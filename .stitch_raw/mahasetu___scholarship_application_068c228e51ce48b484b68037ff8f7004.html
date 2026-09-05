@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Post-Matric Scholarship Application - MahaSetu</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-tertiary-container": "#81d27c",
+                        "on-tertiary-fixed": "#002204",
+                        "secondary-container": "#fe8028",
+                        "tertiary": "#00410c",
+                        "tertiary-fixed-dim": "#88d982",
+                        "tertiary-fixed": "#a3f69c",
+                        "error": "#ba1a1a",
+                        "on-secondary-fixed-variant": "#763300",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-fixed-variant": "#0e4b6e",
+                        "surface": "#f8f9ff",
+                        "on-primary": "#ffffff",
+                        "on-primary-fixed": "#001e30",
+                        "on-tertiary-fixed-variant": "#005312",
+                        "background": "#f8f9ff",
+                        "surface-tint": "#2f6388",
+                        "surface-container": "#e5eeff",
+                        "primary-fixed-dim": "#9bccf6",
+                        "tertiary-container": "#005b14",
+                        "surface-variant": "#d3e4fe",
+                        "on-error-container": "#93000a",
+                        "primary-container": "#1a5276",
+                        "outline-variant": "#c1c7cf",
+                        "secondary-fixed-dim": "#ffb68d",
+                        "on-background": "#0b1c30",
+                        "secondary": "#9a4600",
+                        "surface-container-low": "#eff4ff",
+                        "on-secondary-fixed": "#321200",
+                        "surface-container-high": "#dce9ff",
+                        "on-primary-container": "#94c5ee",
+                        "on-surface-variant": "#41474e",
+                        "on-secondary": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "inverse-on-surface": "#eaf1ff",
+                        "surface-bright": "#f8f9ff",
+                        "on-surface": "#0b1c30",
+                        "on-error": "#ffffff",
+                        "surface-dim": "#cbdbf5",
+                        "surface-container-highest": "#d3e4fe",
+                        "error-container": "#ffdad6",
+                        "outline": "#72787f",
+                        "primary": "#003b5a",
+                        "inverse-primary": "#9bccf6",
+                        "inverse-surface": "#213145",
+                        "primary-fixed": "#cbe6ff",
+                        "secondary-fixed": "#ffdbc9",
+                        "on-secondary-container": "#612900"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    spacing: {
+                        "gutter": "24px",
+                        "stack-sm": "8px",
+                        "unit": "8px",
+                        "container-max": "1280px",
+                        "margin-desktop": "40px",
+                        "stack-md": "16px",
+                        "stack-lg": "32px",
+                        "margin-mobile": "16px"
+                    },
+                    fontFamily: {
+                        "title-lg": ["Public Sans"],
+                        "headline-md": ["Public Sans"],
+                        "headline-lg": ["Public Sans"],
+                        "label-md": ["Public Sans"],
+                        "display-lg": ["Public Sans"],
+                        "headline-lg-mobile": ["Public Sans"],
+                        "body-lg": ["Public Sans"],
+                        "body-md": ["Public Sans"],
+                        "caption": ["Public Sans"]
+                    },
+                    fontSize: {
+                        "title-lg": ["20px", { "lineHeight": "28px", "fontWeight": "500" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "600" }],
+                        "label-md": ["14px", { "lineHeight": "20px", "fontWeight": "600" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "caption": ["12px", { "lineHeight": "16px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface min-h-screen flex flex-col font-body-md text-body-md">
+<!-- TopNavBar (Shared Component) -->
+<header class="bg-surface dark:bg-on-background border-b border-outline-variant dark:border-outline shadow-sm fixed top-0 left-0 w-full z-50 flex justify-between items-center px-margin-desktop h-16 mx-auto">
+<div class="flex items-center gap-8 max-w-container-max mx-auto w-full">
+<div class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed-dim">
+                MahaSetu
+            </div>
+<!-- Desktop Navigation -->
+<nav class="hidden md:flex gap-6 items-center h-full">
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim transition-colors duration-200 cursor-pointer active:opacity-70 h-full flex items-center" href="#">
+                    Home
+                </a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim transition-colors duration-200 cursor-pointer active:opacity-70 h-full flex items-center" href="#">
+                    Services
+                </a>
+<!-- Active State for Schemes -->
+<a class="text-primary dark:text-primary-fixed-dim border-b-2 border-primary dark:border-primary-fixed-dim font-bold h-full flex items-center pt-0.5" href="#">
+                    Schemes
+                </a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim transition-colors duration-200 cursor-pointer active:opacity-70 h-full flex items-center" href="#">
+                    How It Works
+                </a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim transition-colors duration-200 cursor-pointer active:opacity-70 h-full flex items-center" href="#">
+                    About
+                </a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim transition-colors duration-200 cursor-pointer active:opacity-70 h-full flex items-center" href="#">
+                    Help
+                </a>
+</nav>
+<div class="ml-auto hidden md:block">
+<button class="bg-primary text-on-primary font-label-md text-label-md px-6 py-2 rounded-full hover:opacity-90 transition-opacity">
+                    Login
+                </button>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas (Transactional Flow - SideNav Suppressed) -->
+<main class="flex-grow pt-24 pb-16 px-margin-mobile md:px-margin-desktop w-full max-w-container-max mx-auto flex flex-col gap-stack-lg">
+<!-- Header & Stepper -->
+<div class="flex flex-col gap-stack-md">
+<h1 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface">Post-Matric Scholarship Application</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-3xl">
+                Please complete the following steps to submit your application. Your progress is saved automatically.
+            </p>
+<!-- Horizontal Stepper (Desktop) -->
+<div class="hidden md:flex items-center w-full mt-stack-md relative">
+<!-- Lines -->
+<div class="absolute top-1/2 left-0 w-full h-0.5 bg-outline-variant -z-10 transform -translate-y-1/2"></div>
+<div class="absolute top-1/2 left-0 w-1/2 h-0.5 bg-primary -z-10 transform -translate-y-1/2"></div>
+<div class="flex justify-between w-full">
+<!-- Step 1: Done -->
+<div class="flex flex-col items-center gap-2 bg-background px-4">
+<div class="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center border-2 border-primary">
+<span class="material-symbols-outlined" data-icon="check" style="font-size: 16px;">check</span>
+</div>
+<span class="font-label-md text-label-md text-primary">Personal Details</span>
+</div>
+<!-- Step 2: Done -->
+<div class="flex flex-col items-center gap-2 bg-background px-4">
+<div class="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center border-2 border-primary">
+<span class="material-symbols-outlined" data-icon="check" style="font-size: 16px;">check</span>
+</div>
+<span class="font-label-md text-label-md text-primary">Eligibility</span>
+</div>
+<!-- Step 3: Active -->
+<div class="flex flex-col items-center gap-2 bg-background px-4">
+<div class="w-8 h-8 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center border-2 border-primary">
+<span class="font-label-md text-label-md">3</span>
+</div>
+<span class="font-label-md text-label-md text-primary font-bold">Documents</span>
+</div>
+<!-- Step 4: Pending -->
+<div class="flex flex-col items-center gap-2 bg-background px-4">
+<div class="w-8 h-8 rounded-full bg-surface-container-lowest text-on-surface-variant flex items-center justify-center border-2 border-outline-variant">
+<span class="font-label-md text-label-md">4</span>
+</div>
+<span class="font-label-md text-label-md text-on-surface-variant">Review</span>
+</div>
+<!-- Step 5: Pending -->
+<div class="flex flex-col items-center gap-2 bg-background px-4">
+<div class="w-8 h-8 rounded-full bg-surface-container-lowest text-on-surface-variant flex items-center justify-center border-2 border-outline-variant">
+<span class="font-label-md text-label-md">5</span>
+</div>
+<span class="font-label-md text-label-md text-on-surface-variant">Submit</span>
+</div>
+</div>
+</div>
+<!-- Vertical Stepper text summary (Mobile) -->
+<div class="md:hidden flex items-center gap-4 bg-surface-container-low p-4 rounded-lg border border-outline-variant mt-stack-sm">
+<div class="w-10 h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center flex-shrink-0">
+<span class="font-label-md text-label-md">3/5</span>
+</div>
+<div>
+<div class="font-label-md text-label-md text-primary">Current Step: Documents</div>
+<div class="font-caption text-caption text-on-surface-variant">Next: Review Application</div>
+</div>
+</div>
+</div>
+<!-- Section: Document Verification -->
+<section class="flex flex-col gap-stack-md mt-stack-md">
+<div class="flex flex-col gap-unit">
+<h2 class="font-headline-md text-headline-md text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" data-icon="verified_user">verified_user</span>
+                    Document Verification
+                </h2>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-4xl">
+                    Experience the 'One Digital Journey'. The following documents have been securely located in your digital locker and pre-verified by the issuing authorities. You do not need to re-upload these manually.
+                </p>
+</div>
+<!-- Bento Grid for Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter mt-stack-sm">
+<!-- Card 1: Income Certificate -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 flex flex-col gap-4 shadow-[0px_4px_20px_rgba(26,82,118,0.05)] hover:shadow-[0px_8px_24px_rgba(26,82,118,0.1)] hover:border-primary transition-all relative group">
+<div class="flex justify-between items-start">
+<div class="w-12 h-12 rounded-full bg-primary-fixed flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined" data-icon="account_balance">account_balance</span>
+</div>
+<div class="inline-flex items-center gap-1 border border-tertiary text-tertiary px-3 py-1 rounded-full font-label-md text-label-md bg-surface-bright">
+<span class="material-symbols-outlined" data-icon="check_circle" style="font-size: 16px;">check_circle</span>
+                            Verified
+                        </div>
+</div>
+<div class="flex flex-col gap-1 mt-2">
+<h3 class="font-title-lg text-title-lg text-on-surface">Income Certificate</h3>
+<p class="font-caption text-caption text-on-surface-variant">ID: MH-INC-2023-89472</p>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant flex-grow">
+                        Information already available through MahaSetu. Issued securely by the Revenue Dept.
+                    </p>
+<div class="flex flex-col gap-3 mt-4 pt-4 border-t border-outline-variant/30">
+<button class="w-full bg-primary text-on-primary font-label-md text-label-md h-12 rounded-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
+                            Use Verified Information
+                        </button>
+<button class="w-full text-primary font-label-md text-label-md h-10 rounded-lg hover:bg-surface-container transition-colors text-center underline decoration-primary/30 underline-offset-4">
+                            Upload Manually Instead
+                        </button>
+</div>
+</div>
+<!-- Card 2: Caste Certificate -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 flex flex-col gap-4 shadow-[0px_4px_20px_rgba(26,82,118,0.05)] hover:shadow-[0px_8px_24px_rgba(26,82,118,0.1)] hover:border-primary transition-all relative group">
+<div class="flex justify-between items-start">
+<div class="w-12 h-12 rounded-full bg-primary-fixed flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined" data-icon="badge">badge</span>
+</div>
+<div class="inline-flex items-center gap-1 border border-tertiary text-tertiary px-3 py-1 rounded-full font-label-md text-label-md bg-surface-bright">
+<span class="material-symbols-outlined" data-icon="check_circle" style="font-size: 16px;">check_circle</span>
+                            Verified
+                        </div>
+</div>
+<div class="flex flex-col gap-1 mt-2">
+<h3 class="font-title-lg text-title-lg text-on-surface">Caste Certificate</h3>
+<p class="font-caption text-caption text-on-surface-variant">ID: MH-CST-2021-11933</p>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant flex-grow">
+                        Information already available through MahaSetu. Issued securely by the Revenue Dept.
+                    </p>
+<div class="flex flex-col gap-3 mt-4 pt-4 border-t border-outline-variant/30">
+<button class="w-full bg-primary text-on-primary font-label-md text-label-md h-12 rounded-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
+                            Use Verified Information
+                        </button>
+<button class="w-full text-primary font-label-md text-label-md h-10 rounded-lg hover:bg-surface-container transition-colors text-center underline decoration-primary/30 underline-offset-4">
+                            Upload Manually Instead
+                        </button>
+</div>
+</div>
+<!-- Card 3: Residence Certificate -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 flex flex-col gap-4 shadow-[0px_4px_20px_rgba(26,82,118,0.05)] hover:shadow-[0px_8px_24px_rgba(26,82,118,0.1)] hover:border-primary transition-all relative group">
+<div class="flex justify-between items-start">
+<div class="w-12 h-12 rounded-full bg-primary-fixed flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+</div>
+<div class="inline-flex items-center gap-1 border border-tertiary text-tertiary px-3 py-1 rounded-full font-label-md text-label-md bg-surface-bright">
+<span class="material-symbols-outlined" data-icon="check_circle" style="font-size: 16px;">check_circle</span>
+                            Verified
+                        </div>
+</div>
+<div class="flex flex-col gap-1 mt-2">
+<h3 class="font-title-lg text-title-lg text-on-surface">Domicile / Residence</h3>
+<p class="font-caption text-caption text-on-surface-variant">ID: MH-DOM-2022-44012</p>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant flex-grow">
+                        Information already available through MahaSetu. Issued securely by the Revenue Dept.
+                    </p>
+<div class="flex flex-col gap-3 mt-4 pt-4 border-t border-outline-variant/30">
+<button class="w-full bg-primary text-on-primary font-label-md text-label-md h-12 rounded-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
+                            Use Verified Information
+                        </button>
+<button class="w-full text-primary font-label-md text-label-md h-10 rounded-lg hover:bg-surface-container transition-colors text-center underline decoration-primary/30 underline-offset-4">
+                            Upload Manually Instead
+                        </button>
+</div>
+</div>
+</div>
+</section>
+<!-- Form Navigation Actions -->
+<div class="flex flex-col-reverse md:flex-row justify-between items-center gap-4 mt-stack-lg pt-stack-md border-t border-outline-variant">
+<button class="w-full md:w-auto px-8 h-12 rounded-lg border border-primary text-primary font-label-md text-label-md hover:bg-surface-container-low transition-colors">
+                Back to Eligibility
+            </button>
+<button class="w-full md:w-auto px-8 h-12 rounded-lg bg-secondary text-on-secondary font-label-md text-label-md hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
+                Save &amp; Continue
+                <span class="material-symbols-outlined" data-icon="arrow_forward" style="font-size: 20px;">arrow_forward</span>
+</button>
+</div>
+</main>
+<!-- Footer (Shared Component) -->
+<footer class="bg-surface-container-highest dark:bg-on-background border-t border-outline-variant dark:border-outline w-full py-8 mt-auto">
+<div class="w-full flex flex-col md:flex-row justify-between items-center px-margin-desktop max-w-container-max mx-auto gap-4">
+<div class="font-title-lg text-title-lg font-bold text-primary dark:text-primary-fixed-dim">
+                MahaSetu
+            </div>
+<div class="flex flex-wrap justify-center gap-x-6 gap-y-2">
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim transition-all font-body-md text-body-md opacity-100" href="#">Maharashtra Government</a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim transition-all font-body-md text-body-md opacity-100" href="#">Privacy Policy</a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim transition-all font-body-md text-body-md opacity-100" href="#">Terms of Service</a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim transition-all font-body-md text-body-md opacity-100" href="#">Help &amp; Support</a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim transition-all font-body-md text-body-md opacity-100" href="#">Contact Us</a>
+</div>
+<div class="font-body-md text-body-md text-on-surface-variant text-center md:text-right">
+                © 2024 Government of Maharashtra. All Rights Reserved.
+            </div>
+</div>
+</footer>
+</body></html>

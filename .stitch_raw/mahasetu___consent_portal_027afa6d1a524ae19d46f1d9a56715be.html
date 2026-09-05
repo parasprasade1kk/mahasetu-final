@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MahaSetu Consent Interface</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-container": "#81d27c",
+                        "on-tertiary-fixed": "#002204",
+                        "secondary-container": "#fe8028",
+                        "tertiary": "#00410c",
+                        "tertiary-fixed-dim": "#88d982",
+                        "tertiary-fixed": "#a3f69c",
+                        "error": "#ba1a1a",
+                        "on-secondary-fixed-variant": "#763300",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-fixed-variant": "#0e4b6e",
+                        "surface": "#f8f9ff",
+                        "on-primary": "#ffffff",
+                        "on-primary-fixed": "#001e30",
+                        "on-tertiary-fixed-variant": "#005312",
+                        "background": "#f8f9ff",
+                        "surface-tint": "#2f6388",
+                        "surface-container": "#e5eeff",
+                        "primary-fixed-dim": "#9bccf6",
+                        "tertiary-container": "#005b14",
+                        "surface-variant": "#d3e4fe",
+                        "on-error-container": "#93000a",
+                        "primary-container": "#1a5276",
+                        "outline-variant": "#c1c7cf",
+                        "secondary-fixed-dim": "#ffb68d",
+                        "on-background": "#0b1c30",
+                        "secondary": "#9a4600",
+                        "surface-container-low": "#eff4ff",
+                        "on-secondary-fixed": "#321200",
+                        "surface-container-high": "#dce9ff",
+                        "on-primary-container": "#94c5ee",
+                        "on-surface-variant": "#41474e",
+                        "on-secondary": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "inverse-on-surface": "#eaf1ff",
+                        "surface-bright": "#f8f9ff",
+                        "on-surface": "#0b1c30",
+                        "on-error": "#ffffff",
+                        "surface-dim": "#cbdbf5",
+                        "surface-container-highest": "#d3e4fe",
+                        "error-container": "#ffdad6",
+                        "outline": "#72787f",
+                        "primary": "#003b5a",
+                        "inverse-primary": "#9bccf6",
+                        "inverse-surface": "#213145",
+                        "primary-fixed": "#cbe6ff",
+                        "secondary-fixed": "#ffdbc9",
+                        "on-secondary-container": "#612900"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "gutter": "24px",
+                        "stack-sm": "8px",
+                        "unit": "8px",
+                        "container-max": "1280px",
+                        "margin-desktop": "40px",
+                        "stack-md": "16px",
+                        "stack-lg": "32px",
+                        "margin-mobile": "16px"
+                    },
+                    "fontFamily": {
+                        "title-lg": ["Public Sans"],
+                        "headline-md": ["Public Sans"],
+                        "headline-lg": ["Public Sans"],
+                        "label-md": ["Public Sans"],
+                        "display-lg": ["Public Sans"],
+                        "headline-lg-mobile": ["Public Sans"],
+                        "body-lg": ["Public Sans"],
+                        "body-md": ["Public Sans"],
+                        "caption": ["Public Sans"]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background min-h-screen flex items-center justify-center p-4 antialiased selection:bg-primary-fixed selection:text-on-primary-fixed">
+<main class="w-full max-w-[600px] bg-surface-container-lowest rounded-xl shadow-[0_4px_20px_rgba(26,82,118,0.05)] border border-outline-variant p-8 relative overflow-hidden">
+<!-- Subtle decorative top accent -->
+<div class="absolute top-0 left-0 w-full h-1 bg-primary"></div>
+<!-- Header Section -->
+<div class="flex items-center gap-4 mb-8">
+<div class="w-12 h-12 bg-surface-container-high rounded-lg flex items-center justify-center text-primary border border-outline-variant">
+<span class="material-symbols-outlined text-[28px]" data-icon="security" style="font-variation-settings: 'FILL' 1;">security</span>
+</div>
+<div>
+<h1 class="font-title-lg text-title-lg text-on-background">Consent Request</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">MahaSetu Identity Gateway</p>
+</div>
+</div>
+<!-- Headline -->
+<h2 class="font-headline-md text-headline-md text-on-background mb-8 leading-tight">
+            Education Department is requesting access to your Income Certificate.
+        </h2>
+<!-- Details Grid -->
+<div class="bg-surface-container-low rounded-lg p-6 border border-outline-variant mb-8 space-y-6">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-2 border-b border-outline-variant pb-4 last:border-0 last:pb-0">
+<span class="font-label-md text-label-md text-on-surface-variant md:col-span-1">Requested by</span>
+<span class="font-body-md text-body-md text-on-background font-medium md:col-span-2">Education Department</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-2 border-b border-outline-variant pb-4 last:border-0 last:pb-0">
+<span class="font-label-md text-label-md text-on-surface-variant md:col-span-1">Information</span>
+<div class="md:col-span-2 flex flex-col gap-1">
+<span class="font-body-md text-body-md text-on-background font-medium">Income Certificate</span>
+<span class="inline-flex items-center gap-1 text-primary font-caption text-caption">
+<span class="material-symbols-outlined text-[14px]" data-icon="verified" style="font-variation-settings: 'FILL' 1;">verified</span>
+                        Verified by Revenue Dept
+                    </span>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-2 border-b border-outline-variant pb-4 last:border-0 last:pb-0">
+<span class="font-label-md text-label-md text-on-surface-variant md:col-span-1">Purpose</span>
+<span class="font-body-md text-body-md text-on-background font-medium md:col-span-2">Scholarship eligibility verification</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+<span class="font-label-md text-label-md text-on-surface-variant md:col-span-1">Access Type</span>
+<span class="font-body-md text-body-md text-on-background font-medium md:col-span-2">One-time verification</span>
+</div>
+</div>
+<!-- Privacy Message -->
+<div class="flex items-start gap-3 bg-inverse-on-surface p-4 rounded-lg border border-primary-fixed mb-8">
+<span class="material-symbols-outlined text-primary mt-0.5" data-icon="info" style="font-variation-settings: 'FILL' 1;">info</span>
+<p class="font-body-md text-body-md text-on-background">
+                MahaSetu ensures your data is only shared with your explicit consent.
+            </p>
+</div>
+<!-- Action Buttons -->
+<div class="flex flex-col sm:flex-row gap-4">
+<button class="flex-1 bg-primary text-on-primary font-label-md text-label-md h-[48px] rounded px-6 flex items-center justify-center gap-2 hover:bg-primary-container hover:text-on-primary-container transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
+<span class="material-symbols-outlined" data-icon="check" style="font-variation-settings: 'FILL' 1;">check</span>
+                Allow Access
+            </button>
+<button class="flex-1 bg-transparent text-primary font-label-md text-label-md h-[48px] rounded border border-primary px-6 flex items-center justify-center gap-2 hover:bg-surface-container-low transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
+<span class="material-symbols-outlined" data-icon="close">close</span>
+                Reject
+            </button>
+</div>
+</main>
+</body></html>

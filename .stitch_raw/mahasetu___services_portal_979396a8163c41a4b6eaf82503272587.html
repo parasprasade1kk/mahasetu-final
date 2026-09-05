@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MahaSetu - Government Services</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-container": "#81d27c",
+                        "on-tertiary-fixed": "#002204",
+                        "secondary-container": "#fe8028",
+                        "tertiary": "#00410c",
+                        "tertiary-fixed-dim": "#88d982",
+                        "tertiary-fixed": "#a3f69c",
+                        "error": "#ba1a1a",
+                        "on-secondary-fixed-variant": "#763300",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-fixed-variant": "#0e4b6e",
+                        "surface": "#f8f9ff",
+                        "on-primary": "#ffffff",
+                        "on-primary-fixed": "#001e30",
+                        "on-tertiary-fixed-variant": "#005312",
+                        "background": "#f8f9ff",
+                        "surface-tint": "#2f6388",
+                        "surface-container": "#e5eeff",
+                        "primary-fixed-dim": "#9bccf6",
+                        "tertiary-container": "#005b14",
+                        "surface-variant": "#d3e4fe",
+                        "on-error-container": "#93000a",
+                        "primary-container": "#1a5276",
+                        "outline-variant": "#c1c7cf",
+                        "secondary-fixed-dim": "#ffb68d",
+                        "on-background": "#0b1c30",
+                        "secondary": "#9a4600",
+                        "surface-container-low": "#eff4ff",
+                        "on-secondary-fixed": "#321200",
+                        "surface-container-high": "#dce9ff",
+                        "on-primary-container": "#94c5ee",
+                        "on-surface-variant": "#41474e",
+                        "on-secondary": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "inverse-on-surface": "#eaf1ff",
+                        "surface-bright": "#f8f9ff",
+                        "on-surface": "#0b1c30",
+                        "on-error": "#ffffff",
+                        "surface-dim": "#cbdbf5",
+                        "surface-container-highest": "#d3e4fe",
+                        "error-container": "#ffdad6",
+                        "outline": "#72787f",
+                        "primary": "#003b5a",
+                        "inverse-primary": "#9bccf6",
+                        "inverse-surface": "#213145",
+                        "primary-fixed": "#cbe6ff",
+                        "secondary-fixed": "#ffdbc9",
+                        "on-secondary-container": "#612900"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "gutter": "24px",
+                        "stack-sm": "8px",
+                        "unit": "8px",
+                        "container-max": "1280px",
+                        "margin-desktop": "40px",
+                        "stack-md": "16px",
+                        "stack-lg": "32px",
+                        "margin-mobile": "16px"
+                    },
+                    "fontFamily": {
+                        "title-lg": ["Public Sans"],
+                        "headline-md": ["Public Sans"],
+                        "headline-lg": ["Public Sans"],
+                        "label-md": ["Public Sans"],
+                        "display-lg": ["Public Sans"],
+                        "headline-lg-mobile": ["Public Sans"],
+                        "body-lg": ["Public Sans"],
+                        "body-md": ["Public Sans"],
+                        "caption": ["Public Sans"]
+                    },
+                    "fontSize": {
+                        "title-lg": ["20px", { "lineHeight": "28px", "fontWeight": "500" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "600" }],
+                        "label-md": ["14px", { "lineHeight": "20px", "fontWeight": "600" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "caption": ["12px", { "lineHeight": "16px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Public Sans', sans-serif; background-color: #F8FAFC; color: #0b1c30; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .material-symbols-outlined.fill { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .card-shadow { box-shadow: 0px 4px 20px rgba(26, 82, 118, 0.05); }
+    </style>
+</head>
+<body class="bg-surface text-on-surface antialiased flex flex-col min-h-screen">
+<!-- TopNavBar -->
+<nav class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-margin-desktop h-16 max-w-container-max mx-auto bg-surface dark:bg-on-background border-b border-outline-variant dark:border-outline shadow-sm">
+<div class="flex items-center gap-8">
+<span class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed-dim">MahaSetu</span>
+<div class="hidden md:flex gap-6">
+<a class="text-on-surface-variant dark:text-surface-variant font-body-md text-body-md hover:text-primary dark:hover:text-primary-fixed-dim transition-colors duration-200 cursor-pointer active:opacity-70" href="#">Home</a>
+<a class="text-primary dark:text-primary-fixed-dim border-b-2 border-primary dark:border-primary-fixed-dim font-bold pb-1 font-body-md text-body-md hover:text-primary dark:hover:text-primary-fixed-dim transition-colors duration-200 cursor-pointer active:opacity-70" href="#">Services</a>
+<a class="text-on-surface-variant dark:text-surface-variant font-body-md text-body-md hover:text-primary dark:hover:text-primary-fixed-dim transition-colors duration-200 cursor-pointer active:opacity-70" href="#">Schemes</a>
+<a class="text-on-surface-variant dark:text-surface-variant font-body-md text-body-md hover:text-primary dark:hover:text-primary-fixed-dim transition-colors duration-200 cursor-pointer active:opacity-70" href="#">How It Works</a>
+<a class="text-on-surface-variant dark:text-surface-variant font-body-md text-body-md hover:text-primary dark:hover:text-primary-fixed-dim transition-colors duration-200 cursor-pointer active:opacity-70" href="#">About</a>
+<a class="text-on-surface-variant dark:text-surface-variant font-body-md text-body-md hover:text-primary dark:hover:text-primary-fixed-dim transition-colors duration-200 cursor-pointer active:opacity-70" href="#">Help</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative hidden md:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="pl-10 pr-4 py-2 bg-surface-container-low border border-outline-variant rounded-full text-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary w-48" placeholder="Search..." type="text"/>
+</div>
+<button class="text-primary font-label-md text-label-md font-bold px-4 py-2 border border-primary rounded hover:bg-surface-container-low transition-colors">Login</button>
+</div>
+</nav>
+<div class="flex flex-1 pt-16">
+<!-- SideNavBar Citizen -->
+<aside class="h-screen w-64 fixed left-0 top-16 bg-surface-container-low dark:bg-on-background border-r border-outline-variant dark:border-outline hidden lg:flex flex-col py-4 z-40 overflow-y-auto">
+<div class="px-6 mb-6">
+<h2 class="font-title-lg text-title-lg font-bold text-primary dark:text-primary-fixed-dim">Citizen Portal</h2>
+<p class="font-caption text-caption text-on-surface-variant">Government of Maharashtra</p>
+</div>
+<nav class="flex flex-col gap-1">
+<a class="text-on-surface-variant dark:text-surface-variant mx-2 my-1 px-4 py-3 flex items-center gap-3 rounded-lg hover:bg-surface-variant dark:hover:bg-surface-container-highest transition-all active:scale-95 duration-150 font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+                    Dashboard
+                </a>
+<a class="bg-primary-container dark:bg-primary text-on-primary-container dark:text-on-primary rounded-lg mx-2 my-1 px-4 py-3 flex items-center gap-3 hover:bg-surface-variant dark:hover:bg-surface-container-highest transition-all active:scale-95 duration-150 font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined fill">apps</span>
+                    Services
+                </a>
+<a class="text-on-surface-variant dark:text-surface-variant mx-2 my-1 px-4 py-3 flex items-center gap-3 rounded-lg hover:bg-surface-variant dark:hover:bg-surface-container-highest transition-all active:scale-95 duration-150 font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">list_alt</span>
+                    Schemes
+                </a>
+<a class="text-on-surface-variant dark:text-surface-variant mx-2 my-1 px-4 py-3 flex items-center gap-3 rounded-lg hover:bg-surface-variant dark:hover:bg-surface-container-highest transition-all active:scale-95 duration-150 font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">assignment</span>
+                    Applications
+                </a>
+<a class="text-on-surface-variant dark:text-surface-variant mx-2 my-1 px-4 py-3 flex items-center gap-3 rounded-lg hover:bg-surface-variant dark:hover:bg-surface-container-highest transition-all active:scale-95 duration-150 font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">description</span>
+                    Documents
+                </a>
+<a class="text-on-surface-variant dark:text-surface-variant mx-2 my-1 px-4 py-3 flex items-center gap-3 rounded-lg hover:bg-surface-variant dark:hover:bg-surface-container-highest transition-all active:scale-95 duration-150 font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">verified_user</span>
+                    Consent
+                </a>
+<a class="text-on-surface-variant dark:text-surface-variant mx-2 my-1 px-4 py-3 flex items-center gap-3 rounded-lg hover:bg-surface-variant dark:hover:bg-surface-container-highest transition-all active:scale-95 duration-150 font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">notifications</span>
+                    Notifications
+                </a>
+<a class="text-on-surface-variant dark:text-surface-variant mx-2 my-1 px-4 py-3 flex items-center gap-3 rounded-lg hover:bg-surface-variant dark:hover:bg-surface-container-highest transition-all active:scale-95 duration-150 font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">person</span>
+                    Profile
+                </a>
+</nav>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 lg:ml-64 p-margin-mobile md:p-margin-desktop max-w-container-max mx-auto w-full">
+<header class="mb-stack-lg flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div>
+<h1 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg font-bold text-on-surface mb-2">Government Services</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Discover and apply for essential government services online.</p>
+</div>
+<div class="relative w-full md:w-96">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="w-full pl-12 pr-4 py-3 bg-surface-container-lowest border border-outline-variant rounded-lg text-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 card-shadow transition-shadow" placeholder="Search for a government service..." type="text"/>
+</div>
+</header>
+<!-- Filters -->
+<div class="flex gap-2 overflow-x-auto pb-4 mb-stack-lg no-scrollbar">
+<button class="px-4 py-2 bg-primary text-on-primary rounded-full font-label-md text-label-md whitespace-nowrap shadow-sm">All Departments</button>
+<button class="px-4 py-2 bg-surface-container-lowest border border-outline-variant text-on-surface-variant hover:bg-surface-container-low hover:text-primary rounded-full font-label-md text-label-md whitespace-nowrap transition-colors">Revenue</button>
+<button class="px-4 py-2 bg-surface-container-lowest border border-outline-variant text-on-surface-variant hover:bg-surface-container-low hover:text-primary rounded-full font-label-md text-label-md whitespace-nowrap transition-colors">Education</button>
+<button class="px-4 py-2 bg-surface-container-lowest border border-outline-variant text-on-surface-variant hover:bg-surface-container-low hover:text-primary rounded-full font-label-md text-label-md whitespace-nowrap transition-colors">Social Welfare</button>
+</div>
+<!-- Sections Bento Grid Approach -->
+<div class="space-y-stack-lg">
+<!-- REVENUE -->
+<section>
+<div class="flex items-center gap-2 mb-stack-md border-b border-outline-variant pb-2">
+<span class="material-symbols-outlined text-primary">account_balance</span>
+<h2 class="font-title-lg text-title-lg font-bold text-on-surface">Revenue Department</h2>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter">
+<!-- Card 1 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 card-shadow hover:shadow-md hover:border-primary transition-all duration-300 flex flex-col relative overflow-hidden group">
+<div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+<span class="material-symbols-outlined text-6xl text-primary">description</span>
+</div>
+<div class="flex items-start justify-between mb-4 relative z-10">
+<div class="w-12 h-12 bg-primary-container rounded-lg flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">receipt_long</span>
+</div>
+<span class="bg-surface-container-low text-primary px-2 py-1 rounded text-caption font-label-md">Revenue</span>
+</div>
+<h3 class="font-title-lg text-title-lg font-bold text-on-surface mb-2 relative z-10">Income Certificate</h3>
+<p class="font-body-sm text-body-md text-on-surface-variant mb-4 flex-grow relative z-10">Official document certifying the annual income of an individual or family.</p>
+<div class="flex flex-col gap-2 mb-6 relative z-10 border-t border-outline-variant pt-4">
+<div class="flex items-center gap-2 text-caption text-on-surface-variant">
+<span class="material-symbols-outlined text-sm">schedule</span> Est. Time: 7 Days
+                                </div>
+<div class="flex items-center gap-2 text-caption text-on-surface-variant">
+<span class="material-symbols-outlined text-sm">folder</span> Docs: Aadhar, Ration Card, Salary Slip
+                                </div>
+</div>
+<div class="flex gap-2 relative z-10 mt-auto">
+<button class="flex-1 py-2 border border-primary text-primary font-label-md text-label-md rounded hover:bg-primary-container/20 transition-colors">Eligibility</button>
+<button class="flex-1 py-2 bg-secondary text-on-secondary font-label-md text-label-md font-bold rounded hover:bg-secondary/90 transition-colors">Apply Now</button>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 card-shadow hover:shadow-md hover:border-primary transition-all duration-300 flex flex-col relative overflow-hidden group">
+<div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+<span class="material-symbols-outlined text-6xl text-primary">fingerprint</span>
+</div>
+<div class="flex items-start justify-between mb-4 relative z-10">
+<div class="w-12 h-12 bg-primary-container rounded-lg flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">diversity_3</span>
+</div>
+<span class="bg-surface-container-low text-primary px-2 py-1 rounded text-caption font-label-md">Revenue</span>
+</div>
+<h3 class="font-title-lg text-title-lg font-bold text-on-surface mb-2 relative z-10">Caste Certificate</h3>
+<p class="font-body-sm text-body-md text-on-surface-variant mb-4 flex-grow relative z-10">Documentary proof of a person belonging to a particular caste, as specified by constitution.</p>
+<div class="flex flex-col gap-2 mb-6 relative z-10 border-t border-outline-variant pt-4">
+<div class="flex items-center gap-2 text-caption text-on-surface-variant">
+<span class="material-symbols-outlined text-sm">schedule</span> Est. Time: 15 Days
+                                </div>
+<div class="flex items-center gap-2 text-caption text-on-surface-variant">
+<span class="material-symbols-outlined text-sm">folder</span> Docs: Aadhar, School LC, Father's Proof
+                                </div>
+</div>
+<div class="flex gap-2 relative z-10 mt-auto">
+<button class="flex-1 py-2 border border-primary text-primary font-label-md text-label-md rounded hover:bg-primary-container/20 transition-colors">Eligibility</button>
+<button class="flex-1 py-2 bg-secondary text-on-secondary font-label-md text-label-md font-bold rounded hover:bg-secondary/90 transition-colors">Apply Now</button>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 card-shadow hover:shadow-md hover:border-primary transition-all duration-300 flex flex-col relative overflow-hidden group">
+<div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+<span class="material-symbols-outlined text-6xl text-primary">home_pin</span>
+</div>
+<div class="flex items-start justify-between mb-4 relative z-10">
+<div class="w-12 h-12 bg-primary-container rounded-lg flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">home</span>
+</div>
+<span class="bg-surface-container-low text-primary px-2 py-1 rounded text-caption font-label-md">Revenue</span>
+</div>
+<h3 class="font-title-lg text-title-lg font-bold text-on-surface mb-2 relative z-10">Domicile Certificate</h3>
+<p class="font-body-sm text-body-md text-on-surface-variant mb-4 flex-grow relative z-10">Proof of continuous residence in the state of Maharashtra for a specified period.</p>
+<div class="flex flex-col gap-2 mb-6 relative z-10 border-t border-outline-variant pt-4">
+<div class="flex items-center gap-2 text-caption text-on-surface-variant">
+<span class="material-symbols-outlined text-sm">schedule</span> Est. Time: 10 Days
+                                </div>
+<div class="flex items-center gap-2 text-caption text-on-surface-variant">
+<span class="material-symbols-outlined text-sm">folder</span> Docs: Aadhar, Light Bill, Tax Receipt
+                                </div>
+</div>
+<div class="flex gap-2 relative z-10 mt-auto">
+<button class="flex-1 py-2 border border-primary text-primary font-label-md text-label-md rounded hover:bg-primary-container/20 transition-colors">Eligibility</button>
+<button class="flex-1 py-2 bg-secondary text-on-secondary font-label-md text-label-md font-bold rounded hover:bg-secondary/90 transition-colors">Apply Now</button>
+</div>
+</div>
+</div>
+</section>
+<!-- EDUCATION -->
+<section>
+<div class="flex items-center gap-2 mb-stack-md border-b border-outline-variant pb-2">
+<span class="material-symbols-outlined text-primary">school</span>
+<h2 class="font-title-lg text-title-lg font-bold text-on-surface">Education Department</h2>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter">
+<!-- Card 4 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 card-shadow hover:shadow-md hover:border-primary transition-all duration-300 flex flex-col relative overflow-hidden group">
+<div class="flex items-start justify-between mb-4 relative z-10">
+<div class="w-12 h-12 bg-primary-container rounded-lg flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">menu_book</span>
+</div>
+<span class="bg-surface-container-low text-primary px-2 py-1 rounded text-caption font-label-md">Education</span>
+</div>
+<h3 class="font-title-lg text-title-lg font-bold text-on-surface mb-2 relative z-10">Pre-Matric Scholarship</h3>
+<p class="font-body-sm text-body-md text-on-surface-variant mb-4 flex-grow relative z-10">Financial support for students studying in classes 1 to 10 from minority communities.</p>
+<div class="flex flex-col gap-2 mb-6 relative z-10 border-t border-outline-variant pt-4">
+<div class="flex items-center gap-2 text-caption text-on-surface-variant">
+<span class="material-symbols-outlined text-sm">schedule</span> Est. Time: 30 Days
+                                </div>
+<div class="flex items-center gap-2 text-caption text-on-surface-variant">
+<span class="material-symbols-outlined text-sm">folder</span> Docs: Aadhar, Previous Marksheet, Income Cert
+                                </div>
+</div>
+<div class="flex gap-2 relative z-10 mt-auto">
+<button class="flex-1 py-2 border border-primary text-primary font-label-md text-label-md rounded hover:bg-primary-container/20 transition-colors">Eligibility</button>
+<button class="flex-1 py-2 bg-secondary text-on-secondary font-label-md text-label-md font-bold rounded hover:bg-secondary/90 transition-colors">Apply Now</button>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+</div>
+<!-- Footer -->
+<footer class="w-full py-8 bg-surface-container-highest dark:bg-on-background border-t border-outline-variant dark:border-outline mt-auto">
+<div class="w-full flex flex-col md:flex-row justify-between items-center px-margin-desktop max-w-container-max mx-auto gap-4">
+<div class="font-title-lg text-title-lg font-bold text-primary dark:text-primary-fixed-dim">MahaSetu</div>
+<div class="flex flex-wrap justify-center gap-6">
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim underline transition-all font-body-md text-body-md" href="#">Maharashtra Government</a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim underline transition-all font-body-md text-body-md" href="#">Privacy Policy</a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim underline transition-all font-body-md text-body-md" href="#">Terms of Service</a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim underline transition-all font-body-md text-body-md" href="#">Help &amp; Support</a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim underline transition-all font-body-md text-body-md" href="#">Contact Us</a>
+</div>
+<div class="text-on-surface-variant dark:text-surface-variant font-body-md text-body-md text-center md:text-right">
+                © 2024 Government of Maharashtra. All Rights Reserved.
+            </div>
+</div>
+</footer>
+</body></html>

@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MahaSetu - Citizen Dashboard</title>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<!-- Tailwind Config injected from Style Guidance -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-container": "#81d27c",
+                        "on-tertiary-fixed": "#002204",
+                        "secondary-container": "#fe8028",
+                        "tertiary": "#00410c",
+                        "tertiary-fixed-dim": "#88d982",
+                        "tertiary-fixed": "#a3f69c",
+                        "error": "#ba1a1a",
+                        "on-secondary-fixed-variant": "#763300",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-fixed-variant": "#0e4b6e",
+                        "surface": "#f8f9ff",
+                        "on-primary": "#ffffff",
+                        "on-primary-fixed": "#001e30",
+                        "on-tertiary-fixed-variant": "#005312",
+                        "background": "#f8f9ff",
+                        "surface-tint": "#2f6388",
+                        "surface-container": "#e5eeff",
+                        "primary-fixed-dim": "#9bccf6",
+                        "tertiary-container": "#005b14",
+                        "surface-variant": "#d3e4fe",
+                        "on-error-container": "#93000a",
+                        "primary-container": "#1a5276",
+                        "outline-variant": "#c1c7cf",
+                        "secondary-fixed-dim": "#ffb68d",
+                        "on-background": "#0b1c30",
+                        "secondary": "#9a4600",
+                        "surface-container-low": "#eff4ff",
+                        "on-secondary-fixed": "#321200",
+                        "surface-container-high": "#dce9ff",
+                        "on-primary-container": "#94c5ee",
+                        "on-surface-variant": "#41474e",
+                        "on-secondary": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "inverse-on-surface": "#eaf1ff",
+                        "surface-bright": "#f8f9ff",
+                        "on-surface": "#0b1c30",
+                        "on-error": "#ffffff",
+                        "surface-dim": "#cbdbf5",
+                        "surface-container-highest": "#d3e4fe",
+                        "error-container": "#ffdad6",
+                        "outline": "#72787f",
+                        "primary": "#003b5a",
+                        "inverse-primary": "#9bccf6",
+                        "inverse-surface": "#213145",
+                        "primary-fixed": "#cbe6ff",
+                        "secondary-fixed": "#ffdbc9",
+                        "on-secondary-container": "#612900"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "gutter": "24px",
+                        "stack-sm": "8px",
+                        "unit": "8px",
+                        "container-max": "1280px",
+                        "margin-desktop": "40px",
+                        "stack-md": "16px",
+                        "stack-lg": "32px",
+                        "margin-mobile": "16px"
+                    },
+                    "fontFamily": {
+                        "title-lg": ["Public Sans", "sans-serif"],
+                        "headline-md": ["Public Sans", "sans-serif"],
+                        "headline-lg": ["Public Sans", "sans-serif"],
+                        "label-md": ["Public Sans", "sans-serif"],
+                        "display-lg": ["Public Sans", "sans-serif"],
+                        "headline-lg-mobile": ["Public Sans", "sans-serif"],
+                        "body-lg": ["Public Sans", "sans-serif"],
+                        "body-md": ["Public Sans", "sans-serif"],
+                        "caption": ["Public Sans", "sans-serif"]
+                    },
+                    "fontSize": {
+                        "title-lg": ["20px", { "lineHeight": "28px", "fontWeight": "500" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "600" }],
+                        "label-md": ["14px", { "lineHeight": "20px", "fontWeight": "600" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "caption": ["12px", { "lineHeight": "16px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-surface text-on-surface font-body-md antialiased min-h-screen">
+<!-- TopNavBar -->
+<nav class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-margin-desktop h-16 max-w-container-max mx-auto bg-surface dark:bg-on-background border-b border-outline-variant dark:border-outline shadow-sm">
+<div class="flex items-center gap-4">
+<span class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed-dim">MahaSetu</span>
+</div>
+<!-- Navigation Links (Hidden on mobile/tablet if side nav is present, but rendering per JSON spec for TopNav) -->
+<div class="hidden md:flex items-center gap-8 h-full">
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim transition-colors duration-200 cursor-pointer active:opacity-70 font-body-md text-body-md flex items-center h-full" href="#">Home</a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim transition-colors duration-200 cursor-pointer active:opacity-70 font-body-md text-body-md flex items-center h-full" href="#">Services</a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim transition-colors duration-200 cursor-pointer active:opacity-70 font-body-md text-body-md flex items-center h-full" href="#">Schemes</a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim transition-colors duration-200 cursor-pointer active:opacity-70 font-body-md text-body-md flex items-center h-full" href="#">How It Works</a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim transition-colors duration-200 cursor-pointer active:opacity-70 font-body-md text-body-md flex items-center h-full" href="#">About</a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim transition-colors duration-200 cursor-pointer active:opacity-70 font-body-md text-body-md flex items-center h-full" href="#">Help</a>
+</div>
+<div class="flex items-center gap-4">
+<!-- Trailing Action -->
+<button class="bg-primary text-on-primary font-label-md text-label-md px-6 py-2 rounded-lg hover:opacity-90 transition-opacity">Login</button>
+</div>
+</nav>
+<!-- SideNavBar -->
+<aside class="h-screen w-64 fixed left-0 top-16 bg-surface-container-low dark:bg-on-background border-r border-outline-variant dark:border-outline hidden lg:flex flex-col py-4 z-40">
+<div class="px-6 py-4 mb-4 border-b border-outline-variant flex items-center gap-3">
+<div class="w-10 h-10 rounded-full overflow-hidden bg-surface-container-highest shrink-0 border border-outline-variant">
+<img alt="Citizen Avatar" class="w-full h-full object-cover" data-alt="A highly detailed, professional headshot of a mature Indian male citizen in his late 40s. He is wearing a crisp, light blue collared shirt. The lighting is soft and natural, illuminating his face evenly. The background is a blurred, bright modern office setting, signifying a professional and reliable digital identity for a government portal context." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDmu3WHtHGo_Eiszg6JnNEr2P3MqLUtSpSW0Oh498ouJBXlXP2LG1qYB1YLsqq1g2rkYeINoBOBdTQL2lAYL6jarxDP_3oi3CelFK1Yf1IUz9Eir_fA5-2n74vcgsrBxPQ8kQ5Ms45B4KFIyFnawP4Vh4fsvPpsTQv1mNmAaOgyFmijc0FQqmi5PN3meuFYm47as77zo8zu5Dcx1BEbFf88bxFjVEc-NTW6RWGnPKV8pnIahGWAvIxSCg"/>
+</div>
+<div>
+<h2 class="font-title-lg text-title-lg font-bold text-primary dark:text-primary-fixed-dim leading-tight">Citizen Portal</h2>
+<p class="font-caption text-caption text-on-surface-variant">Government of Maharashtra</p>
+</div>
+</div>
+<nav class="flex-1 overflow-y-auto font-label-md text-label-md flex flex-col gap-1 px-2">
+<a class="bg-primary-container dark:bg-primary text-on-primary-container dark:text-on-primary rounded-lg mx-2 my-1 px-4 py-3 flex items-center gap-3 active:scale-95 duration-150" href="#">
+<span class="material-symbols-outlined" data-weight="fill" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+                Dashboard
+            </a>
+<a class="text-on-surface-variant dark:text-surface-variant mx-2 my-1 px-4 py-3 flex items-center gap-3 hover:bg-surface-variant dark:hover:bg-surface-container-highest transition-all active:scale-95 duration-150" href="#">
+<span class="material-symbols-outlined">apps</span>
+                Services
+            </a>
+<a class="text-on-surface-variant dark:text-surface-variant mx-2 my-1 px-4 py-3 flex items-center gap-3 hover:bg-surface-variant dark:hover:bg-surface-container-highest transition-all active:scale-95 duration-150" href="#">
+<span class="material-symbols-outlined">list_alt</span>
+                Schemes
+            </a>
+<a class="text-on-surface-variant dark:text-surface-variant mx-2 my-1 px-4 py-3 flex items-center gap-3 hover:bg-surface-variant dark:hover:bg-surface-container-highest transition-all active:scale-95 duration-150" href="#">
+<span class="material-symbols-outlined">assignment</span>
+                Applications
+            </a>
+<a class="text-on-surface-variant dark:text-surface-variant mx-2 my-1 px-4 py-3 flex items-center gap-3 hover:bg-surface-variant dark:hover:bg-surface-container-highest transition-all active:scale-95 duration-150" href="#">
+<span class="material-symbols-outlined">description</span>
+                Documents
+            </a>
+<a class="text-on-surface-variant dark:text-surface-variant mx-2 my-1 px-4 py-3 flex items-center gap-3 hover:bg-surface-variant dark:hover:bg-surface-container-highest transition-all active:scale-95 duration-150" href="#">
+<span class="material-symbols-outlined">verified_user</span>
+                Consent
+            </a>
+<a class="text-on-surface-variant dark:text-surface-variant mx-2 my-1 px-4 py-3 flex items-center gap-3 hover:bg-surface-variant dark:hover:bg-surface-container-highest transition-all active:scale-95 duration-150" href="#">
+<span class="material-symbols-outlined">notifications</span>
+                Notifications
+            </a>
+<a class="text-on-surface-variant dark:text-surface-variant mx-2 my-1 px-4 py-3 flex items-center gap-3 hover:bg-surface-variant dark:hover:bg-surface-container-highest transition-all active:scale-95 duration-150" href="#">
+<span class="material-symbols-outlined">person</span>
+                Profile
+            </a>
+</nav>
+</aside>
+<!-- Main Content Canvas -->
+<main class="pt-24 lg:ml-64 px-4 md:px-margin-desktop pb-24 max-w-[1600px]">
+<!-- Welcome Section -->
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-stack-lg gap-4">
+<div>
+<h1 class="font-headline-lg text-headline-lg text-primary">Welcome, Rahul</h1>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">Here is a summary of your interactions with the state.</p>
+</div>
+<!-- Profile Completion Card -->
+<div class="bg-surface-container-lowest border border-outline-variant p-4 rounded-xl shadow-sm w-full md:w-64 flex items-center gap-4">
+<div class="relative w-12 h-12 shrink-0">
+<svg class="w-full h-full transform -rotate-90" viewbox="0 0 36 36">
+<circle class="stroke-surface-variant" cx="18" cy="18" fill="none" r="16" stroke-width="4"></circle>
+<circle class="stroke-secondary" cx="18" cy="18" fill="none" r="16" stroke-dasharray="100" stroke-dashoffset="20" stroke-width="4"></circle>
+</svg>
+<div class="absolute inset-0 flex items-center justify-center font-label-md text-label-md text-primary">80%</div>
+</div>
+<div>
+<h3 class="font-label-md text-label-md text-on-surface">Profile Status</h3>
+<p class="font-caption text-caption text-on-surface-variant cursor-pointer hover:text-primary hover:underline">Complete profile →</p>
+</div>
+</div>
+</div>
+<!-- Summary Cards Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter mb-stack-lg">
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm hover:border-primary hover:shadow-md transition-all group relative overflow-hidden">
+<div class="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+<div class="flex justify-between items-start mb-4">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined">assignment</span>
+</div>
+</div>
+<h2 class="font-display-lg text-display-lg text-on-surface leading-none mb-2">2</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Active Applications</p>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm hover:border-tertiary hover:shadow-md transition-all group relative overflow-hidden">
+<div class="absolute top-0 right-0 w-24 h-24 bg-tertiary/5 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+<div class="flex justify-between items-start mb-4">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-tertiary-container group-hover:bg-tertiary group-hover:text-on-tertiary transition-colors">
+<span class="material-symbols-outlined">check_circle</span>
+</div>
+</div>
+<h2 class="font-display-lg text-display-lg text-on-surface leading-none mb-2">5</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Approved Services</p>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm hover:border-secondary hover:shadow-md transition-all group relative overflow-hidden">
+<div class="absolute top-0 right-0 w-24 h-24 bg-secondary/5 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+<div class="flex justify-between items-start mb-4">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-secondary group-hover:bg-secondary group-hover:text-on-secondary transition-colors">
+<span class="material-symbols-outlined">pending_actions</span>
+</div>
+</div>
+<h2 class="font-display-lg text-display-lg text-on-surface leading-none mb-2">1</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Pending Requests</p>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm hover:border-primary-container hover:shadow-md transition-all group relative overflow-hidden">
+<div class="absolute top-0 right-0 w-24 h-24 bg-primary-container/5 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+<div class="flex justify-between items-start mb-4">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-primary-container group-hover:bg-primary-container group-hover:text-on-primary-container transition-colors">
+<span class="material-symbols-outlined">recommend</span>
+</div>
+</div>
+<h2 class="font-display-lg text-display-lg text-on-surface leading-none mb-2">4</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Recommended Schemes</p>
+</div>
+</div>
+<!-- Main Content 2-Column Split -->
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-gutter">
+<!-- Left Column: Services & Table (Spans 8) -->
+<div class="xl:col-span-8 flex flex-col gap-stack-lg">
+<!-- Notification Panel (Moved to top of left column for visibility in dense layout, or can stay right. Let's put it top of left for immediate attention) -->
+<div class="bg-secondary/10 border-l-4 border-secondary rounded-r-lg p-4 flex items-start gap-4">
+<span class="material-symbols-outlined text-secondary mt-0.5">info</span>
+<div>
+<h4 class="font-label-md text-label-md text-on-surface mb-1">Action Required</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">Education Department requested access to your Income Certificate.</p>
+<button class="mt-2 text-primary font-label-md text-label-md hover:underline">Review Request</button>
+</div>
+</div>
+<!-- Quick Services Bento Grid -->
+<section>
+<div class="flex justify-between items-end mb-4">
+<h2 class="font-title-lg text-title-lg text-on-surface">Quick Services</h2>
+<a class="text-primary font-label-md text-label-md hover:underline" href="#">View Directory</a>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+<!-- Dept Card: Revenue -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-5 shadow-sm flex flex-col h-full">
+<div class="flex items-center gap-3 mb-4">
+<span class="material-symbols-outlined text-primary bg-primary/10 p-2 rounded-lg">account_balance</span>
+<h3 class="font-label-md text-label-md text-on-surface font-bold">Revenue</h3>
+</div>
+<ul class="flex flex-col gap-2 flex-1">
+<li>
+<a class="flex items-center justify-between group p-2 -mx-2 rounded-lg hover:bg-surface-container-low transition-colors" href="#">
+<span class="font-body-md text-body-md text-on-surface-variant group-hover:text-primary">Income Certificate</span>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary text-sm">arrow_forward</span>
+</a>
+</li>
+<li>
+<a class="flex items-center justify-between group p-2 -mx-2 rounded-lg hover:bg-surface-container-low transition-colors" href="#">
+<span class="font-body-md text-body-md text-on-surface-variant group-hover:text-primary">Domicile Certificate</span>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary text-sm">arrow_forward</span>
+</a>
+</li>
+</ul>
+</div>
+<!-- Dept Card: Education -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-5 shadow-sm flex flex-col h-full">
+<div class="flex items-center gap-3 mb-4">
+<span class="material-symbols-outlined text-primary bg-primary/10 p-2 rounded-lg">school</span>
+<h3 class="font-label-md text-label-md text-on-surface font-bold">Education</h3>
+</div>
+<ul class="flex flex-col gap-2 flex-1">
+<li>
+<a class="flex items-center justify-between group p-2 -mx-2 rounded-lg hover:bg-surface-container-low transition-colors" href="#">
+<span class="font-body-md text-body-md text-on-surface-variant group-hover:text-primary">Scholarship Portal</span>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary text-sm">arrow_forward</span>
+</a>
+</li>
+<li>
+<a class="flex items-center justify-between group p-2 -mx-2 rounded-lg hover:bg-surface-container-low transition-colors" href="#">
+<span class="font-body-md text-body-md text-on-surface-variant group-hover:text-primary">Exam Results</span>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary text-sm">arrow_forward</span>
+</a>
+</li>
+</ul>
+</div>
+<!-- Dept Card: Social Welfare -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-5 shadow-sm flex flex-col h-full">
+<div class="flex items-center gap-3 mb-4">
+<span class="material-symbols-outlined text-primary bg-primary/10 p-2 rounded-lg">diversity_1</span>
+<h3 class="font-label-md text-label-md text-on-surface font-bold">Social Welfare</h3>
+</div>
+<ul class="flex flex-col gap-2 flex-1">
+<li>
+<a class="flex items-center justify-between group p-2 -mx-2 rounded-lg hover:bg-surface-container-low transition-colors" href="#">
+<span class="font-body-md text-body-md text-on-surface-variant group-hover:text-primary">Pension Scheme</span>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary text-sm">arrow_forward</span>
+</a>
+</li>
+<li>
+<a class="flex items-center justify-between group p-2 -mx-2 rounded-lg hover:bg-surface-container-low transition-colors" href="#">
+<span class="font-body-md text-body-md text-on-surface-variant group-hover:text-primary">Disability Grant</span>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary text-sm">arrow_forward</span>
+</a>
+</li>
+</ul>
+</div>
+</div>
+</section>
+<!-- Recent Applications Table -->
+<section>
+<div class="flex justify-between items-end mb-4">
+<h2 class="font-title-lg text-title-lg text-on-surface">Recent Applications</h2>
+<a class="text-primary font-label-md text-label-md hover:underline" href="#">View All</a>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-sm overflow-hidden overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low border-b border-outline-variant">
+<th class="p-4 font-label-md text-label-md text-on-surface-variant whitespace-nowrap">Application</th>
+<th class="p-4 font-label-md text-label-md text-on-surface-variant whitespace-nowrap">Department</th>
+<th class="p-4 font-label-md text-label-md text-on-surface-variant whitespace-nowrap">Date</th>
+<th class="p-4 font-label-md text-label-md text-on-surface-variant whitespace-nowrap">Status</th>
+<th class="p-4 font-label-md text-label-md text-on-surface-variant text-right whitespace-nowrap">Action</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant">
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="p-4 font-body-md text-body-md text-on-surface font-medium whitespace-nowrap">Post-Matric Scholarship</td>
+<td class="p-4 font-body-md text-body-md text-on-surface-variant whitespace-nowrap">Education</td>
+<td class="p-4 font-body-md text-body-md text-on-surface-variant whitespace-nowrap">24 Oct 2024</td>
+<td class="p-4 whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full font-label-md text-label-md bg-secondary-container text-on-secondary-container">
+                                            Under Review
+                                        </span>
+</td>
+<td class="p-4 text-right whitespace-nowrap">
+<button class="text-primary font-label-md text-label-md hover:underline">View</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="p-4 font-body-md text-body-md text-on-surface font-medium whitespace-nowrap">Income Certificate</td>
+<td class="p-4 font-body-md text-body-md text-on-surface-variant whitespace-nowrap">Revenue</td>
+<td class="p-4 font-body-md text-body-md text-on-surface-variant whitespace-nowrap">20 Oct 2024</td>
+<td class="p-4 whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full font-label-md text-label-md bg-[#dcfce7] text-[#166534]">
+<!-- Hardcoded slightly to ensure readable green pill since tertiary-container might be too dark, but let's stick to design system strictly where possible. Wait, requirement says use named colors. -->
+<!-- Re-evaluating: Success (Green). Let's use custom inline style to match standard success badge if tertiary isn't exactly success. But tertiary in this scheme is green. -->
+<!-- Using theme colors: -->
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full font-label-md text-label-md bg-tertiary-fixed text-on-tertiary-fixed-variant">
+                                                Approved
+                                            </span>
+</span>
+</td>
+<td class="p-4 text-right whitespace-nowrap">
+<button class="flex items-center justify-end gap-1 text-primary font-label-md text-label-md hover:underline ml-auto">
+<span class="material-symbols-outlined text-[18px]">download</span>
+                                            Download
+                                        </button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</div>
+<!-- Right Column: Recommendations (Spans 4) -->
+<div class="xl:col-span-4 flex flex-col gap-stack-lg">
+<section>
+<div class="flex justify-between items-end mb-4">
+<h2 class="font-title-lg text-title-lg text-on-surface">Recommended for You</h2>
+</div>
+<div class="flex flex-col gap-4">
+<!-- Scheme Card 1 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-5 shadow-sm hover:border-primary transition-all flex gap-4 items-start">
+<div class="w-12 h-12 shrink-0 bg-primary-fixed rounded-lg flex items-center justify-center text-primary border border-primary/10">
+<span class="material-symbols-outlined">lightbulb</span>
+</div>
+<div>
+<h3 class="font-label-md text-label-md text-on-surface font-bold mb-1">Self-Employment Loan Scheme</h3>
+<p class="font-caption text-caption text-on-surface-variant mb-3 line-clamp-2">Financial assistance for starting new businesses in rural areas with subsidized interest rates.</p>
+<button class="text-primary font-label-md text-label-md hover:underline border border-primary px-3 py-1 rounded-md text-sm">Apply Now</button>
+</div>
+</div>
+<!-- Scheme Card 2 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-5 shadow-sm hover:border-primary transition-all flex gap-4 items-start">
+<div class="w-12 h-12 shrink-0 bg-secondary-fixed rounded-lg flex items-center justify-center text-secondary border border-secondary/10">
+<span class="material-symbols-outlined">health_and_safety</span>
+</div>
+<div>
+<h3 class="font-label-md text-label-md text-on-surface font-bold mb-1">State Health Insurance</h3>
+<p class="font-caption text-caption text-on-surface-variant mb-3 line-clamp-2">Comprehensive health coverage for eligible families covering major medical procedures.</p>
+<button class="text-primary font-label-md text-label-md hover:underline border border-primary px-3 py-1 rounded-md text-sm">Check Eligibility</button>
+</div>
+</div>
+<!-- Info Banner -->
+<div class="mt-2 p-4 bg-surface-container rounded-xl border border-outline-variant/50 text-center">
+<span class="material-symbols-outlined text-outline mb-2">tune</span>
+<p class="font-caption text-caption text-on-surface-variant">Update your profile preferences to get better scheme recommendations.</p>
+</div>
+</div>
+</section>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="w-full flex flex-col md:flex-row justify-between items-center px-margin-desktop max-w-container-max mx-auto bg-surface-container-highest dark:bg-on-background border-t border-outline-variant dark:border-outline py-8 lg:ml-64 lg:w-[calc(100%-16rem)]">
+<div class="font-title-lg text-title-lg font-bold text-primary dark:text-primary-fixed-dim mb-4 md:mb-0">
+            MahaSetu
+        </div>
+<div class="flex flex-wrap justify-center gap-6 font-body-md text-body-md">
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim underline transition-all opacity-100" href="#">Maharashtra Government</a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim underline transition-all opacity-100" href="#">Privacy Policy</a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim underline transition-all opacity-100" href="#">Terms of Service</a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim underline transition-all opacity-100" href="#">Help &amp; Support</a>
+<a class="text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim underline transition-all opacity-100" href="#">Contact Us</a>
+</div>
+<div class="w-full text-center md:w-auto mt-4 md:mt-0 font-caption text-caption text-on-surface-variant">
+            © 2024 Government of Maharashtra. All Rights Reserved.
+        </div>
+</footer>
+</body></html>

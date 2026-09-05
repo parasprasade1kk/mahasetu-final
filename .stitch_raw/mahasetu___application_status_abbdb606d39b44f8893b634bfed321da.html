@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Citizen Portal - Applications</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-tertiary-container": "#81d27c",
+                      "on-tertiary-fixed": "#002204",
+                      "secondary-container": "#fe8028",
+                      "tertiary": "#00410c",
+                      "tertiary-fixed-dim": "#88d982",
+                      "tertiary-fixed": "#a3f69c",
+                      "error": "#ba1a1a",
+                      "on-secondary-fixed-variant": "#763300",
+                      "on-tertiary": "#ffffff",
+                      "on-primary-fixed-variant": "#0e4b6e",
+                      "surface": "#f8f9ff",
+                      "on-primary": "#ffffff",
+                      "on-primary-fixed": "#001e30",
+                      "on-tertiary-fixed-variant": "#005312",
+                      "background": "#f8f9ff",
+                      "surface-tint": "#2f6388",
+                      "surface-container": "#e5eeff",
+                      "primary-fixed-dim": "#9bccf6",
+                      "tertiary-container": "#005b14",
+                      "surface-variant": "#d3e4fe",
+                      "on-error-container": "#93000a",
+                      "primary-container": "#1a5276",
+                      "outline-variant": "#c1c7cf",
+                      "secondary-fixed-dim": "#ffb68d",
+                      "on-background": "#0b1c30",
+                      "secondary": "#9a4600",
+                      "surface-container-low": "#eff4ff",
+                      "on-secondary-fixed": "#321200",
+                      "surface-container-high": "#dce9ff",
+                      "on-primary-container": "#94c5ee",
+                      "on-surface-variant": "#41474e",
+                      "on-secondary": "#ffffff",
+                      "surface-container-lowest": "#ffffff",
+                      "inverse-on-surface": "#eaf1ff",
+                      "surface-bright": "#f8f9ff",
+                      "on-surface": "#0b1c30",
+                      "on-error": "#ffffff",
+                      "surface-dim": "#cbdbf5",
+                      "surface-container-highest": "#d3e4fe",
+                      "error-container": "#ffdad6",
+                      "outline": "#72787f",
+                      "primary": "#003b5a",
+                      "inverse-primary": "#9bccf6",
+                      "inverse-surface": "#213145",
+                      "primary-fixed": "#cbe6ff",
+                      "secondary-fixed": "#ffdbc9",
+                      "on-secondary-container": "#612900"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "gutter": "24px",
+                      "stack-sm": "8px",
+                      "unit": "8px",
+                      "container-max": "1280px",
+                      "margin-desktop": "40px",
+                      "stack-md": "16px",
+                      "stack-lg": "32px",
+                      "margin-mobile": "16px"
+              },
+              "fontFamily": {
+                      "title-lg": ["Public Sans"],
+                      "headline-md": ["Public Sans"],
+                      "headline-lg": ["Public Sans"],
+                      "label-md": ["Public Sans"],
+                      "display-lg": ["Public Sans"],
+                      "headline-lg-mobile": ["Public Sans"],
+                      "body-lg": ["Public Sans"],
+                      "body-md": ["Public Sans"],
+                      "caption": ["Public Sans"]
+              },
+              "fontSize": {
+                      "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "500"}],
+                      "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                      "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "600"}],
+                      "label-md": ["14px", {"lineHeight": "20px", "fontWeight": "600"}],
+                      "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                      "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                      "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                      "caption": ["12px", {"lineHeight": "16px", "fontWeight": "400"}]
+              }
+            }
+          }
+        }
+    </script>
+<style>
+        body { font-family: 'Public Sans', sans-serif; background-color: #f8f9ff; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .icon-fill { font-variation-settings: 'FILL' 1; }
+        
+        /* Subtle animation for the active timeline step */
+        @keyframes pulse-ring {
+            0% { transform: scale(0.8); opacity: 0.5; }
+            100% { transform: scale(1.5); opacity: 0; }
+        }
+        .pulse-active::before {
+            content: '';
+            position: absolute;
+            left: -4px; top: -4px; right: -4px; bottom: -4px;
+            border-radius: 50%;
+            background-color: rgba(26, 82, 118, 0.4);
+            animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+        }
+        
+        .timeline-line {
+            position: absolute;
+            left: 20px;
+            top: 40px;
+            bottom: 0;
+            width: 2px;
+            background-color: #d3e4fe; /* surface-container-highest */
+            z-index: 0;
+        }
+        .timeline-line-fill {
+            position: absolute;
+            left: 20px;
+            top: 40px;
+            width: 2px;
+            background-color: #003b5a; /* primary */
+            z-index: 1;
+            height: 70%; /* Approximating progress */
+        }
+    </style>
+</head>
+<body class="text-on-background bg-background min-h-screen flex">
+<!-- TopNavBar (Mobile only for demo purposes, as per instructions typically we show bottom nav on mobile, but preserving layout requested) -->
+<nav class="md:hidden fixed top-0 w-full bg-surface border-b border-outline-variant h-16 flex items-center justify-between px-margin-mobile z-50 shadow-sm">
+<div class="font-headline-md text-headline-md font-bold text-primary">MahaSetu</div>
+<button class="material-symbols-outlined text-on-surface-variant">menu</button>
+</nav>
+<!-- SideNavBar (Citizen) - Desktop -->
+<aside class="hidden lg:flex flex-col py-4 h-screen w-64 fixed left-0 top-0 bg-surface-container-low border-r border-outline-variant z-40">
+<div class="px-6 mb-8 mt-4">
+<h1 class="font-title-lg text-title-lg font-bold text-primary">Citizen Portal</h1>
+<p class="font-caption text-caption text-on-surface-variant mt-1">Government of Maharashtra</p>
+</div>
+<nav class="flex-1 overflow-y-auto font-label-md text-label-md">
+<a class="text-on-surface-variant mx-2 my-1 px-4 py-3 flex items-center gap-3 hover:bg-surface-variant transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+                Dashboard
+            </a>
+<a class="text-on-surface-variant mx-2 my-1 px-4 py-3 flex items-center gap-3 hover:bg-surface-variant transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined">apps</span>
+                Services
+            </a>
+<a class="text-on-surface-variant mx-2 my-1 px-4 py-3 flex items-center gap-3 hover:bg-surface-variant transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined">list_alt</span>
+                Schemes
+            </a>
+<a class="bg-primary-container text-on-primary-container mx-2 my-1 px-4 py-3 flex items-center gap-3 rounded-lg active:scale-95 duration-150" href="#">
+<span class="material-symbols-outlined icon-fill">assignment</span>
+                Applications
+            </a>
+<a class="text-on-surface-variant mx-2 my-1 px-4 py-3 flex items-center gap-3 hover:bg-surface-variant transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined">description</span>
+                Documents
+            </a>
+<a class="text-on-surface-variant mx-2 my-1 px-4 py-3 flex items-center gap-3 hover:bg-surface-variant transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined">verified_user</span>
+                Consent
+            </a>
+<a class="text-on-surface-variant mx-2 my-1 px-4 py-3 flex items-center gap-3 hover:bg-surface-variant transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined">notifications</span>
+                Notifications
+            </a>
+<a class="text-on-surface-variant mx-2 my-1 px-4 py-3 flex items-center gap-3 hover:bg-surface-variant transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined">person</span>
+                Profile
+            </a>
+</nav>
+<div class="px-6 py-4 mt-auto border-t border-outline-variant">
+<div class="flex items-center gap-3">
+<img class="w-10 h-10 rounded-full object-cover border border-outline-variant" data-alt="A small, professional avatar portrait of an Indian citizen, clear lighting, corporate modern style, isolated on a light background, conveying trust and reliability." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDB3zqsQ3dGrJndks-pJKQ61yfM5pS7a2pn56CNVb_oIGjVXPpFOh3DFl-v24eAeofvrSFnb9XYb22i5F-5WYpZJuan9wCx9nnC5ns1kG4_XAl3gq6O20aKQ1FG7nUxfFTNtwIhiwImr6U32IeSuexscHtxB1hwpWR2pvHVtSdTFmezEaqOgIR3ZoCCNbfpqrwdg2wOb1qbCTR7LOIu_KmR9719ipxCIoGOMyCfRr2DwwkX-rnmb_gqXA"/>
+<div>
+<div class="font-label-md text-label-md text-on-surface">Rahul Sharma</div>
+<div class="font-caption text-caption text-on-surface-variant">ID: MH-2024-892</div>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 lg:ml-64 pt-16 lg:pt-0 p-margin-mobile md:p-margin-desktop max-w-container-max mx-auto w-full">
+<!-- Header Section -->
+<header class="mb-stack-lg flex flex-col md:flex-row md:items-end justify-between gap-4 mt-4 lg:mt-8">
+<div>
+<h2 class="font-display-lg text-headline-lg-mobile md:text-display-lg text-on-background">My Applications</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mt-2 max-w-2xl">Track the status of your submitted applications and service requests.</p>
+</div>
+<!-- Filters -->
+<div class="flex gap-2 overflow-x-auto pb-2 md:pb-0 hide-scrollbar">
+<button class="whitespace-nowrap px-4 py-2 bg-primary-container text-on-primary-container rounded-full font-label-md text-label-md border border-transparent">All</button>
+<button class="whitespace-nowrap px-4 py-2 bg-surface text-on-surface-variant rounded-full font-label-md text-label-md border border-outline-variant hover:bg-surface-variant transition-colors">Pending</button>
+<button class="whitespace-nowrap px-4 py-2 bg-surface text-on-surface-variant rounded-full font-label-md text-label-md border border-outline-variant hover:bg-surface-variant transition-colors">Approved</button>
+<button class="whitespace-nowrap px-4 py-2 bg-surface text-on-surface-variant rounded-full font-label-md text-label-md border border-outline-variant hover:bg-surface-variant transition-colors">Rejected</button>
+</div>
+</header>
+<!-- Tracker Layout (Bento-style grid) -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+<!-- Left Column: Application Details & Info -->
+<div class="lg:col-span-5 flex flex-col gap-gutter">
+<!-- Primary Application Card -->
+<div class="bg-surface-container-lowest rounded-xl p-6 border border-outline-variant shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+<div class="absolute top-0 right-0 w-32 h-32 bg-primary-container opacity-10 rounded-bl-full -mr-8 -mt-8 pointer-events-none"></div>
+<div class="flex items-start justify-between mb-4">
+<div class="flex items-center justify-center w-12 h-12 rounded-lg bg-surface-container-low text-primary border border-outline-variant">
+<span class="material-symbols-outlined text-[28px]">school</span>
+</div>
+<span class="inline-flex items-center px-3 py-1 rounded-full bg-secondary-fixed text-on-secondary-container font-label-md text-caption border border-secondary-fixed-dim">
+<span class="w-2 h-2 rounded-full bg-secondary mr-2"></span>
+                            Under Review
+                        </span>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-background mb-1">Post-Matric Scholarship</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-6">Department of Social Justice and Special Assistance</p>
+<div class="grid grid-cols-2 gap-4 border-t border-outline-variant pt-4">
+<div>
+<div class="font-caption text-caption text-on-surface-variant mb-1">Application ID</div>
+<div class="font-label-md text-label-md text-on-surface">SCH-2024-9982</div>
+</div>
+<div>
+<div class="font-caption text-caption text-on-surface-variant mb-1">Submitted On</div>
+<div class="font-label-md text-label-md text-on-surface">12 Oct 2024</div>
+</div>
+<div>
+<div class="font-caption text-caption text-on-surface-variant mb-1">Applicant Name</div>
+<div class="font-label-md text-label-md text-on-surface">Rahul Sharma</div>
+</div>
+<div>
+<div class="font-caption text-caption text-on-surface-variant mb-1">Academic Year</div>
+<div class="font-label-md text-label-md text-on-surface">2024-2025</div>
+</div>
+</div>
+<div class="mt-6 flex gap-3">
+<button class="flex-1 bg-surface-container-high hover:bg-surface-variant text-primary font-label-md text-label-md py-3 rounded-lg border border-outline-variant transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[20px]">download</span>
+                            Receipt
+                        </button>
+<button class="flex-1 bg-surface-container-high hover:bg-surface-variant text-primary font-label-md text-label-md py-3 rounded-lg border border-outline-variant transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[20px]">edit_document</span>
+                            View Form
+                        </button>
+</div>
+</div>
+<!-- Support/Help Card -->
+<div class="bg-surface-container-low rounded-xl p-6 border border-outline-variant flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined">support_agent</span>
+</div>
+<div>
+<h4 class="font-title-lg text-title-lg text-on-surface mb-1">Need assistance?</h4>
+<p class="font-body-md text-caption text-on-surface-variant mb-2">Our support team is available 8AM - 8PM.</p>
+<a class="font-label-md text-label-md text-primary hover:underline" href="#">Contact Support</a>
+</div>
+</div>
+</div>
+<!-- Right Column: Visual Timeline -->
+<div class="lg:col-span-7">
+<div class="bg-surface-container-lowest rounded-xl p-6 md:p-8 border border-outline-variant shadow-sm h-full">
+<div class="mb-8">
+<h3 class="font-title-lg text-title-lg text-on-background font-bold mb-2">Application Journey</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Track the progress of your application through departmental checks.</p>
+</div>
+<div class="relative mt-4 ml-2 pb-4">
+<!-- Connecting Lines -->
+<div class="timeline-line"></div>
+<div class="timeline-line-fill"></div>
+<!-- Step 1: Submitted -->
+<div class="relative flex items-start mb-8 z-10 group">
+<div class="flex items-center justify-center w-10 h-10 rounded-full bg-primary text-on-primary border-4 border-surface-container-lowest shadow-sm shrink-0 mt-1">
+<span class="material-symbols-outlined icon-fill text-[20px]">check</span>
+</div>
+<div class="ml-6">
+<h4 class="font-label-md text-title-lg text-on-surface">Application Submitted</h4>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">Form filled and initial documents attached.</p>
+<span class="font-caption text-caption text-outline mt-2 block">12 Oct 2024, 10:30 AM</span>
+</div>
+</div>
+<!-- Step 2: Info Verified -->
+<div class="relative flex items-start mb-8 z-10">
+<div class="flex items-center justify-center w-10 h-10 rounded-full bg-primary text-on-primary border-4 border-surface-container-lowest shadow-sm shrink-0 mt-1">
+<span class="material-symbols-outlined icon-fill text-[20px]">check</span>
+</div>
+<div class="ml-6">
+<h4 class="font-label-md text-title-lg text-on-surface">Information Verified</h4>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">Basic details matched with Aadhaar and registry.</p>
+<span class="font-caption text-caption text-outline mt-2 block">14 Oct 2024, 02:15 PM</span>
+</div>
+</div>
+<!-- Step 3: Docs Verified -->
+<div class="relative flex items-start mb-8 z-10">
+<div class="flex items-center justify-center w-10 h-10 rounded-full bg-primary text-on-primary border-4 border-surface-container-lowest shadow-sm shrink-0 mt-1">
+<span class="material-symbols-outlined icon-fill text-[20px]">check</span>
+</div>
+<div class="ml-6">
+<h4 class="font-label-md text-title-lg text-on-surface">Documents Verified</h4>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">Income certificate and previous marksheets validated.</p>
+<span class="font-caption text-caption text-outline mt-2 block">16 Oct 2024, 11:45 AM</span>
+</div>
+</div>
+<!-- Step 4: Eligibility -->
+<div class="relative flex items-start mb-8 z-10">
+<div class="flex items-center justify-center w-10 h-10 rounded-full bg-primary text-on-primary border-4 border-surface-container-lowest shadow-sm shrink-0 mt-1">
+<span class="material-symbols-outlined icon-fill text-[20px]">check</span>
+</div>
+<div class="ml-6">
+<h4 class="font-label-md text-title-lg text-on-surface">Eligibility Checked</h4>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">Applicant meets all criteria for the scholarship scheme.</p>
+<span class="font-caption text-caption text-outline mt-2 block">18 Oct 2024, 09:20 AM</span>
+</div>
+</div>
+<!-- Step 5: Dept Review (Active) -->
+<div class="relative flex items-start mb-8 z-10">
+<div class="relative flex items-center justify-center w-10 h-10 rounded-full bg-secondary-container text-on-secondary-container border-4 border-surface-container-lowest shadow-sm shrink-0 mt-1 pulse-active">
+<span class="material-symbols-outlined text-[20px]">sync</span>
+</div>
+<div class="ml-6">
+<h4 class="font-label-md text-title-lg text-on-surface font-bold">Department Review</h4>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">Application is currently under final review by the nodal officer.</p>
+<div class="mt-3 bg-surface-container-high rounded-lg p-4 border border-outline-variant flex items-center gap-3">
+<span class="material-symbols-outlined text-primary">info</span>
+<p class="font-caption text-caption text-on-surface-variant">Estimated completion by 25 Oct 2024.</p>
+</div>
+</div>
+</div>
+<!-- Step 6: Final Decision (Pending) -->
+<div class="relative flex items-start z-10 opacity-50">
+<div class="flex items-center justify-center w-10 h-10 rounded-full bg-surface-variant text-on-surface-variant border-4 border-surface-container-lowest shadow-sm shrink-0 mt-1">
+<span class="material-symbols-outlined text-[20px]">flag</span>
+</div>
+<div class="ml-6">
+<h4 class="font-label-md text-title-lg text-on-surface">Final Decision</h4>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">Approval and fund disbursement initiation.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

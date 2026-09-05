@@ -1,0 +1,226 @@
+<!DOCTYPE html><html class="light" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>MahaSetu - Login</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@100..900&amp;display=swap" rel="stylesheet">
+<style>
+        .material-symbols-outlined {
+            font-family: 'Material Symbols Outlined';
+            font-weight: normal;
+            font-style: normal;
+            font-size: 24px;
+            line-height: 1;
+            letter-spacing: normal;
+            text-transform: none;
+            display: inline-block;
+            white-space: nowrap;
+            word-wrap: normal;
+            direction: ltr;
+            -webkit-font-feature-settings: 'liga';
+            -webkit-font-smoothing: antialiased;
+        }
+    </style>
+<!-- Tailwind CSS with Config -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-container": "#81d27c",
+                        "on-tertiary-fixed": "#002204",
+                        "secondary-container": "#fe8028",
+                        "tertiary": "#00410c",
+                        "tertiary-fixed-dim": "#88d982",
+                        "tertiary-fixed": "#a3f69c",
+                        "error": "#ba1a1a",
+                        "on-secondary-fixed-variant": "#763300",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-fixed-variant": "#0e4b6e",
+                        "surface": "#f8f9ff",
+                        "on-primary": "#ffffff",
+                        "on-primary-fixed": "#001e30",
+                        "on-tertiary-fixed-variant": "#005312",
+                        "background": "#f8f9ff",
+                        "surface-tint": "#2f6388",
+                        "surface-container": "#e5eeff",
+                        "primary-fixed-dim": "#9bccf6",
+                        "tertiary-container": "#005b14",
+                        "surface-variant": "#d3e4fe",
+                        "on-error-container": "#93000a",
+                        "primary-container": "#1a5276",
+                        "outline-variant": "#c1c7cf",
+                        "secondary-fixed-dim": "#ffb68d",
+                        "on-background": "#0b1c30",
+                        "secondary": "#9a4600",
+                        "surface-container-low": "#eff4ff",
+                        "on-secondary-fixed": "#321200",
+                        "surface-container-high": "#dce9ff",
+                        "on-primary-container": "#94c5ee",
+                        "on-surface-variant": "#41474e",
+                        "on-secondary": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "inverse-on-surface": "#eaf1ff",
+                        "surface-bright": "#f8f9ff",
+                        "on-surface": "#0b1c30",
+                        "on-error": "#ffffff",
+                        "surface-dim": "#cbdbf5",
+                        "surface-container-highest": "#d3e4fe",
+                        "error-container": "#ffdad6",
+                        "outline": "#72787f",
+                        "primary": "#003b5a",
+                        "inverse-primary": "#9bccf6",
+                        "inverse-surface": "#213145",
+                        "primary-fixed": "#cbe6ff",
+                        "secondary-fixed": "#ffdbc9",
+                        "on-secondary-container": "#612900"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "gutter": "24px",
+                        "stack-sm": "8px",
+                        "unit": "8px",
+                        "container-max": "1280px",
+                        "margin-desktop": "40px",
+                        "stack-md": "16px",
+                        "stack-lg": "32px",
+                        "margin-mobile": "16px"
+                    },
+                    "fontFamily": {
+                        "title-lg": ["Public Sans"],
+                        "headline-md": ["Public Sans"],
+                        "headline-lg": ["Public Sans"],
+                        "label-md": ["Public Sans"],
+                        "display-lg": ["Public Sans"],
+                        "headline-lg-mobile": ["Public Sans"],
+                        "body-lg": ["Public Sans"],
+                        "body-md": ["Public Sans"],
+                        "caption": ["Public Sans"]
+                    },
+                    "fontSize": {
+                        "title-lg": ["20px", { "lineHeight": "28px", "fontWeight": "500" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "600" }],
+                        "label-md": ["14px", { "lineHeight": "20px", "fontWeight": "600" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "caption": ["12px", { "lineHeight": "16px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background font-body-md text-body-md min-h-screen flex antialiased">
+<!-- Split Screen Layout -->
+<div class="flex w-full h-screen">
+<!-- Left Panel: Branding & Imagery (Hidden on mobile) -->
+<div class="hidden md:flex w-1/2 lg:w-5/12 bg-primary flex-col justify-between p-margin-desktop relative overflow-hidden">
+<!-- Decorative background pattern (CSS gradient) -->
+<div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(circle at 20% 30%, #ffffff 1px, transparent 1px), radial-gradient(circle at 80% 70%, #ffffff 1px, transparent 1px); background-size: 20px 20px;"></div>
+<div class="relative z-10 flex items-center gap-3">
+<span class="material-symbols-outlined text-4xl text-on-primary">account_balance</span>
+<h1 class="font-display-lg text-display-lg text-on-primary">MahaSetu</h1>
+</div>
+<div class="relative z-10 flex-grow flex flex-col justify-center max-w-sm mt-12">
+<h2 class="font-headline-lg text-headline-lg text-on-primary mb-stack-md leading-tight">
+                    One Citizen.<br>One Consent.<br>One Digital Journey.
+                </h2>
+<p class="font-body-lg text-body-lg text-primary-fixed-dim mb-12">
+                    Access over 400+ government services seamlessly. Institutional, reliable, and secure access for all citizens of Maharashtra.
+                </p>
+<!-- Illustration Placeholder -->
+<div class="w-full h-64 bg-cover bg-center rounded-xl bg-primary-container border border-on-primary/10 shadow-lg relative overflow-hidden" data-alt="A flat, modern corporate vector illustration showing diverse citizens interacting confidently with glowing digital government interfaces. The scene uses a deep institutional blue palette with sharp white accents, conveying security, state reliability, and seamless digital access in a structured, whitespace-heavy composition." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuC3mwx_zAqMtSihcQByN0PAYn1sGeL4jcB1uZkhqcsG0TZYI7DyPG2TkVgoH1kiYP0a0nMWZ9Wh5H37RMLB88kvO2WDIv13aYf21fwqfVMeEuMwu2vawh5bK4s3jySVl_TW_YOlEFsfeEe2j_Xe0XW21iXReRyi3potPrjPBkCuKDW_82jh12mKARAdMhSTZACLJ-Ck-Sk0K6p5t6sFM-o4fyoWgbuMbaJX3qI0eXDL2wuP2O_NlXCSrw')">
+<div class="absolute inset-0 bg-gradient-to-t from-primary/80 to-transparent"></div>
+</div>
+</div>
+<div class="relative z-10">
+<p class="font-caption text-caption text-primary-fixed-dim">
+                    © 2024 Government of Maharashtra. Trusted Digital Services.
+                </p>
+</div>
+</div>
+<!-- Right Panel: Login Form -->
+<div class="w-full md:w-1/2 lg:w-7/12 flex flex-col justify-center items-center p-6 md:p-margin-desktop bg-surface-container-low"><div class="w-full max-w-md flex justify-end mb-4"><div class="flex items-center gap-2 bg-surface-container-lowest border border-outline-variant rounded-md px-3 py-1.5 shadow-sm"><span class="material-symbols-outlined text-[18px] text-outline">language</span><select aria-label="Select Language" class="bg-transparent font-label-md text-label-md text-on-surface focus:outline-none cursor-pointer"><option value="en">English</option><option value="hi">हिन्दी</option><option value="mr">मराठी</option></select></div></div>
+<!-- Mobile Logo (Visible only on mobile) -->
+<div class="md:hidden flex items-center gap-2 mb-8">
+<span class="material-symbols-outlined text-3xl text-primary">account_balance</span>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-primary font-bold">MahaSetu</h1>
+</div>
+<!-- Login Card -->
+<div class="w-full max-w-md bg-surface-container-lowest rounded-xl shadow-[0px_4px_20px_rgba(26,82,118,0.05)] border border-outline-variant p-8 relative">
+<h2 class="font-headline-lg text-headline-lg text-on-surface mb-2">Login to MahaSetu</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mb-8">Securely access your citizen dashboard.</p>
+<!-- Login Method Tabs -->
+<div class="flex p-1 bg-surface-variant rounded-lg mb-8">
+<button class="flex-1 py-2 font-label-md text-label-md bg-surface-container-lowest text-primary rounded-md shadow-sm border border-outline-variant/50 transition-all">
+                        OTP
+                    </button>
+<button class="flex-1 py-2 font-label-md text-label-md text-on-surface-variant hover:text-primary transition-all">
+                        Password
+                    </button>
+</div>
+<form class="flex flex-col gap-stack-md" onsubmit="event.preventDefault();">
+<!-- Mobile Number Input -->
+<div class="flex flex-col gap-1">
+<label class="font-label-md text-label-md text-on-surface" for="mobile">Mobile Number</label>
+<div class="relative">
+<span class="absolute inset-y-0 left-0 flex items-center pl-3">
+<span class="material-symbols-outlined text-outline text-lg">call</span>
+</span>
+<input class="w-full h-12 pl-10 pr-4 bg-surface-container-lowest border border-outline-variant rounded-md font-body-md text-body-md text-on-surface placeholder:text-outline focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-shadow" id="mobile" placeholder="Enter 10-digit number" required="" type="tel">
+</div>
+</div>
+<!-- OTP Input (Contextually grouped) -->
+<div class="flex flex-col gap-1">
+<div class="flex justify-between items-end">
+<label class="font-label-md text-label-md text-on-surface" for="otp">One Time Password</label>
+<button class="font-label-md text-label-md text-primary hover:underline pb-0.5" type="button">Get OTP</button>
+</div>
+<div class="relative">
+<span class="absolute inset-y-0 left-0 flex items-center pl-3">
+<span class="material-symbols-outlined text-outline text-lg">dialpad</span>
+</span>
+<input class="w-full h-12 pl-10 pr-4 bg-surface-container-lowest border border-outline-variant rounded-md font-body-md text-body-md text-on-surface placeholder:text-outline focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-shadow" id="otp" placeholder="6-digit OTP" type="text">
+</div>
+</div>
+<!-- Primary Action Button -->
+<button class="w-full h-12 mt-4 bg-primary text-on-primary rounded-md font-label-md text-label-md shadow-sm hover:bg-primary/90 hover:shadow-md transition-all active:scale-[0.98] flex items-center justify-center gap-2" type="submit">
+<span class="">Login</span>
+<span class="material-symbols-outlined text-[20px]">arrow_forward</span>
+</button>
+</form>
+<!-- Auxiliary Links -->
+<div class="mt-8 pt-6 border-t border-outline-variant/30 flex flex-col gap-4">
+<div class="flex justify-between items-center w-full">
+<a class="font-label-md text-label-md text-primary hover:underline" href="#">Forgot Password?</a>
+<a class="font-label-md text-label-md text-secondary hover:underline" href="#">New User? Register</a>
+</div>
+<div class="text-center mt-2">
+<a class="font-caption text-caption text-on-surface-variant hover:text-primary flex items-center justify-center gap-1 transition-colors" href="#">
+<span class="material-symbols-outlined text-[16px]">help</span>
+                            Help &amp; Support
+                        </a>
+</div>
+</div>
+</div>
+<!-- Mobile Footer (Visible only on mobile) -->
+<p class="md:hidden mt-8 font-caption text-caption text-on-surface-variant text-center max-w-xs">
+                © 2024 Government of Maharashtra.<br>All Rights Reserved.
+            </p>
+</div>
+</div>
+
+
+</body></html>

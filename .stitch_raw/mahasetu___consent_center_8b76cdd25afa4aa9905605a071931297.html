@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MahaSetu Consent Center</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                            "on-tertiary-container": "#81d27c",
+                            "on-tertiary-fixed": "#002204",
+                            "secondary-container": "#fe8028",
+                            "tertiary": "#00410c",
+                            "tertiary-fixed-dim": "#88d982",
+                            "tertiary-fixed": "#a3f69c",
+                            "error": "#ba1a1a",
+                            "on-secondary-fixed-variant": "#763300",
+                            "on-tertiary": "#ffffff",
+                            "on-primary-fixed-variant": "#0e4b6e",
+                            "surface": "#f8f9ff",
+                            "on-primary": "#ffffff",
+                            "on-primary-fixed": "#001e30",
+                            "on-tertiary-fixed-variant": "#005312",
+                            "background": "#f8f9ff",
+                            "surface-tint": "#2f6388",
+                            "surface-container": "#e5eeff",
+                            "primary-fixed-dim": "#9bccf6",
+                            "tertiary-container": "#005b14",
+                            "surface-variant": "#d3e4fe",
+                            "on-error-container": "#93000a",
+                            "primary-container": "#1a5276",
+                            "outline-variant": "#c1c7cf",
+                            "secondary-fixed-dim": "#ffb68d",
+                            "on-background": "#0b1c30",
+                            "secondary": "#9a4600",
+                            "surface-container-low": "#eff4ff",
+                            "on-secondary-fixed": "#321200",
+                            "surface-container-high": "#dce9ff",
+                            "on-primary-container": "#94c5ee",
+                            "on-surface-variant": "#41474e",
+                            "on-secondary": "#ffffff",
+                            "surface-container-lowest": "#ffffff",
+                            "inverse-on-surface": "#eaf1ff",
+                            "surface-bright": "#f8f9ff",
+                            "on-surface": "#0b1c30",
+                            "on-error": "#ffffff",
+                            "surface-dim": "#cbdbf5",
+                            "surface-container-highest": "#d3e4fe",
+                            "error-container": "#ffdad6",
+                            "outline": "#72787f",
+                            "primary": "#003b5a",
+                            "inverse-primary": "#9bccf6",
+                            "inverse-surface": "#213145",
+                            "primary-fixed": "#cbe6ff",
+                            "secondary-fixed": "#ffdbc9",
+                            "on-secondary-container": "#612900"
+                    },
+                    "borderRadius": {
+                            "DEFAULT": "0.25rem",
+                            "lg": "0.5rem",
+                            "xl": "0.75rem",
+                            "full": "9999px"
+                    },
+                    "spacing": {
+                            "gutter": "24px",
+                            "stack-sm": "8px",
+                            "unit": "8px",
+                            "container-max": "1280px",
+                            "margin-desktop": "40px",
+                            "stack-md": "16px",
+                            "stack-lg": "32px",
+                            "margin-mobile": "16px"
+                    },
+                    "fontFamily": {
+                            "title-lg": ["Public Sans"],
+                            "headline-md": ["Public Sans"],
+                            "headline-lg": ["Public Sans"],
+                            "label-md": ["Public Sans"],
+                            "display-lg": ["Public Sans"],
+                            "headline-lg-mobile": ["Public Sans"],
+                            "body-lg": ["Public Sans"],
+                            "body-md": ["Public Sans"],
+                            "caption": ["Public Sans"]
+                    },
+                    "fontSize": {
+                            "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "500"}],
+                            "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                            "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "600"}],
+                            "label-md": ["14px", {"lineHeight": "20px", "fontWeight": "600"}],
+                            "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                            "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                            "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                            "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                            "caption": ["12px", {"lineHeight": "16px", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            background-color: #F8FAFC; /* Fallback */
+            color: #0b1c30;
+        }
+        .shadow-ambient {
+            box-shadow: 0px 4px 20px rgba(26, 82, 118, 0.05);
+        }
+    </style>
+</head>
+<body class="bg-background flex min-h-screen font-body-md text-body-md text-on-background">
+<!-- TopNavBar -->
+<header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-margin-desktop h-16 max-w-container-max mx-auto bg-surface dark:bg-on-background border-b border-outline-variant dark:border-outline shadow-sm lg:hidden">
+<div class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed-dim">MahaSetu</div>
+<nav class="hidden md:flex gap-gutter h-full">
+<a class="flex items-center h-full text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim transition-colors duration-200 cursor-pointer active:opacity-70" href="#">Home</a>
+<a class="flex items-center h-full text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim transition-colors duration-200 cursor-pointer active:opacity-70" href="#">Services</a>
+<a class="flex items-center h-full text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim transition-colors duration-200 cursor-pointer active:opacity-70" href="#">Schemes</a>
+<a class="flex items-center h-full text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim transition-colors duration-200 cursor-pointer active:opacity-70" href="#">How It Works</a>
+<a class="flex items-center h-full text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim transition-colors duration-200 cursor-pointer active:opacity-70" href="#">About</a>
+<a class="flex items-center h-full text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed-dim transition-colors duration-200 cursor-pointer active:opacity-70" href="#">Help</a>
+</nav>
+<button class="font-label-md text-label-md bg-primary text-on-primary px-4 py-2 rounded">Login</button>
+</header>
+<!-- SideNavBar (Citizen) -->
+<aside class="hidden lg:flex flex-col py-4 h-screen w-64 fixed left-0 top-0 bg-surface-container-low dark:bg-on-background border-r border-outline-variant dark:border-outline">
+<div class="px-6 mb-8 mt-4">
+<div class="font-title-lg text-title-lg font-bold text-primary dark:text-primary-fixed-dim mb-4">Citizen Portal</div>
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+</div>
+<div>
+<div class="font-label-md text-label-md">Citizen Avatar</div>
+<div class="font-caption text-caption text-on-surface-variant">Government of Maharashtra</div>
+</div>
+</div>
+</div>
+<nav class="flex-1 font-label-md text-label-md">
+<a class="text-on-surface-variant dark:text-surface-variant mx-2 my-1 px-4 py-3 flex items-center gap-3 hover:bg-surface-variant dark:hover:bg-surface-container-highest transition-all active:scale-95 duration-150 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span> Dashboard
+            </a>
+<a class="text-on-surface-variant dark:text-surface-variant mx-2 my-1 px-4 py-3 flex items-center gap-3 hover:bg-surface-variant dark:hover:bg-surface-container-highest transition-all active:scale-95 duration-150 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="apps">apps</span> Services
+            </a>
+<a class="text-on-surface-variant dark:text-surface-variant mx-2 my-1 px-4 py-3 flex items-center gap-3 hover:bg-surface-variant dark:hover:bg-surface-container-highest transition-all active:scale-95 duration-150 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="list_alt">list_alt</span> Schemes
+            </a>
+<a class="text-on-surface-variant dark:text-surface-variant mx-2 my-1 px-4 py-3 flex items-center gap-3 hover:bg-surface-variant dark:hover:bg-surface-container-highest transition-all active:scale-95 duration-150 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="assignment">assignment</span> Applications
+            </a>
+<a class="text-on-surface-variant dark:text-surface-variant mx-2 my-1 px-4 py-3 flex items-center gap-3 hover:bg-surface-variant dark:hover:bg-surface-container-highest transition-all active:scale-95 duration-150 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="description">description</span> Documents
+            </a>
+<a class="bg-primary-container dark:bg-primary text-on-primary-container dark:text-on-primary rounded-lg mx-2 my-1 px-4 py-3 flex items-center gap-3 active:scale-95 duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="verified_user">verified_user</span> Consent
+            </a>
+<a class="text-on-surface-variant dark:text-surface-variant mx-2 my-1 px-4 py-3 flex items-center gap-3 hover:bg-surface-variant dark:hover:bg-surface-container-highest transition-all active:scale-95 duration-150 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span> Notifications
+            </a>
+<a class="text-on-surface-variant dark:text-surface-variant mx-2 my-1 px-4 py-3 flex items-center gap-3 hover:bg-surface-variant dark:hover:bg-surface-container-highest transition-all active:scale-95 duration-150 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span> Profile
+            </a>
+</nav>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 lg:ml-64 pt-20 lg:pt-8 px-margin-mobile md:px-margin-desktop pb-12 max-w-container-max mx-auto w-full">
+<div class="mb-stack-lg">
+<h1 class="font-headline-lg text-headline-lg text-primary mb-2">Consent Center</h1>
+<p class="text-on-surface-variant">Manage and review your data sharing permissions across government departments.</p>
+</div>
+<!-- Bento Grid for Overview -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter mb-stack-lg">
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-ambient">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 rounded-lg bg-primary-fixed flex items-center justify-center text-on-primary-fixed">
+<span class="material-symbols-outlined" data-icon="verified_user">verified_user</span>
+</div>
+<span class="font-headline-md text-headline-md text-primary">12</span>
+</div>
+<h3 class="font-title-lg text-title-lg mb-1">Active Consents</h3>
+<p class="text-on-surface-variant text-sm">Currently sharing data</p>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-ambient">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 rounded-lg bg-surface-container-highest flex items-center justify-center text-on-surface">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+</div>
+<span class="font-headline-md text-headline-md text-primary">48</span>
+</div>
+<h3 class="font-title-lg text-title-lg mb-1">Consent History</h3>
+<p class="text-on-surface-variant text-sm">Past sharing events</p>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-ambient">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 rounded-lg bg-error-container flex items-center justify-center text-on-error-container">
+<span class="material-symbols-outlined" data-icon="block">block</span>
+</div>
+<span class="font-headline-md text-headline-md text-error">3</span>
+</div>
+<h3 class="font-title-lg text-title-lg mb-1">Revoked</h3>
+<p class="text-on-surface-variant text-sm">Permissions withdrawn</p>
+</div>
+</div>
+<!-- Table Section -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-ambient overflow-hidden">
+<div class="px-6 py-4 border-b border-outline-variant flex justify-between items-center bg-surface-container-low">
+<h2 class="font-title-lg text-title-lg">Active Data Sharing</h2>
+<div class="flex gap-2">
+<button class="px-4 py-2 text-sm border border-outline-variant rounded text-on-surface hover:bg-surface-variant transition-colors">Filter</button>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-outline-variant text-on-surface-variant bg-surface-container-lowest font-label-md text-label-md">
+<th class="p-4 pl-6">Department</th>
+<th class="p-4">Information Shared</th>
+<th class="p-4">Purpose</th>
+<th class="p-4">Date</th>
+<th class="p-4">Expiry</th>
+<th class="p-4">Status</th>
+<th class="p-4 pr-6">Action</th>
+</tr>
+</thead>
+<tbody>
+<tr class="border-b border-outline-variant hover:bg-surface-container-low transition-colors group">
+<td class="p-4 pl-6 font-medium text-primary">Education Dept</td>
+<td class="p-4">Income Certificate</td>
+<td class="p-4">Scholarship</td>
+<td class="p-4 text-on-surface-variant">24 Oct 2024</td>
+<td class="p-4 text-on-surface-variant">One-time</td>
+<td class="p-4">
+<span class="px-2 py-1 bg-tertiary-fixed text-on-tertiary-fixed rounded-full text-xs font-semibold">Active</span>
+</td>
+<td class="p-4 pr-6">
+<button class="px-3 py-1.5 border border-error text-error rounded text-sm hover:bg-error-container transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100">Revoke</button>
+</td>
+</tr>
+<!-- Dummy Row 2 -->
+<tr class="border-b border-outline-variant hover:bg-surface-container-low transition-colors group">
+<td class="p-4 pl-6 font-medium text-primary">Revenue Dept</td>
+<td class="p-4">Domicile Status</td>
+<td class="p-4">Land Registration</td>
+<td class="p-4 text-on-surface-variant">15 Sep 2024</td>
+<td class="p-4 text-on-surface-variant">15 Sep 2025</td>
+<td class="p-4">
+<span class="px-2 py-1 bg-tertiary-fixed text-on-tertiary-fixed rounded-full text-xs font-semibold">Active</span>
+</td>
+<td class="p-4 pr-6">
+<button class="px-3 py-1.5 border border-error text-error rounded text-sm hover:bg-error-container transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100">Revoke</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="px-6 py-4 border-t border-outline-variant bg-surface-container-lowest text-sm text-on-surface-variant flex justify-between items-center">
+<span>Showing 1-2 of 12 active consents</span>
+<div class="flex gap-1">
+<button class="p-1 disabled:opacity-50" disabled=""><span class="material-symbols-outlined" data-icon="chevron_left">chevron_left</span></button>
+<button class="p-1 hover:text-primary"><span class="material-symbols-outlined" data-icon="chevron_right">chevron_right</span></button>
+</div>
+</div>
+</div>
+</main>
+</body></html>
