@@ -1,7 +1,4 @@
 {
-  "/dashboard/page": "app/dashboard/page.js",
-  "/page": "app/page.js",
-  "/scholarship-application/page": "app/scholarship-application/page.js",
-  "/documents/page": "app/documents/page.js",
-  "/consent/authorize/page": "app/consent/authorize/page.js"
+  "/scheme-finder/page": "app/scheme-finder/page.js",
+  "/page": "app/page.js"
 }

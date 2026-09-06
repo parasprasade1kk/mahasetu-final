@@ -15,6 +15,7 @@ export default function Navbar() {
     { href: '/', labelEn: 'Home', labelMr: 'मुख्यपृष्ठ', icon: 'home' },
     { href: '/services', labelEn: 'Services Portal', labelMr: 'नागरिक सेवा', icon: 'category' },
     { href: '/schemes', labelEn: 'Schemes', labelMr: 'शासकीय योजना', icon: 'policy' },
+    { href: '/scheme-finder', labelEn: 'AI Scheme Finder', labelMr: 'एआय योजना शोध', icon: 'auto_awesome' },
     { href: '/eligibility-checker', labelEn: 'Eligibility Checker', labelMr: 'पात्रता तपासणी', icon: 'fact_check' },
     { href: '/track', labelEn: 'Track Status', labelMr: 'अर्ज स्थिती', icon: 'track_changes' },
     { href: '/documents', labelEn: 'My Documents', labelMr: 'माझी कागदपत्रे', icon: 'folder_shared' },

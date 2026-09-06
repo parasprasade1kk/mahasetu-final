@@ -285,7 +285,124 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Departments Section */}
+      {/* AI Smart Scheme Finder Feature Banner */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#002b42] via-[#003b5a] to-[#014d74] text-white p-8 sm:p-10 shadow-gov-lg border border-[#004f77]">
+          {/* Subtle background glow */}
+          <div className="absolute -right-16 -top-16 w-64 h-64 bg-[#f47920]/20 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -left-16 -bottom-16 w-64 h-64 bg-[#38bdf8]/15 rounded-full blur-3xl pointer-events-none" />
+
+          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            <div className="lg:col-span-7 space-y-4">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur border border-white/20 text-amber-300 text-xs font-bold tracking-wide">
+                <span className="material-symbols-outlined text-[16px]">auto_awesome</span>
+                <span>{language === 'mr' ? 'एआय-सक्षम शोध प्रणाली' : 'AI-Powered Scheme Discovery'}</span>
+              </div>
+
+              <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white leading-tight">
+                {language === 'mr' ? (
+                  <>
+                    आपल्या प्रोफाईलनुसार <span className="text-[#f47920]">योग्य शासकीय योजना</span> काही सेकंदात शोधा
+                  </>
+                ) : (
+                  <>
+                    Find the Right Government Schemes for <span className="text-[#f47920]">Your Profile</span> in Seconds
+                  </>
+                )}
+              </h2>
+
+              <p className="text-slate-200 text-sm sm:text-base leading-relaxed">
+                {language === 'mr'
+                  ? 'आमची बुद्धिमत्ता प्रणाली आपल्या गरजा आणि पात्रतेचे विश्लेषण करून ४५०+ केंद्रीय व राज्य योजनांमधून सर्वाधिक जुळणाऱ्या योजना थेट सादर करते.'
+                  : 'Our AI engine matches your background, district, and aspirations against 450+ central & state welfare schemes, verifying required documents instantly.'}
+              </p>
+
+              {/* Feature pills */}
+              <div className="flex flex-wrap gap-2 pt-1 text-xs">
+                <span className="px-2.5 py-1 rounded-md bg-white/10 text-white/90 border border-white/15 flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-[15px] text-[#f47920]">check_circle</span>
+                  {language === 'mr' ? '९२% अचूक जुळणी' : '92% High Match Accuracy'}
+                </span>
+                <span className="px-2.5 py-1 rounded-md bg-white/10 text-white/90 border border-white/15 flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-[15px] text-emerald-400">verified_user</span>
+                  {language === 'mr' ? 'डिजिलॉकर लॉकर तपासणी' : 'DigiLocker Doc Check'}
+                </span>
+                <span className="px-2.5 py-1 rounded-md bg-white/10 text-white/90 border border-white/15 flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-[15px] text-sky-400">bolt</span>
+                  {language === 'mr' ? 'थेट १-क्लिक अर्ज' : 'Instant 1-Click Apply'}
+                </span>
+              </div>
+
+              <div className="pt-2">
+                <Link
+                  href="/scheme-finder"
+                  className="inline-flex items-center gap-2.5 bg-[#f47920] hover:bg-[#d86815] text-white px-6 py-3 rounded-xl text-sm font-bold shadow-gov transition-all transform hover:-translate-y-0.5"
+                >
+                  <span className="material-symbols-outlined text-[20px]">search_spark</span>
+                  <span>{language === 'mr' ? 'स्मार्ट शोध सुरू करा' : 'Start Smart Search'}</span>
+                  <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+                </Link>
+              </div>
+            </div>
+
+            {/* Right Card / Interactive Preview */}
+            <div className="lg:col-span-5">
+              <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-5 space-y-4">
+                <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span className="text-xs font-semibold text-white/80">
+                      {language === 'mr' ? 'सक्रिय योजना जुळणी' : 'Live Scheme Match Preview'}
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-bold bg-[#f47920]/30 text-amber-200 px-2 py-0.5 rounded border border-[#f47920]/40">
+                    12 Steps Flow
+                  </span>
+                </div>
+
+                {/* Sample scheme card */}
+                <div className="bg-white text-slate-800 rounded-lg p-3.5 shadow-sm space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <span className="text-[10px] font-bold text-[#003b5a] uppercase tracking-wider bg-[#dce9ff] px-2 py-0.5 rounded">
+                        {language === 'mr' ? 'उच्च शिक्षण' : 'Higher Education'}
+                      </span>
+                      <h4 className="text-xs font-bold text-slate-900 mt-1">
+                        {language === 'mr' ? 'मॅट्रिकोत्तर शिष्यवृत्ती योजना' : 'Post-Matric Scholarship'}
+                      </h4>
+                    </div>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 flex-shrink-0">
+                      92% Match
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 leading-tight">
+                    {language === 'mr'
+                      ? 'आर्थिकदृष्ट्या दुर्बल घटकातील विद्यार्थ्यांसाठी वार्षिक ₹५०,००० आर्थिक सहाय्य.'
+                      : 'Financial assistance for higher education students belonging to economically weaker sections.'}
+                  </p>
+                  <div className="flex items-center justify-between text-[11px] pt-1 border-t border-slate-100 text-slate-600">
+                    <span>{language === 'mr' ? 'लाभ: ₹५०,००० / वर्ष' : 'Benefit: ₹50,000 / yr'}</span>
+                    <span className="font-semibold text-emerald-700 flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[13px]">check_circle</span>
+                      6/6 Docs Ready
+                    </span>
+                  </div>
+                </div>
+
+                <div className="text-center">
+                  <Link
+                    href="/scheme-finder"
+                    className="text-xs text-amber-300 hover:text-white font-semibold transition inline-flex items-center gap-1"
+                  >
+                    <span>{language === 'mr' ? '१२-टप्प्यांची संपूर्ण शोध प्रक्रिया पहा' : 'Explore Complete 12-Step Scheme Finder'}</span>
+                    <span className="material-symbols-outlined text-[14px]">chevron_right</span>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
       <section className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="text-center max-w-3xl mx-auto mb-10">
           <span className="text-xs font-bold uppercase tracking-wider text-[#f47920] bg-orange-50 px-3 py-1 rounded-full border border-orange-200">
