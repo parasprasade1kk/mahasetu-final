@@ -8,6 +8,7 @@ import {
   registerAccount,
   loadAccounts,
   SEED_ACCOUNTS,
+  maskAadhaar,
 } from '@/lib/authConfig';
 
 type Language = 'en' | 'mr';
@@ -65,8 +66,8 @@ interface AppContextType {
   isProfileComplete: boolean;
 
   // Auth Actions
-  loginWithMobile: (mobile: string) => { success: boolean; user?: CitizenAccount; error?: string };
-  registerUser: (name: string, mobile: string) => { success: boolean; user?: CitizenAccount; error?: string };
+  loginWithMobile: (mobile: string, aadhaar?: string) => { success: boolean; user?: CitizenAccount; error?: string };
+  registerUser: (name: string, mobile: string, aadhaar?: string) => { success: boolean; user?: CitizenAccount; error?: string };
   saveUserProfile: (profile: CitizenProfile) => void;
   login: () => void; // Legacy fallback
   logout: () => void;
@@ -216,13 +217,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const isProfileComplete = Boolean(userProfile && userProfile.confirmedAccurate);
 
   // ─── Login (existing registered citizen) ─────────────────────────────────
-  const loginWithMobile = (mobile: string): { success: boolean; user?: CitizenAccount; error?: string } => {
+  const loginWithMobile = (mobile: string, aadhaar?: string): { success: boolean; user?: CitizenAccount; error?: string } => {
     const account = findAccount(mobile);
     if (!account) {
       return {
         success: false,
         error: 'No account found for this mobile number. Please create a new account.'
       };
+    }
+
+    if (aadhaar && aadhaar.replace(/\D/g, '').length === 12) {
+      account.aadhaarMasked = maskAadhaar(aadhaar);
     }
 
     setCurrentUser(account);
@@ -244,7 +249,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   // ─── Register (new citizen) ───────────────────────────────────────────────
-  const registerUser = (name: string, mobile: string): { success: boolean; user?: CitizenAccount; error?: string } => {
+  const registerUser = (name: string, mobile: string, aadhaar?: string): { success: boolean; user?: CitizenAccount; error?: string } => {
     if (!name || name.trim().length < 2) {
       return { success: false, error: 'Please enter your full name (at least 2 characters).' };
     }
@@ -254,7 +259,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      const account = registerAccount(name, mobile);
+      const account = registerAccount(name, mobile, aadhaar);
       setCurrentUser(account);
       setIsLoggedIn(true);
       setUserProfile(null); // Fresh registration — no profile yet
@@ -324,13 +329,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const user: AppUser = {
     name: language === 'mr' ? displayNameMr : displayName,
-    aadhaarMasked: currentUser?.aadhaarMasked || 'XXXX-XXXX-0000',
+    aadhaarMasked: currentUser?.aadhaarMasked || 'XXXX XXXX 0000',
     mobile: currentUser ? `+91 ${currentUser.mobile}` : '+91 XXXXX XXXXX',
     email: currentUser?.email || 'citizen@mahasetu.gov.in',
     district: userProfile
       ? (language === 'mr' ? `${userProfile.district} (महाराष्ट्र)` : `${userProfile.district} (Maharashtra)`)
       : (language === 'mr' ? 'महाराष्ट्र' : 'Maharashtra'),
-    digiLockerLinked: true
+    digiLockerLinked: Boolean(userProfile?.digiLockerLinked)
   };
 
   return (

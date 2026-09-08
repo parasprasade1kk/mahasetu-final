@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState } from 'react';
-import Link from 'next/link';
 import { useApp } from '@/context/AppContext';
 
 interface DocItem {
@@ -150,22 +149,14 @@ export default function DocumentsPage() {
                 <span>View & Verify</span>
               </button>
 
-              <div className="flex items-center gap-2">
-                <Link
-                  href="/consent"
-                  className="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold py-2 px-3 rounded-lg transition"
-                  title="Manage Sharing Permissions"
-                >
-                  Share Permissions
-                </Link>
-                <button
-                  onClick={() => alert(`Downloading PDF for ${doc.certNo}...`)}
-                  className="p-2 text-slate-600 hover:text-[#003b5a] rounded-lg hover:bg-slate-100"
-                  title="Download Certificate"
-                >
-                  <span className="material-symbols-outlined text-[20px]">download</span>
-                </button>
-              </div>
+              <button
+                onClick={() => alert(`Downloading PDF for ${doc.certNo}...`)}
+                className="px-3.5 py-2 text-slate-700 bg-slate-100 hover:bg-slate-200 text-xs font-semibold rounded-lg transition flex items-center gap-1.5"
+                title="Download Certificate"
+              >
+                <span className="material-symbols-outlined text-[16px]">download</span>
+                <span>Download</span>
+              </button>
             </div>
           </div>
         ))}

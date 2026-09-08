@@ -8,7 +8,7 @@ import { MAHARASHTRA_DISTRICTS, getTalukasForDistrict } from '@/lib/maharashtraG
 
 export default function OnboardingProfilePage() {
   const router = useRouter();
-  const { language, currentUser, saveUserProfile, isAuthLoaded, isLoggedIn } = useApp();
+  const { language, currentUser, userProfile, saveUserProfile, isAuthLoaded, isLoggedIn } = useApp();
 
   // Form State
   const [fullName, setFullName] = useState(currentUser?.name || '');
@@ -43,16 +43,55 @@ export default function OnboardingProfilePage() {
   const [preferredLanguage, setPreferredLanguage] = useState<'mr' | 'hi' | 'en'>('mr');
   const [confirmedAccurate, setConfirmedAccurate] = useState<boolean>(false);
 
+  // DigiLocker State (Per-user tracking)
+  const [digiLockerLinked, setDigiLockerLinked] = useState<boolean>(false);
+  const [digiLockerId, setDigiLockerId] = useState<string>('');
+  const [digiLockerLinkedAt, setDigiLockerLinkedAt] = useState<string>('');
+  const [showDigiLockerModal, setShowDigiLockerModal] = useState<boolean>(false);
+  const [modalStep, setModalStep] = useState<'authenticating' | 'enter_pin' | 'verifying' | 'success'>('enter_pin');
+  const [securityPin, setSecurityPin] = useState('');
+  const [modalError, setModalError] = useState('');
+  const [unlinkSuccessToast, setUnlinkSuccessToast] = useState(false);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
 
-  // Sync user details if loaded
+  // Sync user details and existing profile if loaded
   useEffect(() => {
     if (currentUser) {
       if (!fullName) setFullName(currentUser.name);
       setMobile(currentUser.mobile);
     }
   }, [currentUser, fullName]);
+
+  // Sync from existing user profile if present
+  useEffect(() => {
+    if (userProfile) {
+      if (userProfile.fullName) setFullName(userProfile.fullName);
+      if (userProfile.dob) setDob(userProfile.dob);
+      if (userProfile.gender) setGender(userProfile.gender as any);
+      if (userProfile.category) setCategory(userProfile.category as any);
+      if (userProfile.religion) setReligion(userProfile.religion as any);
+      if (userProfile.maritalStatus) setMaritalStatus(userProfile.maritalStatus as any);
+      if (userProfile.district) setDistrict(userProfile.district);
+      if (userProfile.taluka) setTaluka(userProfile.taluka);
+      if (userProfile.villageCity) setVillageCity(userProfile.villageCity);
+      if (userProfile.pinCode) setPinCode(userProfile.pinCode);
+      if (userProfile.annualIncomeTier) setAnnualIncomeTier(userProfile.annualIncomeTier as any);
+      if (userProfile.occupation) setOccupation(userProfile.occupation as any);
+      if (userProfile.educationLevel) setEducationLevel(userProfile.educationLevel as any);
+      if (typeof userProfile.isStudent === 'boolean') setIsStudent(userProfile.isStudent);
+      if (userProfile.currentCourse) setCurrentCourse(userProfile.currentCourse);
+      if (typeof userProfile.hasDisability === 'boolean') setHasDisability(userProfile.hasDisability);
+      if (userProfile.disabilityType) setDisabilityType(userProfile.disabilityType);
+      if (userProfile.disabilityPercentage) setDisabilityPercentage(userProfile.disabilityPercentage);
+      if (userProfile.schemeInterests && userProfile.schemeInterests.length > 0) setSchemeInterests(userProfile.schemeInterests);
+      if (userProfile.preferredLanguage) setPreferredLanguage(userProfile.preferredLanguage as any);
+      if (typeof userProfile.digiLockerLinked === 'boolean') setDigiLockerLinked(userProfile.digiLockerLinked);
+      if (userProfile.digiLockerId) setDigiLockerId(userProfile.digiLockerId);
+      if (userProfile.digiLockerLinkedAt) setDigiLockerLinkedAt(userProfile.digiLockerLinkedAt);
+    }
+  }, [userProfile]);
 
   // Calculate age dynamically when DOB changes
   useEffect(() => {
@@ -115,6 +154,42 @@ export default function OnboardingProfilePage() {
     );
   }, [fullName, mobile, dob, age, district, taluka, villageCity, pinCode, schemeInterests, confirmedAccurate]);
 
+  const handleOpenDigiLockerModal = () => {
+    setShowDigiLockerModal(true);
+    setSecurityPin('');
+    setModalError('');
+    setModalStep('authenticating');
+    setTimeout(() => {
+      setModalStep('enter_pin');
+    }, 700);
+  };
+
+  const handleAuthorizeAndLink = () => {
+    if (securityPin.length !== 6) {
+      setModalError('Please enter a valid 6-digit DigiLocker security PIN.');
+      return;
+    }
+    setModalStep('verifying');
+    setTimeout(() => {
+      const generatedId = `DL-MH-${mobile.slice(-4) || '8598'}-${Math.floor(1000 + Math.random() * 9000)}`;
+      const now = new Date().toISOString();
+      setDigiLockerLinked(true);
+      setDigiLockerId(generatedId);
+      setDigiLockerLinkedAt(now);
+      setModalStep('success');
+    }, 850);
+  };
+
+  const handleUnlinkDigiLocker = () => {
+    setDigiLockerLinked(false);
+    setDigiLockerId('');
+    setDigiLockerLinkedAt('');
+    setUnlinkSuccessToast(true);
+    setTimeout(() => {
+      setUnlinkSuccessToast(false);
+    }, 4000);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!isFormValid) {
@@ -154,7 +229,10 @@ export default function OnboardingProfilePage() {
       schemeInterests,
       preferredLanguage,
       confirmedAccurate: true,
-      completedAt: new Date().toISOString()
+      completedAt: new Date().toISOString(),
+      digiLockerLinked: Boolean(digiLockerLinked),
+      digiLockerId: digiLockerLinked ? (digiLockerId || `DL-MH-${mobile.slice(-4) || '8598'}`) : undefined,
+      digiLockerLinkedAt: digiLockerLinked ? (digiLockerLinkedAt || new Date().toISOString()) : undefined
     };
 
     saveUserProfile(profileData);
@@ -722,7 +800,125 @@ export default function OnboardingProfilePage() {
           </div>
         </div>
 
-        {/* SECTION 5: Mandatory Consent Notice & Confirmation Checkbox */}
+        {/* SECTION 5: Link Your DigiLocker Account */}
+        <div>
+          <div className="flex items-center gap-2 pb-3 mb-4 border-b border-slate-200">
+            <span className="w-7 h-7 rounded-full bg-[#003b5a] text-white flex items-center justify-center text-xs font-bold">5</span>
+            <div className="flex items-center gap-2">
+              <h2 className="text-base font-bold text-[#003b5a]">
+                {language === 'mr' ? 'आपले डिजीलॉकर खाते जोडा' : 'Link Your DigiLocker Account'}
+              </h2>
+              <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-800 border border-blue-200">
+                MeitY / Govt of India
+              </span>
+            </div>
+          </div>
+
+          <p className="text-xs text-slate-600 mb-4 leading-relaxed">
+            {language === 'mr'
+              ? 'पात्र शासकीय कागदपत्रे सुरक्षितपणे मिळवण्यासाठी आणि वारंवार कागदपत्रे अपलोड करण्याचा त्रास टाळण्यासाठी आपले डिजीलॉकर खाते जोडा.'
+              : 'Connect DigiLocker to securely access eligible government-issued documents and reduce repeated document uploads.'}
+          </p>
+
+          {unlinkSuccessToast && (
+            <div className="mb-4 p-3 bg-amber-50 border border-amber-300 text-amber-900 text-xs rounded-xl flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-[18px] text-amber-700">info</span>
+                <span>{language === 'mr' ? 'डिजीलॉकर खाते यशस्वीरित्या अनलिंक केले आहे.' : 'DigiLocker account unlinked successfully.'}</span>
+              </div>
+              <button type="button" onClick={() => setUnlinkSuccessToast(false)} className="text-amber-700 text-xs font-bold hover:underline">
+                ✕
+              </button>
+            </div>
+          )}
+
+          {!digiLockerLinked ? (
+            <div className="bg-gradient-to-r from-blue-50/70 via-indigo-50/40 to-slate-50 border border-blue-200/80 rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 shadow-sm">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-xl bg-blue-600 text-white flex items-center justify-center flex-shrink-0 shadow-md shadow-blue-500/20">
+                  <span className="material-symbols-outlined text-[28px]">cloud_sync</span>
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">
+                    {language === 'mr' ? 'डिजिटल कागदपत्रे एका क्लिकवर' : 'Fetch Verified Documents Instantly'}
+                  </h3>
+                  <p className="text-xs text-slate-600 mt-1 max-w-lg">
+                    {language === 'mr'
+                      ? 'आधार, उत्पन्नाचा दाखला, जात प्रमाणपत्र आणि इतर कागदपत्रे थेट डिजिटल स्वरूपात प्रमाणित केली जातील.'
+                      : 'Sync Aadhaar, Income Certificate, Caste Certificate, and Domicile directly from official issuing authorities.'}
+                  </p>
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    <span className="text-[11px] font-semibold text-slate-600 bg-white px-2 py-0.5 rounded border border-slate-200">
+                      ✓ Instant e-KYC
+                    </span>
+                    <span className="text-[11px] font-semibold text-slate-600 bg-white px-2 py-0.5 rounded border border-slate-200">
+                      ✓ Zero Paperwork
+                    </span>
+                    <span className="text-[11px] font-semibold text-slate-600 bg-white px-2 py-0.5 rounded border border-slate-200">
+                      ✓ 100% Tamper-Proof
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleOpenDigiLockerModal}
+                className="w-full sm:w-auto px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-md shadow-blue-600/20 transition flex items-center justify-center gap-2 flex-shrink-0 cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[18px]">lock_open</span>
+                <span>{language === 'mr' ? 'डिजीलॉकर जोडा' : 'Link DigiLocker'}</span>
+              </button>
+            </div>
+          ) : (
+            <div className="bg-emerald-50/80 border border-emerald-300 rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 shadow-sm">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-xl bg-emerald-600 text-white flex items-center justify-center flex-shrink-0 shadow-md shadow-emerald-500/20">
+                  <span className="material-symbols-outlined text-[28px]">verified</span>
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-800 text-[11px] font-bold px-2.5 py-0.5 rounded-full border border-emerald-300">
+                      <span className="material-symbols-outlined text-[13px]">check_circle</span>
+                      <span>✓ DigiLocker Connected</span>
+                    </span>
+                    <span className="text-[11px] text-slate-500 font-mono font-semibold">
+                      ID: {digiLockerId || `DL-MH-${mobile.slice(-4) || '8598'}`}
+                    </span>
+                  </div>
+                  <h3 className="text-sm font-bold text-slate-900 mt-1">
+                    {language === 'mr' ? 'आपले डिजीलॉकर खाते जोडलेले आहे.' : 'Your DigiLocker account is linked.'}
+                  </h3>
+                  <p className="text-xs text-slate-600 mt-1">
+                    Linked via Mobile: <span className="font-mono font-bold text-slate-800">+91 ******{mobile.slice(-4) || '8598'}</span>
+                  </p>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    <span className="text-[11px] font-semibold text-emerald-800 bg-white px-2 py-0.5 rounded border border-emerald-200">
+                      ✓ Aadhaar Card (Synced)
+                    </span>
+                    <span className="text-[11px] font-semibold text-emerald-800 bg-white px-2 py-0.5 rounded border border-emerald-200">
+                      ✓ Income Certificate (Synced)
+                    </span>
+                    <span className="text-[11px] font-semibold text-emerald-800 bg-white px-2 py-0.5 rounded border border-emerald-200">
+                      ✓ Caste Certificate (Synced)
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleUnlinkDigiLocker}
+                className="w-full sm:w-auto px-4 py-2 bg-white hover:bg-red-50 text-red-700 hover:text-red-800 border border-red-300 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 flex-shrink-0 cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[16px]">link_off</span>
+                <span>{language === 'mr' ? 'डिजीलॉकर अनलिंक करा' : 'Unlink DigiLocker'}</span>
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* SECTION 6: Mandatory Consent Notice & Confirmation Checkbox */}
         <div className="pt-4 border-t border-slate-200 space-y-4">
           {/* Official Privacy Consent Notice */}
           <div className="p-4 bg-amber-50/70 border border-amber-200 rounded-xl text-xs text-amber-900 flex items-start gap-3">
@@ -781,6 +977,149 @@ export default function OnboardingProfilePage() {
           </button>
         </div>
       </form>
+
+      {/* DigiLocker Linking Simulation Modal */}
+      {showDigiLockerModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="bg-[#003b5a] text-white p-5 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center text-amber-400">
+                  <span className="material-symbols-outlined text-[22px]">cloud_sync</span>
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm">DigiLocker • Govt. of India</h3>
+                  <p className="text-[11px] text-slate-300">National Digital Document Repository</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowDigiLockerModal(false)}
+                className="text-white/70 hover:text-white rounded-lg p-1 transition"
+              >
+                <span className="material-symbols-outlined text-[20px]">close</span>
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6">
+              {modalStep === 'authenticating' && (
+                <div className="py-8 text-center space-y-3">
+                  <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                  <h4 className="text-sm font-bold text-slate-800">Connecting to DigiLocker (Government of India)...</h4>
+                  <p className="text-xs text-slate-500">Authenticating via Mobile / Aadhaar (+91 ******{mobile.slice(-4) || '8598'})...</p>
+                </div>
+              )}
+
+              {modalStep === 'enter_pin' && (
+                <div className="space-y-4">
+                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-900">
+                    <p className="font-semibold">Consent & Authorization</p>
+                    <p className="text-[11px] text-blue-800 mt-0.5">
+                      You are authorizing MahaSetu to securely retrieve your verified documents from DigiLocker repository.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Enter 6-digit DigiLocker Security PIN
+                    </label>
+                    <input
+                      type="password"
+                      maxLength={6}
+                      value={securityPin}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, '');
+                        setSecurityPin(val);
+                        setModalError('');
+                      }}
+                      placeholder="• • • • • •"
+                      className="w-full h-11 text-center font-mono tracking-widest text-lg font-bold bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:border-blue-600 focus:bg-white"
+                      autoFocus
+                    />
+                    <div className="flex items-center justify-between mt-1 text-[11px] text-slate-500">
+                      <span>Demo PIN: enter any 6 digits (e.g. 123456)</span>
+                      <span className="font-mono">{securityPin.length}/6</span>
+                    </div>
+                  </div>
+
+                  {modalError && (
+                    <p className="text-xs text-red-600 font-semibold">{modalError}</p>
+                  )}
+
+                  <div className="pt-2 flex items-center justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowDigiLockerModal(false)}
+                      className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleAuthorizeAndLink}
+                      disabled={securityPin.length !== 6}
+                      className={`px-5 py-2 text-xs font-bold rounded-xl transition flex items-center gap-1.5 shadow ${
+                        securityPin.length === 6
+                          ? 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer'
+                          : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-[16px]">lock</span>
+                      <span>Authorize & Link</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {modalStep === 'verifying' && (
+                <div className="py-8 text-center space-y-3">
+                  <div className="w-12 h-12 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                  <h4 className="text-sm font-bold text-slate-800">Verifying Security PIN & Establishing Link...</h4>
+                  <p className="text-xs text-slate-500">Querying DigiLocker gateway (api.digitallocker.gov.in)...</p>
+                </div>
+              )}
+
+              {modalStep === 'success' && (
+                <div className="py-4 text-center space-y-4">
+                  <div className="w-14 h-14 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center mx-auto">
+                    <span className="material-symbols-outlined text-[32px]">task_alt</span>
+                  </div>
+                  <div>
+                    <h4 className="text-base font-bold text-slate-900">DigiLocker account linked successfully!</h4>
+                    <p className="text-xs text-slate-600 mt-1">
+                      Account ID: <span className="font-mono font-bold text-slate-800">{digiLockerId}</span>
+                    </p>
+                  </div>
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-left space-y-1.5 text-xs text-slate-700">
+                    <p className="font-bold text-slate-900 text-[11px] uppercase tracking-wider">Documents Synced:</p>
+                    <div className="flex items-center gap-2 text-emerald-700 font-semibold">
+                      <span className="material-symbols-outlined text-[16px]">check</span>
+                      <span>Aadhaar Card (UIDAI Verified)</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-emerald-700 font-semibold">
+                      <span className="material-symbols-outlined text-[16px]">check</span>
+                      <span>Income Certificate (Revenue Dept, Maharashtra)</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-emerald-700 font-semibold">
+                      <span className="material-symbols-outlined text-[16px]">check</span>
+                      <span>Caste Certificate (if available / applicable)</span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowDigiLockerModal(false)}
+                    className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow transition cursor-pointer"
+                  >
+                    Done & Return to Profile
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

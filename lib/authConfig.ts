@@ -59,6 +59,21 @@ export interface CitizenProfile {
   preferredLanguage: 'mr' | 'hi' | 'en';
   confirmedAccurate: boolean;
   completedAt: string;
+
+  // DigiLocker Status (per-user)
+  digiLockerLinked?: boolean;
+  digiLockerLinkedAt?: string;
+  digiLockerId?: string;
+}
+
+/**
+ * Mask raw 12-digit Aadhaar number for security (format: XXXX XXXX 1234)
+ * Raw Aadhaar digits must NEVER be stored or displayed anywhere in the system.
+ */
+export function maskAadhaar(raw: string): string {
+  const digits = raw.replace(/\D/g, '');
+  const last4 = digits.length >= 4 ? digits.slice(-4) : '0000';
+  return `XXXX XXXX ${last4}`;
 }
 
 // ─── 6 Pre-Seeded Demo Citizen Accounts ──────────────────────────────────────
@@ -72,7 +87,7 @@ export const SEED_ACCOUNTS: CitizenAccount[] = [
     nameMr: 'पारस प्रसादे',
     mobile: '7276218598',
     email: 'paras.prasade@citizen.mahasetu.gov.in',
-    aadhaarMasked: 'XXXX-XXXX-7276',
+    aadhaarMasked: 'XXXX XXXX 7276',
     createdAt: '2026-01-01T00:00:00.000Z',
     role: 'citizen',
   },
@@ -82,7 +97,7 @@ export const SEED_ACCOUNTS: CitizenAccount[] = [
     nameMr: 'जय सावळे',
     mobile: '9588647927',
     email: 'jay.sawale@citizen.mahasetu.gov.in',
-    aadhaarMasked: 'XXXX-XXXX-9588',
+    aadhaarMasked: 'XXXX XXXX 9588',
     createdAt: '2026-01-01T00:00:00.000Z',
     role: 'citizen',
   },
@@ -92,7 +107,7 @@ export const SEED_ACCOUNTS: CitizenAccount[] = [
     nameMr: 'अनिरुद्ध नवले',
     mobile: '7447571077',
     email: 'aniruddha.nawale@citizen.mahasetu.gov.in',
-    aadhaarMasked: 'XXXX-XXXX-7447',
+    aadhaarMasked: 'XXXX XXXX 7447',
     createdAt: '2026-01-01T00:00:00.000Z',
     role: 'citizen',
   },
@@ -102,7 +117,7 @@ export const SEED_ACCOUNTS: CitizenAccount[] = [
     nameMr: 'अंशुल पाटील',
     mobile: '7249517306',
     email: 'anshul.patil@citizen.mahasetu.gov.in',
-    aadhaarMasked: 'XXXX-XXXX-7249',
+    aadhaarMasked: 'XXXX XXXX 7249',
     createdAt: '2026-01-01T00:00:00.000Z',
     role: 'citizen',
   },
@@ -112,7 +127,7 @@ export const SEED_ACCOUNTS: CitizenAccount[] = [
     nameMr: 'अमन चौधरी',
     mobile: '8329895972',
     email: 'aman.chaudhary@citizen.mahasetu.gov.in',
-    aadhaarMasked: 'XXXX-XXXX-8329',
+    aadhaarMasked: 'XXXX XXXX 8329',
     createdAt: '2026-01-01T00:00:00.000Z',
     role: 'citizen',
   },
@@ -122,7 +137,7 @@ export const SEED_ACCOUNTS: CitizenAccount[] = [
     nameMr: 'सृष्टी शिंदे',
     mobile: '8767867760',
     email: 'shrushti.shinde@citizen.mahasetu.gov.in',
-    aadhaarMasked: 'XXXX-XXXX-8767',
+    aadhaarMasked: 'XXXX XXXX 8767',
     createdAt: '2026-01-01T00:00:00.000Z',
     role: 'citizen',
   },
@@ -211,7 +226,7 @@ export function findAuthorizedUser(mobile: string): CitizenAccount | null {
  * If the mobile is already registered, returns the existing account.
  * Persists to localStorage and returns the new CitizenAccount.
  */
-export function registerAccount(name: string, mobile: string): CitizenAccount {
+export function registerAccount(name: string, mobile: string, aadhaar?: string): CitizenAccount {
   const clean = normalizeMobileNumber(mobile);
   const accounts = loadAccounts();
   const existing = accounts.find(a => a.mobile === clean);
@@ -222,7 +237,7 @@ export function registerAccount(name: string, mobile: string): CitizenAccount {
     name: name.trim(),
     mobile: clean,
     email: `citizen.${clean}@mahasetu.gov.in`,
-    aadhaarMasked: `XXXX-XXXX-${clean.slice(-4)}`,
+    aadhaarMasked: aadhaar ? maskAadhaar(aadhaar) : `XXXX XXXX ${clean.slice(-4)}`,
     createdAt: new Date().toISOString(),
     role: 'citizen',
   };

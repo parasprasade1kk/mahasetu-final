@@ -32,6 +32,9 @@ export default function LoginPage() {
 
   // ── Login form state ──────────────────────────────────────────────────────
   const [loginMobile, setLoginMobile] = useState('');
+  const [loginAadhaar, setLoginAadhaar] = useState('');
+  const [loginConsent, setLoginConsent] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [loginOtp, setLoginOtp] = useState('');
   const [loginOtpGenerated, setLoginOtpGenerated] = useState('');
   const [loginOtpSent, setLoginOtpSent] = useState(false);
@@ -44,6 +47,8 @@ export default function LoginPage() {
   // ── Register form state ───────────────────────────────────────────────────
   const [regStep, setRegStep] = useState<RegStep>('mobile');
   const [regMobile, setRegMobile] = useState('');
+  const [regAadhaar, setRegAadhaar] = useState('');
+  const [regConsent, setRegConsent] = useState(false);
   const [regOtp, setRegOtp] = useState('');
   const [regOtpGenerated, setRegOtpGenerated] = useState('');
   const [regOtpSent, setRegOtpSent] = useState(false);
@@ -87,6 +92,22 @@ export default function LoginPage() {
         : 'Please enter a valid 10-digit mobile number.');
       return;
     }
+
+    const cleanAadhaar = loginAadhaar.replace(/\D/g, '');
+    if (!cleanAadhaar || cleanAadhaar.length !== 12) {
+      setLoginError(language === 'mr'
+        ? 'कृपया १२ अंकी वैध आधार क्रमांक प्रविष्ट करा.'
+        : 'Please enter a valid 12-digit Aadhaar number.');
+      return;
+    }
+
+    if (!loginConsent) {
+      setLoginError(language === 'mr'
+        ? 'OTP प्राप्त करण्यासाठी कृपया eKYC संमती स्वीकारा.'
+        : 'Please provide required eKYC consent to receive OTP.');
+      return;
+    }
+
     // Check if account exists
     const account = findAccount(clean);
     if (!account) {
@@ -112,6 +133,16 @@ export default function LoginPage() {
     if (!clean || clean.length !== 10) {
       setLoginError('Please enter a valid 10-digit mobile number.'); return;
     }
+
+    const cleanAadhaar = loginAadhaar.replace(/\D/g, '');
+    if (!cleanAadhaar || cleanAadhaar.length !== 12) {
+      setLoginError('Please enter a valid 12-digit Aadhaar number.'); return;
+    }
+
+    if (!loginConsent) {
+      setLoginError('Please accept the required eKYC consent before continuing.'); return;
+    }
+
     if (!loginCaptchaInput || loginCaptchaInput.trim().toUpperCase() !== loginCaptchaCode.toUpperCase()) {
       setLoginError('Security CAPTCHA verification failed. Please check the code and try again.');
       refreshCaptcha(); return;
@@ -122,7 +153,7 @@ export default function LoginPage() {
 
     setLoginLoading(true);
     setTimeout(() => {
-      const result = loginWithMobile(clean);
+      const result = loginWithMobile(clean, cleanAadhaar);
       setLoginLoading(false);
       if (result.success) {
         const profileKey = `mahasetu_user_profile_${clean}`;
@@ -365,7 +396,7 @@ export default function LoginPage() {
                     <SuccessBox msg={loginSuccess} />
 
                     <form onSubmit={handleLoginSubmit} className="space-y-4">
-                      {/* Mobile */}
+                      {/* 1. Mobile Number */}
                       <div>
                         <div className="flex items-center justify-between mb-1">
                           <label className="block text-xs font-bold text-slate-700" htmlFor="login-mobile">
@@ -395,7 +426,75 @@ export default function LoginPage() {
                         </div>
                       </div>
 
-                      {/* OTP */}
+                      {/* 2. Aadhaar Number (Bug 3) */}
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="block text-xs font-bold text-slate-700" htmlFor="login-aadhaar">
+                            {language === 'mr' ? 'आधार क्रमांक (Aadhaar Number)' : 'Aadhaar Number'}
+                            <span className="text-red-500 ml-1">*</span>
+                          </label>
+                          <span className="text-[10px] text-slate-500">12 Digits Numeric</span>
+                        </div>
+                        <div className="relative">
+                          <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                            <span className="material-symbols-outlined text-[18px]">badge</span>
+                          </span>
+                          <input
+                            id="login-aadhaar"
+                            type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            maxLength={12}
+                            value={loginAadhaar}
+                            onChange={(e) => {
+                              setLoginAadhaar(e.target.value.replace(/\D/g, '').slice(0, 12));
+                              setLoginError('');
+                            }}
+                            placeholder="Enter 12-digit Aadhaar number"
+                            className="w-full h-11 pl-10 pr-4 bg-white border border-slate-300 rounded-lg text-xs font-semibold text-slate-800 tracking-widest font-mono focus:outline-none focus:border-[#003b5a] focus:ring-1 focus:ring-[#003b5a]"
+                            required
+                          />
+                        </div>
+                        <p className="text-[10px] text-slate-500 mt-1">
+                          Aadhaar will only be stored and displayed masked (e.g. XXXX XXXX 1234).
+                        </p>
+                      </div>
+
+                      {/* 3. eKYC Consent (Bug 3) */}
+                      <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2.5">
+                        <div className="flex items-start gap-2">
+                          <span className="material-symbols-outlined text-[#003b5a] text-[18px] flex-shrink-0 mt-0.5">verified_user</span>
+                          <p className="text-[11px] text-slate-600 leading-relaxed">
+                            “I consent to the use of my Aadhaar number and biometric data for eKYC purposes. I understand that my data will be used solely for identity verification, handled securely, and may be shared with authorised entities involved in this process. I acknowledge that this consent is voluntary and can be withdrawn at any time.”
+                          </p>
+                        </div>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-slate-200/60">
+                          <label className="flex items-center gap-2 cursor-pointer select-none">
+                            <input
+                              type="checkbox"
+                              checked={loginConsent}
+                              onChange={(e) => {
+                                setLoginConsent(e.target.checked);
+                                setLoginError('');
+                              }}
+                              className="w-4 h-4 text-[#003b5a] rounded border-slate-300 focus:ring-[#003b5a]"
+                            />
+                            <span className="text-xs font-bold text-slate-800">
+                              {language === 'mr' ? 'मी सहमत आहे / संमती देतो (I Agree / I Consent)' : 'I Agree / I Consent'}
+                            </span>
+                          </label>
+
+                          <button
+                            type="button"
+                            onClick={() => setShowPrivacyModal(true)}
+                            className="text-[11px] font-semibold text-[#003b5a] hover:text-[#f47920] underline text-left sm:text-right"
+                          >
+                            View Privacy Notice
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* 4. One-Time Password (OTP) */}
                       <div>
                         <div className="flex justify-between items-center mb-1">
                           <label className="text-xs font-bold text-slate-700" htmlFor="login-otp">
@@ -441,7 +540,7 @@ export default function LoginPage() {
                         )}
                       </div>
 
-                      {/* CAPTCHA */}
+                      {/* 5. Security CAPTCHA */}
                       <div>
                         <label className="block text-xs font-bold text-slate-700 mb-1" htmlFor="login-captcha">
                           {language === 'mr' ? 'सुरक्षा कॅप्चा' : 'Security CAPTCHA'}
@@ -472,16 +571,21 @@ export default function LoginPage() {
                         </div>
                       </div>
 
-                      {/* Submit */}
+                      {/* Submit button — disabled until consent is checked and inputs valid */}
                       <button
                         type="submit"
-                        disabled={loginLoading}
-                        className="w-full h-11 mt-2 bg-[#003b5a] hover:bg-[#002840] text-white rounded-lg text-xs font-bold shadow-gov transition flex items-center justify-center gap-2 disabled:opacity-75 disabled:cursor-not-allowed"
+                        disabled={
+                          loginLoading ||
+                          loginMobile.length !== 10 ||
+                          loginAadhaar.replace(/\D/g, '').length !== 12 ||
+                          !loginConsent
+                        }
+                        className="w-full h-11 mt-2 bg-[#003b5a] hover:bg-[#002840] disabled:bg-slate-300 disabled:text-slate-500 disabled:cursor-not-allowed text-white rounded-lg text-xs font-bold shadow-gov transition flex items-center justify-center gap-2"
                       >
                         {loginLoading ? (
                           <>
                             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                            <span>Verifying...</span>
+                            <span>Verifying Credentials...</span>
                           </>
                         ) : (
                           <>
@@ -490,6 +594,12 @@ export default function LoginPage() {
                           </>
                         )}
                       </button>
+
+                      {!loginConsent && (
+                        <p className="text-[10px] text-center text-amber-700 font-medium">
+                          Please check “I Agree / I Consent” above to enable sign-in.
+                        </p>
+                      )}
                     </form>
 
                     {/* Demo Accounts Quick-Select */}
@@ -498,13 +608,13 @@ export default function LoginPage() {
                         <summary className="text-[11px] font-semibold text-[#003b5a] hover:underline cursor-pointer list-none flex items-center justify-between">
                           <span className="flex items-center gap-1.5">
                             <span className="material-symbols-outlined text-[15px] text-amber-600">badge</span>
-                            Demo Citizen Accounts — Click to fill mobile
+                            Demo Citizen Accounts — Click to fill mobile & demo Aadhaar
                           </span>
                           <span className="material-symbols-outlined text-[16px] transition-transform group-open:rotate-180">expand_more</span>
                         </summary>
                         <div className="mt-3 p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5 text-[11px]">
                           <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-1">
-                            Pre-registered demo citizens:
+                            Pre-registered demo citizens (Click to prefill):
                           </p>
                           {SEED_ACCOUNTS.map((acc) => (
                             <button
@@ -512,6 +622,8 @@ export default function LoginPage() {
                               type="button"
                               onClick={() => {
                                 setLoginMobile(acc.mobile);
+                                setLoginAadhaar(`23456789${acc.mobile.slice(-4)}`);
+                                setLoginConsent(false);
                                 setLoginError(''); setLoginSuccess('');
                                 setLoginOtpSent(false); setLoginOtp('');
                               }}
@@ -745,8 +857,73 @@ export default function LoginPage() {
             </div>
           </div>
         </div>
-
       </div>
+
+      {/* ─── Privacy Notice Modal ───────────────────────────────────────────── */}
+      {showPrivacyModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden">
+            <div className="bg-[#003b5a] text-white p-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-amber-400">policy</span>
+                <h3 className="text-sm font-bold">
+                  {language === 'mr' ? 'eKYC व डेटा गोपनीयता सूचना' : 'eKYC & Citizen Privacy Notice'}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowPrivacyModal(false)}
+                className="text-slate-300 hover:text-white"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            <div className="p-6 text-xs text-slate-700 space-y-3.5 max-h-[70vh] overflow-y-auto">
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-blue-900 flex items-start gap-2.5">
+                <span className="material-symbols-outlined text-blue-600 text-[18px] flex-shrink-0 mt-0.5">verified_user</span>
+                <div>
+                  <p className="font-bold">Government of Maharashtra Data Protection Guarantee</p>
+                  <p className="text-[11px] text-blue-800 mt-0.5">
+                    Compliant with the Digital Personal Data Protection (DPDP) Act 2023 & Aadhaar Regulations.
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-slate-900 mb-1">1. Purpose of Information Collection</h4>
+                <p className="text-slate-600 leading-relaxed">
+                  Your mobile number and 12-digit Aadhaar number are processed solely for citizen identity authentication, eligibility evaluation for welfare schemes, and automated attestation of statutory certificates.
+                </p>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-slate-900 mb-1">2. Zero Full-Aadhaar Exposure Standard</h4>
+                <p className="text-slate-600 leading-relaxed">
+                  In compliance with statutory UIDAI guidelines, your full Aadhaar number is never logged, exposed in URLs, displayed on dashboard interfaces, or transferred in plain text. Only a cryptographically masked token (<span className="font-mono font-bold">XXXX XXXX 1234</span>) is visible.
+                </p>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-slate-900 mb-1">3. Voluntary Consent & Withdrawal</h4>
+                <p className="text-slate-600 leading-relaxed">
+                  Providing eKYC consent is voluntary. You retain the statutory right to view, update, or revoke departmental document access permissions anytime via the MahaSetu Consent Center.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 p-4 border-t border-slate-200 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowPrivacyModal(false)}
+                className="bg-[#003b5a] hover:bg-[#002840] text-white px-5 py-2 rounded-lg text-xs font-bold transition"
+              >
+                I Understand & Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

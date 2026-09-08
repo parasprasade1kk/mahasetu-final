@@ -83,8 +83,10 @@ const t: Record<string, Record<string, string>> = {
     chk_edu: 'Grant Education Department access to fetch enrollment records.',
     btn_allow_collect: 'Allow & Collect Documents',
     upload_header: 'Upload Missing Files',
-    dropzone_title: 'Drag & drop files here, or browse',
-    dropzone_sub: 'Supports PDF, JPG, PNG up to 10MB',
+    dropzone_title: 'Upload Document',
+    dropzone_sub: 'Select a PDF, JPG, or PNG document (maximum 10MB)',
+    choose_file: 'Choose File',
+    browse_files: 'Browse Files',
     btn_continue_pack: 'Continue to Document Pack',
     pack_header: 'Smart Document Pack',
     pack_sub: 'Ready to attach to application',
@@ -209,8 +211,10 @@ const t: Record<string, Record<string, string>> = {
     chk_edu: 'नावनोंदणी रेकॉर्ड मिळवण्यासाठी शिक्षण विभागाला प्रवेश द्या.',
     btn_allow_collect: 'परवानगी द्या आणि कागदपत्रे गोळा करा',
     upload_header: 'गहाळ फाईल्स अपलोड करा',
-    dropzone_title: 'फायली येथे ड्रॅग आणि ड्रॉप करा, किंवा ब्राउझ करा',
-    dropzone_sub: '१०MB पर्यंत PDF, JPG, PNG समर्थित',
+    dropzone_title: 'दस्तऐवज अपलोड करा',
+    dropzone_sub: 'तुमच्या उपकरणावरून PDF, JPG किंवा PNG निवडा (कमाल १०MB)',
+    choose_file: 'फाईल निवडा',
+    browse_files: 'ब्राउझ फाईल्स',
     btn_continue_pack: 'दस्तऐवज पॅकवर चालू ठेवा',
     pack_header: 'स्मार्ट दस्तऐवज पॅक',
     pack_sub: 'अर्जाशी जोडण्यासाठी तयार',
@@ -397,9 +401,73 @@ export default function SchemeFinderPage() {
     goTo(5);
   };
 
-  // ─── Document helpers ──────────────────────────────────────────────────────
-  const availableDocs = selectedScheme?.requiredDocuments.filter(d => d.available) ?? [];
-  const missingDocs = selectedScheme?.requiredDocuments.filter(d => !d.available) ?? [];
+  // ─── Document upload state (Bug 2: File picker without Drag & Drop) ──────
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const [activeUploadDocId, setActiveUploadDocId] = useState<string | null>(null);
+  const [uploadedDocsMap, setUploadedDocsMap] = useState<Record<string, { fileName: string; fileSize: string; uploadedAt: string }>>({});
+  const [fileUploadError, setFileUploadError] = useState<string>('');
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFileUploadError('');
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      setFileUploadError(lang === 'mr' ? 'फाईल आकार १०MB पेक्षा जास्त असू नये.' : 'File size exceeds 10MB limit. Please choose a smaller file.');
+      return;
+    }
+
+    const allowed = ['pdf', 'jpg', 'jpeg', 'png'];
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    if (!ext || !allowed.includes(ext)) {
+      setFileUploadError(lang === 'mr' ? 'केवळ PDF, JPG, किंवा PNG फाईल समर्थित आहेत.' : 'Only PDF, JPG, or PNG files are supported.');
+      return;
+    }
+
+    const sizeFormatted = file.size > 1024 * 1024
+      ? `${(file.size / (1024 * 1024)).toFixed(1)} MB`
+      : `${Math.round(file.size / 1024)} KB`;
+
+    const docKey = activeUploadDocId || missingDocs[0]?.id || 'general';
+    setUploadedDocsMap(prev => ({
+      ...prev,
+      [docKey]: {
+        fileName: file.name,
+        fileSize: sizeFormatted,
+        uploadedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      }
+    }));
+
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleDeleteFile = (docId: string) => {
+    setUploadedDocsMap(prev => {
+      const next = { ...prev };
+      delete next[docId];
+      return next;
+    });
+  };
+
+  // ─── Document helpers (Connected to DigiLocker per-user status) ───────────
+  const availableDocs = useMemo(() => {
+    if (!selectedScheme) return [];
+    return selectedScheme.requiredDocuments.filter(d => {
+      if (user.digiLockerLinked && d.available) return true;
+      if (uploadedDocsMap[d.id]) return true;
+      return false;
+    });
+  }, [selectedScheme, user.digiLockerLinked, uploadedDocsMap]);
+
+  const missingDocs = useMemo(() => {
+    if (!selectedScheme) return [];
+    return selectedScheme.requiredDocuments.filter(d => {
+      if (user.digiLockerLinked && d.available) return false;
+      if (uploadedDocsMap[d.id]) return false;
+      return true;
+    });
+  }, [selectedScheme, user.digiLockerLinked, uploadedDocsMap]);
+
   const totalDocs = selectedScheme?.requiredDocuments.length ?? 0;
 
   // ─── Submit handler — uses selectedScheme dynamically ─────────────────────
@@ -974,7 +1042,11 @@ export default function SchemeFinderPage() {
                       <span className="material-symbols-outlined text-emerald-600">description</span>
                       <div>
                         <h5 className="text-sm font-semibold">{lang === 'mr' ? doc.nameMr : doc.name}</h5>
-                        <span className="text-xs text-slate-500">{lang === 'mr' ? doc.sourceMr : doc.source}</span>
+                        <span className="text-xs text-slate-500">
+                          {uploadedDocsMap[doc.id]
+                            ? (lang === 'mr' ? 'नागरिक अपलोडद्वारे सत्यापित' : 'Attested via Citizen Upload')
+                            : (lang === 'mr' ? 'डिजिलॉकरद्वारे उपलब्ध' : 'Available via DigiLocker')}
+                        </span>
                       </div>
                     </div>
                     <span className="text-xs bg-emerald-100 text-emerald-800 px-2 py-1 rounded font-medium border border-emerald-200">
@@ -998,7 +1070,11 @@ export default function SchemeFinderPage() {
                       <span className="material-symbols-outlined text-red-500">upload_file</span>
                       <div>
                         <h5 className="text-sm font-semibold">{lang === 'mr' ? doc.nameMr : doc.name}</h5>
-                        <span className="text-xs text-red-500">{tx(lang, 'doc_missing_status')}</span>
+                        <span className="text-xs text-red-500">
+                          {!user.digiLockerLinked
+                            ? (lang === 'mr' ? 'गहाळ — डिजिलॉकर जोडलेले नाही / अपलोड आवश्यक' : 'Missing — Upload Required')
+                            : (lang === 'mr' ? 'गहाळ — अपलोड आवश्यक' : 'Missing — Upload Required')}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -1069,44 +1145,148 @@ export default function SchemeFinderPage() {
       )}
 
       {/* ═══════════════════════════════════════════════════════════════════════
-          SCREEN 8: Upload Missing Files — DYNAMIC
+          SCREEN 8: Upload Missing Files — File Selection UI (No Drag & Drop)
          ═══════════════════════════════════════════════════════════════════════ */}
       {screen === 8 && (
         <div className="space-y-4 animate-fadeIn">
           <ScreenHeader title={tx(lang, 'upload_header')} backTo={7} />
 
-          <div className="bg-white border border-slate-200 p-5 rounded-xl space-y-4 shadow-gov">
-            {/* Dropzone */}
-            <div className="border-2 border-dashed border-slate-300 rounded-xl p-6 text-center space-y-2 hover:border-[#003b5a] transition-colors bg-[#f8f9ff] cursor-pointer">
-              <span className="material-symbols-outlined text-4xl text-[#003b5a]">cloud_upload</span>
-              <h4 className="text-sm font-bold">{tx(lang, 'dropzone_title')}</h4>
-              <p className="text-xs text-slate-500">{tx(lang, 'dropzone_sub')}</p>
+          <div className="bg-white border border-slate-200 p-5 sm:p-6 rounded-xl space-y-5 shadow-gov">
+            {/* Hidden native file input */}
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileSelect}
+              accept=".pdf,.jpg,.jpeg,.png"
+              className="hidden"
+            />
+
+            {/* Simple Clean File Upload Component — NO DRAG AND DROP */}
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 text-center space-y-3">
+              <div className="w-12 h-12 rounded-full bg-[#003b5a]/10 text-[#003b5a] flex items-center justify-center mx-auto">
+                <span className="material-symbols-outlined text-[26px]">upload_file</span>
+              </div>
+
+              <div>
+                <h4 className="text-sm font-bold text-slate-800">
+                  {tx(lang, 'dropzone_title')}
+                </h4>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  {tx(lang, 'dropzone_sub')}
+                </p>
+              </div>
+
+              <div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveUploadDocId(missingDocs[0]?.id || 'general');
+                    fileInputRef.current?.click();
+                  }}
+                  className="bg-[#003b5a] hover:bg-[#002840] text-white px-5 py-2.5 rounded-lg text-xs font-bold transition shadow-sm inline-flex items-center gap-2"
+                >
+                  <span className="material-symbols-outlined text-[18px]">folder_open</span>
+                  <span>{tx(lang, 'choose_file')}</span>
+                </button>
+              </div>
+
+              {fileUploadError && (
+                <div className="p-2.5 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700 font-semibold flex items-center justify-center gap-1.5 max-w-md mx-auto">
+                  <span className="material-symbols-outlined text-[16px]">error</span>
+                  <span>{fileUploadError}</span>
+                </div>
+              )}
             </div>
 
-            {/* Missing docs shown as uploaded (simulated) */}
-            {missingDocs.length > 0 && (
-              <div className="space-y-2">
-                {missingDocs.map((doc) => (
-                  <div key={doc.id} className="bg-[#f8f9ff] p-3 rounded-lg border border-slate-200 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <span className="material-symbols-outlined text-emerald-600">task</span>
-                      <div>
-                        <h5 className="text-sm font-semibold">{lang === 'mr' ? doc.nameMr : doc.name}</h5>
-                        <span className="text-xs text-emerald-600">{tx(lang, 'status_uploaded_mark')}</span>
+            {/* Missing documents list with individual status and file selection */}
+            <div className="space-y-3 pt-2">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-600">
+                {lang === 'mr' ? 'आवश्यक कागदपत्रे स्थिती' : 'Required Documents Status'}
+              </h4>
+
+              {missingDocs.length === 0 ? (
+                <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-emerald-600">check_circle</span>
+                  <span>{lang === 'mr' ? 'सर्व कागदपत्रे जोडली गेली आहेत!' : 'All required documents have been attested!'}</span>
+                </div>
+              ) : (
+                missingDocs.map((doc) => {
+                  const uploaded = uploadedDocsMap[doc.id];
+                  return (
+                    <div key={doc.id} className="bg-[#f8f9ff] p-4 rounded-xl border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex items-start gap-3">
+                        <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                          uploaded ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                        }`}>
+                          <span className="material-symbols-outlined text-[20px]">
+                            {uploaded ? 'check_circle' : 'pending'}
+                          </span>
+                        </div>
+                        <div>
+                          <h5 className="text-xs font-bold text-slate-900">
+                            {lang === 'mr' ? doc.nameMr : doc.name}
+                          </h5>
+                          {uploaded ? (
+                            <p className="text-[11px] text-emerald-700 font-medium">
+                              ✓ {uploaded.fileName} ({uploaded.fileSize}) • Verified
+                            </p>
+                          ) : (
+                            <p className="text-[11px] text-slate-500">
+                              Required from citizen • Select file from device
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 self-end sm:self-center">
+                        {uploaded ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setActiveUploadDocId(doc.id);
+                                fileInputRef.current?.click();
+                              }}
+                              className="px-3 py-1.5 rounded-lg border border-slate-300 hover:bg-white text-xs font-semibold text-slate-700 transition"
+                            >
+                              Replace
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteFile(doc.id)}
+                              className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition"
+                              title="Remove file"
+                            >
+                              <span className="material-symbols-outlined text-[18px]">delete</span>
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setActiveUploadDocId(doc.id);
+                              fileInputRef.current?.click();
+                            }}
+                            className="bg-white hover:bg-slate-50 text-[#003b5a] border border-[#003b5a] px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-xs"
+                          >
+                            <span className="material-symbols-outlined text-[16px]">upload</span>
+                            <span>{tx(lang, 'browse_files')}</span>
+                          </button>
+                        )}
                       </div>
                     </div>
-                    <span className="material-symbols-outlined text-emerald-600">check_circle</span>
-                  </div>
-                ))}
-              </div>
-            )}
+                  );
+                })
+              )}
+            </div>
 
-            <div className="pt-2">
+            <div className="pt-3 border-t border-slate-100">
               <button
                 onClick={() => goTo(9)}
-                className="w-full bg-[#003b5a] text-white py-3 rounded-xl text-sm font-bold shadow-gov hover:bg-[#002840] transition"
+                className="w-full bg-[#003b5a] text-white py-3 rounded-xl text-xs sm:text-sm font-bold shadow-gov hover:bg-[#002840] transition flex items-center justify-center gap-2"
               >
-                {tx(lang, 'btn_continue_pack')}
+                <span>{tx(lang, 'btn_continue_pack')}</span>
+                <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
               </button>
             </div>
           </div>
@@ -1114,38 +1294,67 @@ export default function SchemeFinderPage() {
       )}
 
       {/* ═══════════════════════════════════════════════════════════════════════
-          SCREEN 9: Smart Document Pack — DYNAMIC
+          SCREEN 9: Smart Document Pack — DYNAMIC with DigiLocker Integration
          ═══════════════════════════════════════════════════════════════════════ */}
       {screen === 9 && selectedScheme && (
         <div className="space-y-4 animate-fadeIn">
           <ScreenHeader title={tx(lang, 'pack_header')} backTo={8} />
 
-          <div className="bg-white border border-slate-200 p-5 rounded-xl space-y-4 shadow-gov">
+          <div className="bg-white border border-slate-200 p-5 sm:p-6 rounded-xl space-y-4 shadow-gov">
             {/* Ready Banner */}
             <div className="flex justify-between items-center bg-emerald-50 p-3.5 rounded-xl border border-emerald-200">
               <div>
                 <h4 className="text-sm font-bold text-emerald-800">
-                  {totalDocs}/{totalDocs} {tx(lang, 'pack_status_ready')}
+                  {availableDocs.length}/{totalDocs} {tx(lang, 'pack_status_ready')}
                 </h4>
                 <p className="text-xs text-slate-600">{tx(lang, 'pack_sub')}</p>
               </div>
               <span className="material-symbols-outlined text-3xl text-emerald-600">verified_user</span>
             </div>
 
-            {/* Document List — all scheme docs */}
-            <div className="space-y-2">
-              {selectedScheme.requiredDocuments.map((doc) => (
-                <div key={doc.id} className="bg-[#f8f9ff] p-2.5 rounded-lg border border-slate-200 flex items-center justify-between text-sm">
-                  <span>{lang === 'mr' ? doc.nameMr : doc.name}</span>
-                  <span className={`text-xs px-2 py-0.5 rounded font-medium border ${
-                    doc.available
-                      ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
-                      : 'bg-[#e5eeff] text-[#003b5a] border-[#9bccf6]'
-                  }`}>
-                    {doc.available ? tx(lang, 'badge_gov') : tx(lang, 'badge_citizen')}
-                  </span>
-                </div>
-              ))}
+            {/* Document List — all scheme docs connected to DigiLocker and citizen uploads */}
+            <div className="space-y-2.5">
+              {selectedScheme.requiredDocuments.map((doc) => {
+                const isViaDigiLocker = user.digiLockerLinked && doc.available;
+                const isUserUploaded = Boolean(uploadedDocsMap[doc.id]);
+                const isAvailable = isViaDigiLocker || isUserUploaded;
+
+                return (
+                  <div key={doc.id} className="bg-[#f8f9ff] p-3 rounded-xl border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs sm:text-sm">
+                    <div className="flex items-center gap-2.5">
+                      <span className={`material-symbols-outlined text-[20px] ${isAvailable ? 'text-emerald-600' : 'text-amber-500'}`}>
+                        {isAvailable ? 'check_circle' : 'pending'}
+                      </span>
+                      <div>
+                        <span className="font-semibold text-slate-800 block">
+                          {lang === 'mr' ? doc.nameMr : doc.name}
+                        </span>
+                        <span className="text-[11px] text-slate-500">
+                          {isViaDigiLocker
+                            ? (lang === 'mr' ? 'डिजिलॉकरद्वारे सत्यापित दस्तऐवज' : 'Verified via DigiLocker Vault')
+                            : isUserUploaded
+                            ? `Uploaded: ${uploadedDocsMap[doc.id].fileName}`
+                            : (lang === 'mr' ? doc.sourceMr : doc.source)}
+                        </span>
+                      </div>
+                    </div>
+
+                    <span className={`text-[11px] px-2.5 py-1 rounded-full font-bold border self-start sm:self-center ${
+                      isViaDigiLocker
+                        ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                        : isUserUploaded
+                        ? 'bg-blue-100 text-blue-800 border-blue-200'
+                        : 'bg-red-50 text-red-700 border-red-200'
+                    }`}>
+                      {isViaDigiLocker
+                        ? (lang === 'mr' ? 'डिजिलॉकरद्वारे उपलब्ध' : 'Available via DigiLocker')
+                        : isUserUploaded
+                        ? (lang === 'mr' ? 'नागरिक अपलोड' : 'Citizen Uploaded')
+                        : (lang === 'mr' ? 'गहाळ — अपलोड आवश्यक' : 'Missing — Upload Required')}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
 
             <div className="pt-2">

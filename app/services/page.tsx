@@ -4,136 +4,7 @@ import React, { useState, useMemo, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
-
-interface ServiceItem {
-  id: string;
-  deptId: 'revenue' | 'education' | 'social' | 'agriculture' | 'food';
-  deptNameEn: string;
-  deptNameMr: string;
-  titleEn: string;
-  titleMr: string;
-  descEn: string;
-  descMr: string;
-  sla: string;
-  documentsEn: string[];
-  documentsMr: string[];
-  applyLink: string;
-}
-
-const allServices: ServiceItem[] = [
-  {
-    id: 'srv-1',
-    deptId: 'revenue',
-    deptNameEn: 'Revenue Department',
-    deptNameMr: 'महसूल विभाग',
-    titleEn: 'Income Certificate (1/3 Years)',
-    titleMr: 'उत्पन्नाचा दाखला (१ किंवा ३ वर्षे)',
-    descEn: 'Statutory certificate certifying annual family income issued by the Tehsildar office for educational and welfare benefits.',
-    descMr: 'तहसीलदार कार्यालयामार्फत जारी करण्यात येणारा वार्षिक कौटुंबिक उत्पन्नाचा दाखला.',
-    sla: '3 Days',
-    documentsEn: ['Ration Card', 'Salary Slip / Talathi Income Report', 'Aadhaar Card'],
-    documentsMr: ['रेशन कार्ड', 'पगार पावती / तलाठी अहवाल', 'आधार कार्ड'],
-    applyLink: '/scholarship-application'
-  },
-  {
-    id: 'srv-2',
-    deptId: 'revenue',
-    deptNameEn: 'Revenue Department',
-    deptNameMr: 'महसूल विभाग',
-    titleEn: 'Caste Certificate (SC / ST / VJNT / OBC / SEBC)',
-    titleMr: 'जात प्रमाणपत्र (अजा / अज / विजाभज / इमाव / एसईबीसी)',
-    descEn: 'Official certification of caste category for reservations and educational schemes under Maharashtra state quota.',
-    descMr: 'महाराष्ट्र राज्यातील आरक्षण व शैक्षणिक योजनांसाठी अधिकृत जात प्रमाणपत्र.',
-    sla: '7 Days',
-    documentsEn: ['School Leaving Certificate', 'Father/Relative Caste Proof prior to 1967', 'Aadhaar Card'],
-    documentsMr: ['शाळा सोडल्याचा दाखला', '१९६७ पूर्वीचा वडिलांचा जात पुरावा', 'आधार कार्ड'],
-    applyLink: '/scholarship-application'
-  },
-  {
-    id: 'srv-3',
-    deptId: 'revenue',
-    deptNameEn: 'Revenue Department',
-    deptNameMr: 'महसूल विभाग',
-    titleEn: '7/12 & 8A Digital Land Extract (e-Mahabhumi)',
-    titleMr: 'डिजिटल स्वाक्षरीत ७/१२ व ८-अ उतारा (ई-महाभूमी)',
-    descEn: 'Digitally signed land record extract depicting survey numbers, land ownership, and crop inspection details.',
-    descMr: 'जमीन मालकी, गट क्रमांक आणि पीक पाहणी दर्शविणारा डिजिटल स्वाक्षरी असलेला ७/१२ उतारा.',
-    sla: 'Instant Download',
-    documentsEn: ['District / Taluka / Village Selection', 'Gat / Survey Number'],
-    documentsMr: ['जिल्हा / तालुका / गाव निवड', 'गट / सर्व्हे क्रमांक'],
-    applyLink: '/documents'
-  },
-  {
-    id: 'srv-4',
-    deptId: 'education',
-    deptNameEn: 'Higher & Technical Education',
-    deptNameMr: 'उच्च व तंत्रशिक्षण विभाग',
-    titleEn: 'Post-Matric Scholarship for OBC / EBC Students',
-    titleMr: 'इतर मागासवर्गीय व ईबीसी विद्यार्थ्यांसाठी मॅट्रिकोत्तर शिष्यवृत्ती',
-    descEn: '100% Tuition fee and examination fee reimbursement disbursed directly through DBT into student Aadhaar-seeded bank account.',
-    descMr: 'विद्यार्थ्यांच्या आधार जोडणी असलेल्या बँक खात्यात १००% शिक्षण व परीक्षा शुल्क थेट परतावा.',
-    sla: '14 Days',
-    documentsEn: ['Income Certificate (< ₹8 Lakhs)', 'Caste Certificate', 'College Allotment Letter', 'HSC / SSC Marksheet'],
-    documentsMr: ['उत्पन्न दाखला (< ₹८ लाख)', 'जात प्रमाणपत्र', 'महाविद्यालय वाटप पत्र', 'गुणपत्रिका'],
-    applyLink: '/scholarship-application'
-  },
-  {
-    id: 'srv-5',
-    deptId: 'education',
-    deptNameEn: 'Higher & Technical Education',
-    deptNameMr: 'उच्च व तंत्रशिक्षण विभाग',
-    titleEn: 'Rajarshi Chhatrapati Shahu Maharaj Shikshan Shulkh Yojna',
-    titleMr: 'राजर्षी छत्रपती शाहू महाराज शिक्षण शुल्क शिष्यवृत्ती योजना',
-    descEn: '50% tuition and exam fee waiver for Economically Weaker Section (EWS/Open) students in professional colleges.',
-    descMr: 'व्यावसायिक अभ्यासक्रमांमधील ईडब्ल्यूएस व खुल्या प्रवर्गातील विद्यार्थ्यांसाठी ५०% शिक्षण शुल्क सवलत.',
-    sla: '14 Days',
-    documentsEn: ['Income Certificate (< ₹8 Lakh)', 'CAP Admission Letter', 'Maharashtra Domicile Certificate'],
-    documentsMr: ['उत्पन्न दाखला (< ₹८ लाख)', 'कॅप प्रवेश पत्र', 'महाराष्ट्र अधिवास दाखला'],
-    applyLink: '/scholarship-application'
-  },
-  {
-    id: 'srv-6',
-    deptId: 'social',
-    deptNameEn: 'Social Justice & Special Assistance',
-    deptNameMr: 'सामाजिक न्याय व विशेष सहाय्य',
-    titleEn: 'Caste Validity Certificate (Scrutiny Committee)',
-    titleMr: 'जात पडताळणी वैधता प्रमाणपत्र (छाननी समिती)',
-    descEn: 'Mandatory verification certificate for admissions to professional medical/engineering colleges and government employment.',
-    descMr: 'व्यावसायिक महाविद्यालये व शासकीय नोकऱ्यांसाठी अनिवार्य जात वैधता प्रमाणपत्र.',
-    sla: '21 Days',
-    documentsEn: ['Affidavit Form 3', 'Genealogy Tree (वंशावळ)', 'Oldest available family records (1950/1961)'],
-    documentsMr: ['प्रतिज्ञापत्र (नमुना ३)', 'वंशावळ', 'कुटुंबातील जुने पुरावे (१९५०/१९६१)'],
-    applyLink: '/scholarship-application'
-  },
-  {
-    id: 'srv-7',
-    deptId: 'agriculture',
-    deptNameEn: 'Agriculture & Farmers Welfare',
-    deptNameMr: 'कृषी विभाग',
-    titleEn: 'Namo Shetkari Mahasanman Nidhi Yojana',
-    titleMr: 'नमो शेतकरी महासन्मान निधी योजना',
-    descEn: 'Annual ₹6,000 direct income support disbursed in three equal installments to verified landholder farmers.',
-    descMr: 'शेतकऱ्यांना वार्षिक ₹६,००० थेट बँक अनुदान तीन समान हप्त्यांमध्ये.',
-    sla: '7 Days',
-    documentsEn: ['Aadhaar Number', 'e-Pik Pahani Crop Survey', '7/12 Land Record'],
-    documentsMr: ['आधार क्रमांक', 'ई-पीक पाहणी', '७/१२ उतारा'],
-    applyLink: '/schemes'
-  },
-  {
-    id: 'srv-8',
-    deptId: 'food',
-    deptNameEn: 'Food & Civil Supplies',
-    deptNameMr: 'अन्न व नागरी पुरवठा विभाग',
-    titleEn: 'Addition / Modification of Member in Ration Card',
-    titleMr: 'शिधापत्रिकेत (रेशन कार्ड) नवीन नाव समाविष्ट करणे',
-    descEn: 'Add newborn or spouse to family digital ration card for subsidised food grains under NFSA.',
-    descMr: 'राष्ट्रीय अन्न सुरक्षा योजनेअंतर्गत कुटुंबाच्या रेशन कार्डवर नवीन सदस्याचे नाव जोडणे.',
-    sla: '5 Days',
-    documentsEn: ['Existing Ration Card', 'Birth / Marriage Certificate', 'Aadhaar Card of Member'],
-    documentsMr: ['मूळ रेशन कार्ड', 'जन्म / विवाह नोंदणी दाखला', 'सदस्याचे आधार कार्ड'],
-    applyLink: '/track'
-  }
-];
+import { ALL_SERVICES, ServiceConfig } from '@/lib/servicesConfig';
 
 function ServicesContent() {
   const { language } = useApp();
@@ -153,7 +24,7 @@ function ServicesContent() {
   ];
 
   const filteredServices = useMemo(() => {
-    return allServices.filter((srv) => {
+    return ALL_SERVICES.filter((srv) => {
       const matchesDept = selectedDept === 'all' || srv.deptId === selectedDept;
       const query = searchQuery.toLowerCase();
       const matchesQuery =
@@ -267,7 +138,7 @@ function ServicesContent() {
 
             <div className="pt-5 mt-4 border-t border-slate-100 flex items-center gap-3">
               <Link
-                href={srv.applyLink}
+                href={srv.applicationRoute}
                 className="flex-1 bg-[#f47920] hover:bg-[#d86815] text-white text-center font-bold py-2.5 px-4 rounded-lg text-xs transition shadow-sm flex items-center justify-center gap-1"
               >
                 <span>{language === 'mr' ? 'ऑनलाइन अर्ज करा' : 'Apply Online'}</span>
