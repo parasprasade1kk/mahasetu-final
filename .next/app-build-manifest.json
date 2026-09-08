@@ -11,6 +11,11 @@
       "static/css/app/layout.css",
       "static/chunks/app/layout.js"
     ],
+    "/eligibility-checker/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/eligibility-checker/page.js"
+    ],
     "/scheme-finder/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",

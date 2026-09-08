@@ -1,4 +1,5 @@
 {
-  "/scheme-finder/page": "app/scheme-finder/page.js",
-  "/page": "app/page.js"
+  "/eligibility-checker/page": "app/eligibility-checker/page.js",
+  "/page": "app/page.js",
+  "/scheme-finder/page": "app/scheme-finder/page.js"
 }
