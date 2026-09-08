@@ -22,7 +22,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
     // Case 2: Citizen IS logged in, but has not completed Basic Profile Setup
     if (isLoggedIn && !isProfileComplete) {
-      if (pathname !== '/onboarding') {
+      if (pathname !== '/onboarding' && pathname !== '/profile') {
         router.replace('/onboarding');
       }
       return;
@@ -30,8 +30,11 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
     // Case 3: Citizen IS logged in and profile IS complete
     if (isLoggedIn && isProfileComplete) {
-      if (pathname === '/login' || pathname === '/onboarding') {
+      if (pathname === '/login') {
         router.replace('/dashboard');
+      }
+      if (pathname === '/onboarding') {
+        router.replace('/profile');
       }
     }
   }, [isAuthLoaded, isLoggedIn, isProfileComplete, pathname, router]);
@@ -54,7 +57,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     return null;
   }
 
-  if (isLoggedIn && !isProfileComplete && pathname !== '/onboarding') {
+  if (isLoggedIn && !isProfileComplete && pathname !== '/onboarding' && pathname !== '/profile') {
     return null;
   }
 

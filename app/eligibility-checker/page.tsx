@@ -45,8 +45,25 @@ export default function EligibilityCheckerPage() {
         }
       }
       if (savedProfile.age) setAge(savedProfile.age);
-      if (savedProfile.occupation) setOccupation(savedProfile.occupation.toLowerCase());
-      if (savedProfile.educationLevel) setEducationLevel(savedProfile.educationLevel);
+      if (savedProfile.occupation) {
+        const occ = savedProfile.occupation.toLowerCase();
+        if (occ.includes('farmer') || occ.includes('agricultural')) setOccupation('farmer');
+        else if (occ.includes('student')) setOccupation('student');
+        else if (occ.includes('senior') || occ.includes('retired')) setOccupation('senior');
+        else if (occ.includes('unemployed')) setOccupation('unemployed');
+        else if (occ.includes('private') || occ.includes('salaried') || occ.includes('employee') || occ.includes('job')) setOccupation('salaried');
+        else setOccupation('student');
+      }
+
+      if (savedProfile.educationLevel) {
+        const edu = savedProfile.educationLevel.toLowerCase();
+        if (edu.includes('post') || edu.includes('doctorate')) setEducationLevel('Postgraduate');
+        else if (edu.includes('diploma')) setEducationLevel('Diploma');
+        else if (edu.includes('school') || edu.includes('10th') || edu.includes('12th') || edu.includes('primary')) setEducationLevel('School');
+        else if (edu.includes('illiterate')) setEducationLevel('None');
+        else setEducationLevel('Undergraduate');
+      }
+
       if (savedProfile.hasDisability !== undefined) setHasDisability(savedProfile.hasDisability);
       if (savedProfile.gender) {
         setGender(savedProfile.gender === 'Male' ? 'male' : savedProfile.gender === 'Female' ? 'female' : 'any');

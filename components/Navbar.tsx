@@ -109,6 +109,14 @@ export default function Navbar() {
                       {language === 'mr' ? 'नागरिक डॅशबोर्ड' : 'Citizen Dashboard'}
                     </Link>
                     <Link
+                      href="/profile"
+                      onClick={() => setUserDropdownOpen(false)}
+                      className="flex items-center gap-2 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                    >
+                      <span className="material-symbols-outlined text-[16px] text-[#003b5a]">manage_accounts</span>
+                      {language === 'mr' ? 'माझी प्रोफाइल अद्ययावत करा' : 'Update Profile'}
+                    </Link>
+                    <Link
                       href="/documents"
                       onClick={() => setUserDropdownOpen(false)}
                       className="flex items-center gap-2 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"

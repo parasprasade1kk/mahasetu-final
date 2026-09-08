@@ -13,14 +13,32 @@ export default function DashboardPage() {
   // Dynamically evaluate schemes if userProfile is available
   const evaluatedSchemes = useMemo(() => {
     if (!userProfile) return [];
+
+    // Normalize occupation for rule engine
+    let occ = (userProfile.occupation || '').toLowerCase();
+    if (occ.includes('farmer') || occ.includes('agricultural')) occ = 'farmer';
+    else if (occ.includes('student')) occ = 'student';
+    else if (occ.includes('private') || occ.includes('salaried') || occ.includes('business') || occ.includes('employee')) occ = 'salaried';
+    else if (occ.includes('unemployed')) occ = 'unemployed';
+    else if (occ.includes('retired')) occ = 'senior';
+
+    // Normalize education for rule engine
+    let edu = 'Undergraduate';
+    const rawEdu = (userProfile.educationLevel || '').toLowerCase();
+    if (rawEdu.includes('post') || rawEdu.includes('doctorate')) edu = 'Postgraduate';
+    else if (rawEdu.includes('diploma')) edu = 'Diploma';
+    else if (rawEdu.includes('school') || rawEdu.includes('10th') || rawEdu.includes('12th')) edu = 'School';
+    else if (rawEdu.includes('illiterate')) edu = 'None';
+    else if (rawEdu.includes('grad')) edu = 'Undergraduate';
+
     const engineProfile: UserProfile = {
       category: userProfile.category === 'General/Open' ? 'OPEN' : userProfile.category,
       annualIncome: userProfile.annualIncomeAmount,
       age: userProfile.age,
-      occupation: userProfile.occupation.toLowerCase(),
-      educationLevel: userProfile.educationLevel,
-      isStudent: userProfile.isStudent,
-      hasDisability: userProfile.hasDisability,
+      occupation: occ,
+      educationLevel: edu,
+      isStudent: Boolean(userProfile.isStudent),
+      hasDisability: Boolean(userProfile.hasDisability),
       isMaharashtraResident: true,
       gender: userProfile.gender === 'Male' ? 'male' : userProfile.gender === 'Female' ? 'female' : 'any',
       district: userProfile.district,
@@ -111,43 +129,73 @@ export default function DashboardPage() {
             <span>{language === 'mr' ? 'एआय योजना शोधा' : 'Find Schemes'}</span>
           </Link>
           <Link
-            href="/onboarding"
+            href="/profile"
             className="bg-[#003b5a] hover:bg-[#002840] text-white px-4 py-2.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-sm"
           >
-            <span className="material-symbols-outlined text-[18px]">badge</span>
-            <span>{language === 'mr' ? 'प्रोफाइल संपादित करा' : 'Update Profile'}</span>
+            <span className="material-symbols-outlined text-[18px]">edit</span>
+            <span>{language === 'mr' ? 'प्रोफाइल अद्ययावत करा' : 'Update Profile'}</span>
           </Link>
         </div>
       </div>
 
-      {/* Citizen Profile Snapshot Badge (if profile exists) */}
-      {userProfile && (
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50/50 rounded-2xl p-5 border border-blue-200 shadow-sm flex flex-wrap items-center justify-between gap-4">
+      {/* Citizen Profile Status & Snapshot Details */}
+      {userProfile ? (
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50/50 rounded-2xl p-5 border border-blue-200 shadow-sm space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <span className="w-10 h-10 rounded-xl bg-[#003b5a] text-amber-400 flex items-center justify-center flex-shrink-0">
+                <span className="material-symbols-outlined text-[20px]">assignment_ind</span>
+              </span>
+              <div>
+                <div className="flex items-center gap-2">
+                  <p className="text-xs font-bold text-[#003b5a]">
+                    {language === 'mr' ? 'नागरिक प्रोफाइल तपशील सक्रिय' : 'Active Citizen Profile Details'}
+                  </p>
+                  <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-300">
+                    <span className="material-symbols-outlined text-[12px]">check_circle</span>
+                    Profile Status: Complete
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-600 mt-0.5">
+                  Category: <strong className="text-slate-800">{userProfile.category}</strong> • Occupation: <strong className="text-slate-800">{userProfile.occupation}</strong> • Age: <strong className="text-slate-800">{userProfile.age} yrs</strong> • Income: <strong className="text-slate-800">{userProfile.annualIncomeTier}</strong>
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Link
+                href="/profile"
+                className="text-xs font-bold text-[#003b5a] hover:bg-[#003b5a] hover:text-white px-3 py-1.5 rounded-lg border border-[#003b5a] transition flex items-center gap-1"
+              >
+                <span className="material-symbols-outlined text-[14px]">edit</span>
+                <span>Update Profile</span>
+              </Link>
+              <Link
+                href="/eligibility-checker"
+                className="text-xs font-bold text-white bg-[#003b5a] hover:bg-[#002840] px-3 py-1.5 rounded-lg transition flex items-center gap-1"
+              >
+                <span>Check Eligibility</span>
+                <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="p-4 bg-amber-50 border-2 border-amber-300 rounded-2xl flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <span className="w-10 h-10 rounded-xl bg-[#003b5a] text-amber-400 flex items-center justify-center flex-shrink-0">
-              <span className="material-symbols-outlined text-[20px]">assignment_ind</span>
-            </span>
+            <span className="material-symbols-outlined text-amber-600 text-[24px]">warning</span>
             <div>
-              <p className="text-xs font-bold text-[#003b5a]">
-                {language === 'mr' ? 'नागरिक प्रोफाइल तपशील सक्रिय' : 'Active Citizen Profile Details'}
-              </p>
-              <p className="text-[11px] text-slate-600 mt-0.5">
-                Category: <strong>{userProfile.category}</strong> • Occupation: <strong>{userProfile.occupation}</strong> • Age: <strong>{userProfile.age} yrs</strong> • Income: <strong>{userProfile.annualIncomeTier}</strong>
+              <p className="text-xs font-bold text-amber-900">Your profile is incomplete.</p>
+              <p className="text-[11px] text-amber-800">
+                Please complete your citizen profile to unlock personalized scheme recommendations and eligibility checks.
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] font-bold text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-full border border-emerald-300">
-              ✓ Smart Engine Synced
-            </span>
-            <Link
-              href="/eligibility-checker"
-              className="text-xs font-bold text-[#003b5a] hover:underline flex items-center gap-1"
-            >
-              <span>Check Eligibility</span>
-              <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
-            </Link>
-          </div>
+          <Link
+            href="/profile"
+            className="px-4 py-2 bg-[#003b5a] text-white rounded-xl text-xs font-bold hover:bg-[#002840] transition"
+          >
+            Complete Profile
+          </Link>
         </div>
       )}
 

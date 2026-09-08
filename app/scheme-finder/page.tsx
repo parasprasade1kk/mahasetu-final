@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useApp } from '@/context/AppContext';
 import { findMatchingSchemes, ScoredScheme } from '@/lib/schemeMatcher';
-import { Scheme } from '@/lib/schemeDatabase';
+import { Scheme, ALL_SCHEMES } from '@/lib/schemeDatabase';
+import { evaluateAllSchemes, UserProfile } from '@/lib/eligibilityEngine';
 
 // ─── Translations ─────────────────────────────────────────────────────────────
 const t: Record<string, Record<string, string>> = {
@@ -340,6 +341,47 @@ export default function SchemeFinderPage() {
     return `MH-SCH-2026-${String(num).padStart(5, '0')}`;
   });
 
+  // Dynamically compute recommended schemes based on userProfile
+  const evaluatedList = useMemo(() => {
+    if (!userProfile) return [];
+    let occ = (userProfile.occupation || '').toLowerCase();
+    if (occ.includes('farmer') || occ.includes('agricultural')) occ = 'farmer';
+    else if (occ.includes('student')) occ = 'student';
+    else if (occ.includes('private') || occ.includes('salaried') || occ.includes('employee') || occ.includes('job')) occ = 'salaried';
+    else if (occ.includes('unemployed')) occ = 'unemployed';
+    else if (occ.includes('retired')) occ = 'senior';
+
+    let edu = 'Undergraduate';
+    const rawEdu = (userProfile.educationLevel || '').toLowerCase();
+    if (rawEdu.includes('post') || rawEdu.includes('doctorate')) edu = 'Postgraduate';
+    else if (rawEdu.includes('diploma')) edu = 'Diploma';
+    else if (rawEdu.includes('school') || rawEdu.includes('10th') || rawEdu.includes('12th')) edu = 'School';
+    else if (rawEdu.includes('illiterate')) edu = 'None';
+
+    const engineProfile: UserProfile = {
+      category: userProfile.category === 'General/Open' ? 'OPEN' : userProfile.category,
+      annualIncome: userProfile.annualIncomeAmount,
+      age: userProfile.age,
+      occupation: occ,
+      educationLevel: edu,
+      isStudent: Boolean(userProfile.isStudent),
+      hasDisability: Boolean(userProfile.hasDisability),
+      isMaharashtraResident: true,
+      gender: userProfile.gender === 'Male' ? 'male' : userProfile.gender === 'Female' ? 'female' : 'any',
+      district: userProfile.district,
+    };
+    return evaluateAllSchemes(engineProfile);
+  }, [userProfile]);
+
+  const topRecommended = useMemo(() => {
+    if (evaluatedList.length > 0) {
+      return evaluatedList
+        .filter(s => s.status === 'eligible' || s.status === 'possible')
+        .slice(0, 3);
+    }
+    return [];
+  }, [evaluatedList]);
+
   // ─── Run Matching ──────────────────────────────────────────────────────────
   const runFinder = (q: string) => {
     const results = findMatchingSchemes(q);
@@ -464,47 +506,88 @@ export default function SchemeFinderPage() {
               <span className="text-[#003b5a] text-sm font-semibold cursor-pointer hover:underline">{tx(lang, 'view_all')}</span>
             </div>
 
-            {/* Scheme Card 1 */}
-            <button
-              onClick={() => runFinder('Post-Matric Scholarship for higher education students')}
-              className="w-full bg-white border border-slate-200 p-4 rounded-xl shadow-gov hover:shadow-gov-md hover:border-[#003b5a]/40 cursor-pointer transition-all space-y-3 text-left"
-            >
-              <div className="flex justify-between items-start">
-                <div>
-                  <span className="text-xs text-emerald-700 font-medium bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                    {tx(lang, 'match_92')}
-                  </span>
-                  <h4 className="text-base font-bold text-[#003b5a] mt-1.5">{tx(lang, 'sch_1_title')}</h4>
-                </div>
-                <span className="material-symbols-outlined text-slate-400">chevron_right</span>
-              </div>
-              <p className="text-sm text-slate-600 line-clamp-2">{tx(lang, 'sch_1_desc')}</p>
-              <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs text-slate-500">
-                <span>{tx(lang, 'dept_edu')}</span>
-                <span className="text-[#003b5a] font-semibold">{tx(lang, 'benefit_amt')}</span>
-              </div>
-            </button>
+            {/* Dynamic Recommended Scheme Cards */}
+            {topRecommended.length > 0 ? (
+              topRecommended.map((item) => (
+                <button
+                  key={item.scheme.id}
+                  onClick={() => {
+                    setSelectedScheme(item.scheme);
+                    setSelectedMatchReasons(lang === 'mr' ? item.passedReasonsMr : item.passedReasonsEn);
+                    setMatchReasonsOpen(false);
+                    goTo(5);
+                  }}
+                  className="w-full bg-white border border-slate-200 p-4 rounded-xl shadow-gov hover:shadow-gov-md hover:border-[#003b5a]/40 cursor-pointer transition-all space-y-2.5 text-left"
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded border ${
+                        item.status === 'eligible' 
+                          ? 'text-emerald-700 bg-emerald-50 border-emerald-200' 
+                          : 'text-[#003b5a] bg-[#e5eeff] border-[#9bccf6]'
+                      }`}>
+                        {item.status === 'eligible' ? '95% Match • Eligible' : '85% Match • High Fit'}
+                      </span>
+                      <h4 className="text-base font-bold text-[#003b5a] mt-1.5">
+                        {lang === 'mr' ? item.scheme.nameMr : item.scheme.name}
+                      </h4>
+                    </div>
+                    <span className="material-symbols-outlined text-slate-400">chevron_right</span>
+                  </div>
+                  <p className="text-sm text-slate-600 line-clamp-2">
+                    {lang === 'mr' ? item.scheme.descriptionMr : item.scheme.description}
+                  </p>
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs text-slate-500">
+                    <span>{lang === 'mr' ? item.scheme.departmentMr : item.scheme.department}</span>
+                    <span className="text-[#003b5a] font-semibold">{item.scheme.benefits}</span>
+                  </div>
+                </button>
+              ))
+            ) : (
+              <>
+                {/* Fallback Scheme Card 1 */}
+                <button
+                  onClick={() => runFinder('Post-Matric Scholarship for higher education students')}
+                  className="w-full bg-white border border-slate-200 p-4 rounded-xl shadow-gov hover:shadow-gov-md hover:border-[#003b5a]/40 cursor-pointer transition-all space-y-3 text-left"
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="text-xs text-emerald-700 font-medium bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                        {tx(lang, 'match_92')}
+                      </span>
+                      <h4 className="text-base font-bold text-[#003b5a] mt-1.5">{tx(lang, 'sch_1_title')}</h4>
+                    </div>
+                    <span className="material-symbols-outlined text-slate-400">chevron_right</span>
+                  </div>
+                  <p className="text-sm text-slate-600 line-clamp-2">{tx(lang, 'sch_1_desc')}</p>
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs text-slate-500">
+                    <span>{tx(lang, 'dept_edu')}</span>
+                    <span className="text-[#003b5a] font-semibold">{tx(lang, 'benefit_amt')}</span>
+                  </div>
+                </button>
 
-            {/* Scheme Card 2 */}
-            <button
-              onClick={() => runFinder('farmer agricultural assistance debt waiver')}
-              className="w-full bg-white border border-slate-200 p-4 rounded-xl shadow-gov hover:shadow-gov-md hover:border-[#003b5a]/40 cursor-pointer transition-all space-y-3 text-left"
-            >
-              <div className="flex justify-between items-start">
-                <div>
-                  <span className="text-xs text-[#003b5a] font-medium bg-[#e5eeff] px-2 py-0.5 rounded border border-[#9bccf6]">
-                    {tx(lang, 'match_85')}
-                  </span>
-                  <h4 className="text-base font-bold text-[#003b5a] mt-1.5">{tx(lang, 'sch_2_title')}</h4>
-                </div>
-                <span className="material-symbols-outlined text-slate-400">chevron_right</span>
-              </div>
-              <p className="text-sm text-slate-600 line-clamp-2">{tx(lang, 'sch_2_desc')}</p>
-              <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs text-slate-500">
-                <span>{tx(lang, 'dept_agri')}</span>
-                <span className="text-[#003b5a] font-semibold">{tx(lang, 'benefit_up_to')}</span>
-              </div>
-            </button>
+                {/* Fallback Scheme Card 2 */}
+                <button
+                  onClick={() => runFinder('farmer agricultural assistance debt waiver')}
+                  className="w-full bg-white border border-slate-200 p-4 rounded-xl shadow-gov hover:shadow-gov-md hover:border-[#003b5a]/40 cursor-pointer transition-all space-y-3 text-left"
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="text-xs text-[#003b5a] font-medium bg-[#e5eeff] px-2 py-0.5 rounded border border-[#9bccf6]">
+                        {tx(lang, 'match_85')}
+                      </span>
+                      <h4 className="text-base font-bold text-[#003b5a] mt-1.5">{tx(lang, 'sch_2_title')}</h4>
+                    </div>
+                    <span className="material-symbols-outlined text-slate-400">chevron_right</span>
+                  </div>
+                  <p className="text-sm text-slate-600 line-clamp-2">{tx(lang, 'sch_2_desc')}</p>
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs text-slate-500">
+                    <span>{tx(lang, 'dept_agri')}</span>
+                    <span className="text-[#003b5a] font-semibold">{tx(lang, 'benefit_up_to')}</span>
+                  </div>
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}

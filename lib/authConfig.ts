@@ -23,18 +23,22 @@ export interface CitizenProfile {
   maritalStatus: 'Single' | 'Married' | 'Divorced' | 'Widowed';
 
   // Address
+  state?: string;
   district: string;
   taluka: string;
   villageCity: string;
   pinCode: string;
 
   // Socio-Economic
-  annualIncomeTier: 'under-50k' | '50k-1L' | '1L-2.5L' | '2.5L-8L' | 'above-8L';
+  annualIncomeTier: 'under-50k' | '50k-1L' | '1L-2.5L' | '2.5L-8L' | 'above-8L' | string;
   annualIncomeAmount: number;
-  occupation: 'Farmer' | 'Agricultural Labourer' | 'Student' | 'Self-Employed / Business' | 'Unemployed' | 'Private Job' | 'Government Employee' | 'Retired';
-  educationLevel: 'Illiterate' | 'Primary School' | '10th Pass' | '12th Pass' | 'Diploma' | 'Graduate' | 'Post Graduate' | 'Doctorate';
+  occupation: 'Farmer' | 'Agricultural Labourer' | 'Student' | 'Self-Employed / Business' | 'Unemployed' | 'Private Job' | 'Government Employee' | 'Retired' | string;
+  educationLevel: 'Illiterate' | 'Primary School' | '10th Pass' | '12th Pass' | 'Diploma' | 'Graduate' | 'Post Graduate' | 'Doctorate' | string;
   isStudent: boolean;
   currentCourse?: string;
+  courseClass?: string;
+  institutionType?: string;
+  academicYear?: string;
   hasDisability: boolean;
   disabilityType?: string;
   disabilityPercentage?: number;
