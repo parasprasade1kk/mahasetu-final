@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { RegisteredUser, CitizenProfile, findAuthorizedUser, ACCESS_DENIED_ERROR_MESSAGE } from '@/lib/authConfig';
 
 type Language = 'en' | 'mr';
 type FontSize = 'normal' | 'large' | 'xlarge';
@@ -32,6 +33,15 @@ export interface ConsentItem {
   validUntil: string;
 }
 
+interface AppUser {
+  name: string;
+  aadhaarMasked: string;
+  mobile: string;
+  email: string;
+  district: string;
+  digiLockerLinked: boolean;
+}
+
 interface AppContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
@@ -39,17 +49,22 @@ interface AppContextType {
   setFontSize: (size: FontSize) => void;
   isHighContrast: boolean;
   setIsHighContrast: (val: boolean) => void;
+
+  // Authentication & Profile State
+  isAuthLoaded: boolean;
   isLoggedIn: boolean;
-  user: {
-    name: string;
-    aadhaarMasked: string;
-    mobile: string;
-    email: string;
-    district: string;
-    digiLockerLinked: boolean;
-  };
-  login: () => void;
+  currentUser: RegisteredUser | null;
+  userProfile: CitizenProfile | null;
+  isProfileComplete: boolean;
+  loginWithMobile: (mobile: string) => { success: boolean; user?: RegisteredUser; error?: string };
+  saveUserProfile: (profile: CitizenProfile) => void;
+  login: () => void; // Legacy fallback
   logout: () => void;
+
+  // Dynamic user object for backward compatibility
+  user: AppUser;
+
+  // Applications & Consents
   applications: ApplicationRecord[];
   addApplication: (app: ApplicationRecord) => void;
   consents: ConsentItem[];
@@ -67,7 +82,7 @@ const initialApplications: ApplicationRecord[] = [
     status: 'Approved / Issued',
     statusColor: 'bg-emerald-100 text-emerald-800 border-emerald-300',
     downloadUrl: '#',
-    applicantName: 'Rajesh Patil',
+    applicantName: 'Paras Prasade',
     district: 'Pune'
   },
   {
@@ -79,7 +94,7 @@ const initialApplications: ApplicationRecord[] = [
     appliedDate: '04 Sep 2026',
     status: 'Under Scrutiny',
     statusColor: 'bg-amber-100 text-amber-800 border-amber-300',
-    applicantName: 'Rajesh Patil',
+    applicantName: 'Paras Prasade',
     district: 'Pune'
   },
   {
@@ -91,7 +106,7 @@ const initialApplications: ApplicationRecord[] = [
     appliedDate: '28 Aug 2026',
     status: 'Field Verification',
     statusColor: 'bg-blue-100 text-blue-800 border-blue-300',
-    applicantName: 'Rajesh Patil',
+    applicantName: 'Paras Prasade',
     district: 'Pune'
   }
 ];
@@ -135,27 +150,120 @@ const initialConsents: ConsentItem[] = [
   }
 ];
 
+const STORAGE_KEY_AUTH_USER = 'mahasetu_auth_user';
+const STORAGE_KEY_USER_PROFILE = 'mahasetu_user_profile_';
+
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguage] = useState<Language>('en');
   const [fontSize, setFontSize] = useState<FontSize>('normal');
   const [isHighContrast, setIsHighContrast] = useState<boolean>(false);
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(true);
+
+  // Authentication State
+  const [isAuthLoaded, setIsAuthLoaded] = useState<boolean>(false);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+  const [currentUser, setCurrentUser] = useState<RegisteredUser | null>(null);
+  const [userProfile, setUserProfile] = useState<CitizenProfile | null>(null);
+
   const [applications, setApplications] = useState<ApplicationRecord[]>(initialApplications);
   const [consents, setConsents] = useState<ConsentItem[]>(initialConsents);
 
-  const user = {
-    name: language === 'mr' ? 'राजेश पाटिल' : 'Rajesh Patil',
-    aadhaarMasked: 'XXXX-XXXX-4821',
-    mobile: '+91 98230 *****',
-    email: 'rajesh.patil@example.in',
-    district: language === 'mr' ? 'पुणे (महाराष्ट्र)' : 'Pune (Maharashtra)',
-    digiLockerLinked: true
+  // Load authentication from localStorage on mount
+  useEffect(() => {
+    try {
+      const savedUserStr = localStorage.getItem(STORAGE_KEY_AUTH_USER);
+      if (savedUserStr) {
+        const savedUser: RegisteredUser = JSON.parse(savedUserStr);
+        // Verify user is legitimately authorized
+        const verified = findAuthorizedUser(savedUser.mobile);
+        if (verified) {
+          setCurrentUser(verified);
+          setIsLoggedIn(true);
+
+          // Check if profile exists for this mobile
+          const savedProfileStr = localStorage.getItem(`${STORAGE_KEY_USER_PROFILE}${verified.mobile}`);
+          if (savedProfileStr) {
+            setUserProfile(JSON.parse(savedProfileStr));
+          }
+        } else {
+          localStorage.removeItem(STORAGE_KEY_AUTH_USER);
+        }
+      }
+    } catch {
+      // Ignore JSON parse errors on invalid storage
+    } finally {
+      setIsAuthLoaded(true);
+    }
+  }, []);
+
+  const isProfileComplete = Boolean(userProfile && userProfile.confirmedAccurate);
+
+  const loginWithMobile = (mobile: string): { success: boolean; user?: RegisteredUser; error?: string } => {
+    const authorized = findAuthorizedUser(mobile);
+    if (!authorized) {
+      return {
+        success: false,
+        error: ACCESS_DENIED_ERROR_MESSAGE
+      };
+    }
+
+    setCurrentUser(authorized);
+    setIsLoggedIn(true);
+    try {
+      localStorage.setItem(STORAGE_KEY_AUTH_USER, JSON.stringify(authorized));
+      const profileKey = `${STORAGE_KEY_USER_PROFILE}${authorized.mobile}`;
+      const existingProfileStr = localStorage.getItem(profileKey);
+      if (existingProfileStr) {
+        setUserProfile(JSON.parse(existingProfileStr));
+      } else {
+        setUserProfile(null);
+      }
+    } catch {
+      // Storage quota or browser privacy mode
+    }
+
+    return {
+      success: true,
+      user: authorized
+    };
   };
 
-  const login = () => setIsLoggedIn(true);
-  const logout = () => setIsLoggedIn(false);
+  const saveUserProfile = (profile: CitizenProfile) => {
+    setUserProfile(profile);
+    if (currentUser) {
+      try {
+        localStorage.setItem(`${STORAGE_KEY_USER_PROFILE}${currentUser.mobile}`, JSON.stringify(profile));
+      } catch {
+        // Handle error gracefully
+      }
+    }
+  };
+
+  const login = () => {
+    // Default fallback to first authorized citizen if called without args
+    const defaultUser = findAuthorizedUser('7276218598');
+    if (defaultUser) {
+      setCurrentUser(defaultUser);
+      setIsLoggedIn(true);
+      try {
+        localStorage.setItem(STORAGE_KEY_AUTH_USER, JSON.stringify(defaultUser));
+      } catch {
+        // Ignore
+      }
+    }
+  };
+
+  const logout = () => {
+    setIsLoggedIn(false);
+    setCurrentUser(null);
+    setUserProfile(null);
+    try {
+      localStorage.removeItem(STORAGE_KEY_AUTH_USER);
+    } catch {
+      // Ignore
+    }
+  };
 
   const addApplication = (app: ApplicationRecord) => {
     setApplications(prev => [app, ...prev]);
@@ -173,6 +281,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     );
   };
 
+  // Dynamically constructed backward-compatible user object
+  const user: AppUser = {
+    name: currentUser
+      ? (language === 'mr' ? currentUser.nameMr : currentUser.name)
+      : (language === 'mr' ? 'नागरिक' : 'Citizen'),
+    aadhaarMasked: currentUser ? currentUser.aadhaarMasked : 'XXXX-XXXX-0000',
+    mobile: currentUser ? `+91 ${currentUser.mobile}` : '+91 XXXXX XXXXX',
+    email: currentUser ? currentUser.email : 'citizen@mahasetu.gov.in',
+    district: userProfile
+      ? (language === 'mr' ? `${userProfile.district} (महाराष्ट्र)` : `${userProfile.district} (Maharashtra)`)
+      : (language === 'mr' ? 'पुणे (महाराष्ट्र)' : 'Pune (Maharashtra)'),
+    digiLockerLinked: true
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -182,10 +304,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setFontSize,
         isHighContrast,
         setIsHighContrast,
+        isAuthLoaded,
         isLoggedIn,
-        user,
+        currentUser,
+        userProfile,
+        isProfileComplete,
+        loginWithMobile,
+        saveUserProfile,
         login,
         logout,
+        user,
         applications,
         addApplication,
         consents,

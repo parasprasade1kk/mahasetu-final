@@ -2,11 +2,12 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 
 export default function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { language, isLoggedIn, user, logout } = useApp();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
@@ -128,6 +129,7 @@ export default function Navbar() {
                       onClick={() => {
                         logout();
                         setUserDropdownOpen(false);
+                        router.push('/login');
                       }}
                       className="w-full text-left flex items-center gap-2 px-4 py-2 text-xs font-semibold text-red-600 hover:bg-red-50"
                     >

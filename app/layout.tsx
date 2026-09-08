@@ -4,6 +4,7 @@ import { AppProvider } from "@/context/AppContext";
 import AccessibilityBar from "@/components/AccessibilityBar";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import AuthGuard from "@/components/AuthGuard";
 
 export const metadata: Metadata = {
   title: "MahaSetu | Unified Citizen Services Portal • Government of Maharashtra",
@@ -35,7 +36,9 @@ export default function RootLayout({
           <AccessibilityBar />
           <Navbar />
           <main id="main-content" className="flex-grow">
-            {children}
+            <AuthGuard>
+              {children}
+            </AuthGuard>
           </main>
           <Footer />
         </AppProvider>

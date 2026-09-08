@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useApp } from '@/context/AppContext';
 import { findMatchingSchemes, ScoredScheme } from '@/lib/schemeMatcher';
@@ -292,7 +292,7 @@ const CHIP_QUERIES: Record<string, string> = {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function SchemeFinderPage() {
-  const { language, user, addApplication } = useApp();
+  const { language, user, userProfile, addApplication } = useApp();
   const lang = language === 'mr' ? 'mr' : 'en';
 
   // Screen navigation
@@ -310,6 +310,16 @@ export default function SchemeFinderPage() {
   const [institute, setInstitute] = useState('College of Engineering, Pune (COEP)');
   const [course, setCourse] = useState('B.Tech Final Year (Computer Engineering)');
   const [bankAcc, setBankAcc] = useState('State Bank of India - A/C XXXXXX4821');
+
+  // Sync profile details if available
+  useEffect(() => {
+    if (userProfile) {
+      if (userProfile.fullName) setFullName(userProfile.fullName);
+      if (userProfile.district) setDistrict(userProfile.district);
+      if (userProfile.category) setCategory(userProfile.category);
+      if (userProfile.currentCourse) setCourse(userProfile.currentCourse);
+    }
+  }, [userProfile]);
 
   // AI Scheme Finder state — the core fix
   const [matchedSchemes, setMatchedSchemes] = useState<ScoredScheme[]>([]);

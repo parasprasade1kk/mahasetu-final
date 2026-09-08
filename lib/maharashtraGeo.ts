@@ -1,0 +1,279 @@
+// ─── Maharashtra Districts & Talukas Master Directory ─────────────────────────
+// Complete mapping of all 36 districts of Maharashtra to their respective talukas.
+
+export interface DistrictData {
+  id: string;
+  nameEn: string;
+  nameMr: string;
+  talukasEn: string[];
+  talukasMr: string[];
+}
+
+export const MAHARASHTRA_DISTRICTS: DistrictData[] = [
+  {
+    id: 'ahilyanagar',
+    nameEn: 'Ahilyanagar (Ahmednagar)',
+    nameMr: 'अहिल्यानगर (अहमदनगर)',
+    talukasEn: ['Nagar', 'Rahata', 'Shirdi', 'Sangamner', 'Kopargaon', 'Akole', 'Shrirampur', 'Nevasa', 'Shevgaon', 'Pathardi', 'Jamkhed', 'Karjat', 'Parner', 'Shrigonda'],
+    talukasMr: ['नगर', 'राहाता', 'शिर्डी', 'संगमनेर', 'कोपरगाव', 'अकोले', 'श्रीरामपूर', 'नेवासा', 'शेवगाव', 'पाथर्डी', 'जामखेड', 'कर्जत', 'पारनेर', 'श्रीगोंदा']
+  },
+  {
+    id: 'akola',
+    nameEn: 'Akola',
+    nameMr: 'अकोला',
+    talukasEn: ['Akola', 'Akot', 'Telhara', 'Balapur', 'Patur', 'Murtizapur', 'Barshitakli'],
+    talukasMr: ['अकोला', 'आकोट', 'तेल्हारा', 'बाळापूर', 'पातूर', 'मुर्तिजापूर', 'बार्शीटाकळी']
+  },
+  {
+    id: 'amravati',
+    nameEn: 'Amravati',
+    nameMr: 'अमरावती',
+    talukasEn: ['Amravati', 'Bhatkuli', 'Nandgaon Khandeshwar', 'Dharni', 'Chikhaldara', 'Achalpur', 'Chandurbazar', 'Morshi', 'Warud', 'Daryapur', 'Anjangaon Surji', 'Chandur Railway', 'Dhamangaon Railway', 'Tiosa'],
+    talukasMr: ['अमरावती', 'भातकुली', 'नांदगाव खंडेश्वर', 'धारणी', 'चिखलदरा', 'अचलपूर', 'चांदूरबाजार', 'मोर्शी', 'वरुड', 'दर्यापूर', 'अंजनगाव सुर्जी', 'चांदूर रेल्वे', 'धामणगाव रेल्वे', 'तिवसा']
+  },
+  {
+    id: 'chhatrapati_sambhajinagar',
+    nameEn: 'Chhatrapati Sambhajinagar (Aurangabad)',
+    nameMr: 'छत्रपती संभाजीनगर (औरंगाबाद)',
+    talukasEn: ['Chhatrapati Sambhajinagar', 'Kannad', 'Soegaon', 'Sillod', 'Phulambri', 'Khuldabad', 'Vaijapur', 'Gangapur', 'Paithan'],
+    talukasMr: ['छत्रपती संभाजीनगर', 'कन्नड', 'सोयगाव', 'सिल्लोड', 'फुलंब्री', 'खुलताबाद', 'वैजापूर', 'गंगापूर', 'पैठण']
+  },
+  {
+    id: 'beed',
+    nameEn: 'Beed',
+    nameMr: 'बीड',
+    talukasEn: ['Beed', 'Ashti', 'Patoda', 'Shirur Kasar', 'Georai', 'Majalgaon', 'Wadwani', 'Kaij', 'Dharur', 'Parli', 'Ambejogai'],
+    talukasMr: ['बीड', 'आष्टी', 'पाटोदा', 'शिरूर कासार', 'गेवराई', 'माजलगाव', 'वडवणी', 'केज', 'धारूर', 'परळी', 'अंबाजोगाई']
+  },
+  {
+    id: 'bhandara',
+    nameEn: 'Bhandara',
+    nameMr: 'भंडारा',
+    talukasEn: ['Bhandara', 'Tumsar', 'Pauni', 'Mohadi', 'Sakoli', 'Lakhani', 'Lakhandur'],
+    talukasMr: ['भंडारा', 'तुमसर', 'पौनी', 'मोहाडी', 'साकोली', 'लाखनी', 'लाखांदूर']
+  },
+  {
+    id: 'buldhana',
+    nameEn: 'Buldhana',
+    nameMr: 'बुलढाणा',
+    talukasEn: ['Buldhana', 'Chikhli', 'Deulgaon Raja', 'Jalgaon Jamod', 'Sangrampur', 'Malkapur', 'Motala', 'Nandura', 'Khamgaon', 'Shegaon', 'Mehkar', 'Sindkhed Raja', 'Lonar'],
+    talukasMr: ['बुलढाणा', 'चिखली', 'देऊळगाव राजा', 'जळगाव जामोद', 'संग्रामपूर', 'मलकापूर', 'मोताळा', 'नांदुरा', 'खामगाव', 'शेगाव', 'मेहकर', 'सिंदखेड राजा', 'लोणार']
+  },
+  {
+    id: 'chandrapur',
+    nameEn: 'Chandrapur',
+    nameMr: 'चंद्रपूर',
+    talukasEn: ['Chandrapur', 'Bhadravati', 'Warora', 'Chimur', 'Nagbhid', 'Bramhapuri', 'Sindewahi', 'Mul', 'Saoli', 'Pombhurna', 'Gondpipri', 'Korpana', 'Rajura', 'Jiwati', 'Ballarpur'],
+    talukasMr: ['चंद्रपूर', 'भद्रावती', 'वरोरा', 'चिमूर', 'नागभीड', 'ब्रह्मपुरी', 'सिंदेवाही', 'मूल', 'सावली', 'पोंभूर्णा', 'गोंडपिपरी', 'कोरपना', 'राजूरा', 'जिवती', 'बल्लारपूर']
+  },
+  {
+    id: 'dhule',
+    nameEn: 'Dhule',
+    nameMr: 'धुळे',
+    talukasEn: ['Dhule', 'Sakri', 'Sindkheda', 'Shirpur'],
+    talukasMr: ['धुळे', 'साक्री', 'शिंदखेडा', 'शिरपूर']
+  },
+  {
+    id: 'gadchiroli',
+    nameEn: 'Gadchiroli',
+    nameMr: 'गडचिरोली',
+    talukasEn: ['Gadchiroli', 'Dhanora', 'Chamorshi', 'Mulchera', 'Armori', 'Desaiganj (Wadsa)', 'Kurkheda', 'Korchi', 'Aheri', 'Etapalli', 'Bhamragad', 'Sironcha'],
+    talukasMr: ['गडचिरोली', 'धानोरा', 'चामोर्शी', 'मुलचेरा', 'आरमोरी', 'देसाईगंज (वडसा)', 'कुरखेडा', 'कोरची', 'अहेरी', 'एटापल्ली', 'भामरागड', 'सिरोंचा']
+  },
+  {
+    id: 'gondia',
+    nameEn: 'Gondia',
+    nameMr: 'गोंदिया',
+    talukasEn: ['Gondia', 'Tirora', 'Goregaon', 'Arjuni Morgaon', 'Deori', 'Amgaon', 'Salekasa', 'Sadak Arjuni'],
+    talukasMr: ['गोंदिया', 'तिरोरा', 'गोरेगाव', 'अर्जुनी मोरगाव', 'देवरी', 'आमगाव', 'सालेकसा', 'सडक अर्जुनी']
+  },
+  {
+    id: 'hingoli',
+    nameEn: 'Hingoli',
+    nameMr: 'हिंगोली',
+    talukasEn: ['Hingoli', 'Sengaon', 'Kalamnuri', 'Basmath', 'Aundha Nagnath'],
+    talukasMr: ['हिंगोली', 'सेनगाव', 'कलमनुरी', 'वसमत', 'औंढा नागनाथ']
+  },
+  {
+    id: 'jalgaon',
+    nameEn: 'Jalgaon',
+    nameMr: 'जळगाव',
+    talukasEn: ['Jalgaon', 'Jamner', 'Erandol', 'Dharangaon', 'Bhusawal', 'Raver', 'Muktainagar', 'Bodwad', 'Yawal', 'Amalner', 'Parola', 'Chopda', 'Pachora', 'Bhadgaon', 'Chalisgaon'],
+    talukasMr: ['जळगाव', 'जामनेर', 'एरंडोल', 'धरणगाव', 'भुसावळ', 'रावेर', 'मुक्ताईनगर', 'बोदवड', 'यावल', 'अमळनेर', 'पारोळा', 'चोपडा', 'पाचोरा', 'भडगाव', 'चाळीसगाव']
+  },
+  {
+    id: 'jalna',
+    nameEn: 'Jalna',
+    nameMr: 'जालना',
+    talukasEn: ['Jalna', 'Bhokardan', 'Jafrabad', 'Badnapur', 'Ambad', 'Ghansawangi', 'Partur', 'Mantha'],
+    talukasMr: ['जालना', 'भोकरदन', 'जाफ्राबाद', 'बदनापूर', 'अंबड', 'घनसावंगी', 'परतूर', 'मंठा']
+  },
+  {
+    id: 'kolhapur',
+    nameEn: 'Kolhapur',
+    nameMr: 'कोल्हापूर',
+    talukasEn: ['Karvir', 'Kagal', 'Panhala', 'Shahuwadi', 'Bhadarghat', 'Radhanagari', 'Gaganbawda', 'Bhudargad', 'Gadhinglaj', 'Ajara', 'Chandgad', 'Hatkanangle', 'Shirol'],
+    talukasMr: ['करवीर', 'कागल', 'पन्हाळा', 'शाहूवाडी', 'राधानगरी', 'गगनबावडा', 'भुदरगड', 'गडहिंग्लज', 'आजरा', 'चंदगड', 'हातकणंगले', 'शिरोळ']
+  },
+  {
+    id: 'latur',
+    nameEn: 'Latur',
+    nameMr: 'लातूर',
+    talukasEn: ['Latur', 'Ausa', 'Renapur', 'Ahmedpur', 'Jalkot', 'Chakur', 'Shirur Anantpal', 'Nilanga', 'Deoni', 'Udgir'],
+    talukasMr: ['लातूर', 'औसा', 'रेणापूर', 'अहमदपूर', 'जळकोट', 'चाकूर', 'शिरूर अनंतपाळ', 'निलंगा', 'देवणी', 'उदगीर']
+  },
+  {
+    id: 'mumbai_city',
+    nameEn: 'Mumbai City',
+    nameMr: 'मुंबई शहर',
+    talukasEn: ['Mumbai City', 'Colaba', 'Byculla', 'Dadar', 'Worli', 'Parel'],
+    talukasMr: ['मुंबई शहर', 'कुलाबा', 'भायखळा', 'दादर', 'वरळी', 'परळ']
+  },
+  {
+    id: 'mumbai_suburban',
+    nameEn: 'Mumbai Suburban',
+    nameMr: 'मुंबई उपनगर',
+    talukasEn: ['Andheri', 'Borivali', 'Kurla', 'Bandra', 'Ghatkopar', 'Mulund'],
+    talukasMr: ['अंधेरी', 'बोरिवली', 'कुर्ला', 'वांद्रे', 'घाटकोपर', 'मुलुंड']
+  },
+  {
+    id: 'nagpur',
+    nameEn: 'Nagpur',
+    nameMr: 'नागपूर',
+    talukasEn: ['Nagpur Urban', 'Nagpur Rural', 'Kamptee', 'Hingna', 'Katol', 'Narkhed', 'Savner', 'Kalameshwar', 'Ramtek', 'Mouda', 'Parseoni', 'Umred', 'Kuhi', 'Bhiwapur'],
+    talukasMr: ['नागपूर शहर', 'नागपूर ग्रामीण', 'कामठी', 'हिंगणा', 'काटोल', 'नरखेड', 'सावनेर', 'कळमेश्वर', 'रामटेक', 'मौदा', 'पारशिवनी', 'उमरेड', 'कुही', 'भिवापूर']
+  },
+  {
+    id: 'nanded',
+    nameEn: 'Nanded',
+    nameMr: 'नांदेड',
+    talukasEn: ['Nanded', 'Ardhapur', 'Mudkhed', 'Bhokar', 'Umri', 'Loha', 'Kandhar', 'Kinwat', 'Himayatnagar', 'Hadgaon', 'Mahoor', 'Deglur', 'Mukhed', 'Dharmabad', 'Biloli', 'Naigaon'],
+    talukasMr: ['नांदेड', 'अर्धापूर', 'मुदखेड', 'भोकर', 'उमरी', 'लोहा', 'कंधार', 'किनवट', 'हिमायतनगर', 'हदगाव', 'माहूर', 'देगलूर', 'मुखेड', 'धर्माबाद', 'बिलोली', 'नायगाव']
+  },
+  {
+    id: 'nandurbar',
+    nameEn: 'Nandurbar',
+    nameMr: 'नंदुरबार',
+    talukasEn: ['Nandurbar', 'Navapur', 'Shahada', 'Taloda', 'Akkalkuwa', 'Akrani (Dhadgaon)'],
+    talukasMr: ['नंदुरबार', 'नवापूर', 'शहादा', 'तळोदा', 'अक्कलकुवा', 'अक्राणी (धडगाव)']
+  },
+  {
+    id: 'nashik',
+    nameEn: 'Nashik',
+    nameMr: 'नाशिक',
+    talukasEn: ['Nashik', 'Igatpuri', 'Dindori', 'Peth', 'Trimbakeshwar', 'Kalwan', 'Deola', 'Surgana', 'Baglan (Satana)', 'Malegaon', 'Nandgaon', 'Chandwad', 'Niphad', 'Sinnar', 'Yeola'],
+    talukasMr: ['नाशिक', 'इगतपुरी', 'दिंडोरी', 'पेठ', 'त्र्यंबकेश्वर', 'कळवण', 'देवळा', 'सुरगाणा', 'बागलाण (सटाणा)', 'मालेगाव', 'नांदगाव', 'चांदवड', 'निफाड', 'सिन्नर', 'येवला']
+  },
+  {
+    id: 'dharashiv',
+    nameEn: 'Dharashiv (Osmanabad)',
+    nameMr: 'धाराशिव (उस्मानाबाद)',
+    talukasEn: ['Dharashiv', 'Tuljapur', 'Bhoom', 'Paranda', 'Kalamb', 'Omerga', 'Lohara', 'Washi'],
+    talukasMr: ['धाराशिव', 'तुळजापूर', 'भूम', 'परंडा', 'कळंब', 'उमरगा', 'लोहारा', 'वाशी']
+  },
+  {
+    id: 'palghar',
+    nameEn: 'Palghar',
+    nameMr: 'पालघर',
+    talukasEn: ['Palghar', 'Vada', 'Vikramgad', 'Jawhar', 'Mokhada', 'Dahanu', 'Talasari', 'Vasai'],
+    talukasMr: ['पालघर', 'वाडा', 'विक्रमगड', 'जव्हार', 'मोखाडा', 'डहाणू', 'तलासरी', 'वसई']
+  },
+  {
+    id: 'parbhani',
+    nameEn: 'Parbhani',
+    nameMr: 'परभणी',
+    talukasEn: ['Parbhani', 'Gangakhed', 'Sonpeth', 'Pathri', 'Manwath', 'Palam', 'Selu', 'Jintur', 'Purna'],
+    talukasMr: ['परभणी', 'गंगाखेड', 'सोनपेठ', 'पाथरी', 'मानवत', 'पालम', 'सेलू', 'जिंतूर', 'पूर्णा']
+  },
+  {
+    id: 'pune',
+    nameEn: 'Pune',
+    nameMr: 'पुणे',
+    talukasEn: ['Pune City', 'Haveli', 'Khed', 'Ambegaon', 'Junnar', 'Shirur', 'Daund', 'Indapur', 'Baramati', 'Purandar', 'Bhor', 'Velhe', 'Mulshi', 'Maval'],
+    talukasMr: ['पुणे शहर', 'हवेली', 'खेड', 'आंबेगाव', 'जुन्नर', 'शिरूर', 'दौंड', 'इंदापूर', 'बारामती', 'पुरंदर', 'भोर', 'वेल्हे', 'मुळशी', 'मावळ']
+  },
+  {
+    id: 'raigad',
+    nameEn: 'Raigad',
+    nameMr: 'रायगड',
+    talukasEn: ['Alibag', 'Pen', 'Murud', 'Panvel', 'Uran', 'Karjat', 'Khalapur', 'Mangaon', 'Roha', 'Sudhagad (Pali)', 'Mahad', 'Poladpur', 'Shrivardhan', 'Mhasla', 'Tala'],
+    talukasMr: ['अलिबाग', 'पेण', 'मुरुड', 'पनवेल', 'उरण', 'कर्जत', 'खालापूर', 'माणगाव', 'रोहा', 'सुधागड (पाली)', 'महाड', 'पोलादपूर', 'श्रीवर्धन', 'म्हसळा', 'तळा']
+  },
+  {
+    id: 'ratnagiri',
+    nameEn: 'Ratnagiri',
+    nameMr: 'रत्नागिरी',
+    talukasEn: ['Ratnagiri', 'Sangameshwar', 'Lanja', 'Rajapur', 'Chiplun', 'Guhagar', 'Dapoli', 'Mandangad', 'Khed'],
+    talukasMr: ['रत्नागिरी', 'संगमेश्वर', 'लांजा', 'राजापूर', 'चिपळूण', 'गुहागर', 'दापोली', 'मंडणगड', 'खेड']
+  },
+  {
+    id: 'sangli',
+    nameEn: 'Sangli',
+    nameMr: 'सांगली',
+    talukasEn: ['Miraj', 'Kavathe Mahankal', 'Tasgaon', 'Jat', 'Walwa', 'Shirala', 'Khanapur (Vita)', 'Atpadi', 'Palus', 'Kadegaon'],
+    talukasMr: ['मिरज', 'कवठे महांकाळ', 'तासगाव', 'जत', 'वाळवा', 'शिराळा', 'खानापूर (विटा)', 'आटपाडी', 'पलूस', 'कडेगाव']
+  },
+  {
+    id: 'satara',
+    nameEn: 'Satara',
+    nameMr: 'सातारा',
+    talukasEn: ['Satara', 'Jaoli', 'Koregaon', 'Wai', 'Mahabaleshwar', 'Khandala', 'Phaltan', 'Maan', 'Khatav', 'Patan', 'Karad'],
+    talukasMr: ['सातारा', 'जावळी', 'कोरेगाव', 'वाई', 'महाबळेश्वर', 'खंडाळा', 'फलटण', 'माण', 'खटाव', 'पाटण', 'कराड']
+  },
+  {
+    id: 'sindhudurg',
+    nameEn: 'Sindhudurg',
+    nameMr: 'सिंधुदुर्ग',
+    talukasEn: ['Kankavli', 'Vaibhavwadi', 'Devgad', 'Malvan', 'Sawantwadi', 'Kudal', 'Vengurla', 'Dodamarg'],
+    talukasMr: ['कणकवली', 'वैभववाडी', 'देवगड', 'मालवण', 'सावंतवाडी', 'कुडाळ', 'वेंगुर्ला', 'दोडामार्ग']
+  },
+  {
+    id: 'solapur',
+    nameEn: 'Solapur',
+    nameMr: 'सोलापूर',
+    talukasEn: ['Solapur North', 'Solapur South', 'Barshi', 'Akkalkot', 'Mohol', 'Madha', 'Karmala', 'Pandharpur', 'Sangola', 'Malshiras', 'Mangalwedha'],
+    talukasMr: ['उत्तर सोलापूर', 'दक्षिण सोलापूर', 'बार्शी', 'अक्कलकोट', 'मोहोळ', 'माढा', 'करमाळा', 'पंढरपूर', 'सांगोला', 'माळशिरस', 'मंगळवेढा']
+  },
+  {
+    id: 'thane',
+    nameEn: 'Thane',
+    nameMr: 'ठाणे',
+    talukasEn: ['Thane', 'Kalyan', 'Murbad', 'Bhiwandi', 'Shahapur', 'Ulhasnagar', 'Ambarnath'],
+    talukasMr: ['ठाणे', 'कल्याण', 'मुरबाड', 'भिवंडी', 'शहापूर', 'उल्हासनगर', 'अंबरनाथ']
+  },
+  {
+    id: 'wardha',
+    nameEn: 'Wardha',
+    nameMr: 'वर्धा',
+    talukasEn: ['Wardha', 'Deoli', 'Seloo', 'Arvi', 'Ashti', 'Karanja', 'Hinganghat', 'Samudrapur'],
+    talukasMr: ['वर्धा', 'देवळी', 'सेलू', 'आर्वी', 'आष्टी', 'कारंजा', 'हिंगणघाट', 'समुद्रपूर']
+  },
+  {
+    id: 'washim',
+    nameEn: 'Washim',
+    nameMr: 'वाशिम',
+    talukasEn: ['Washim', 'Malegaon', 'Risod', 'Mangrulpir', 'Karanja', 'Manora'],
+    talukasMr: ['वाशिम', 'मालेगाव', 'रिसोड', 'मंगरुळपीर', 'कारंजा', 'मानोरा']
+  },
+  {
+    id: 'yavatmal',
+    nameEn: 'Yavatmal',
+    nameMr: 'यवतमाळ',
+    talukasEn: ['Yavatmal', 'Arni', 'Babhulgaon', 'Kalamb', 'Darwha', 'Digras', 'Ner', 'Pusad', 'Umarkhed', 'Mahagaon', 'Kelapur (Pandharkawada)', 'Ralegaon', 'Ghatanji', 'Wani', 'Maregaon', 'Zari Jamani'],
+    talukasMr: ['यवतमाळ', 'आर्णी', 'बाभूळगाव', 'कळंब', 'दारव्हा', 'दिग्रस', 'नेर', 'पुसद', 'उमरखेड', 'महागाव', 'केळापूर (पांढरकवडा)', 'राळेगाव', 'घाटंजी', 'वणी', 'मारेगाव', 'झरी जामणी']
+  }
+];
+
+export function getTalukasForDistrict(districtName: string): string[] {
+  if (!districtName) return [];
+  const normalized = districtName.toLowerCase().replace(/[^a-z]/g, '');
+  const found = MAHARASHTRA_DISTRICTS.find(d => {
+    const dNorm = d.nameEn.toLowerCase().replace(/[^a-z]/g, '');
+    return dNorm.includes(normalized) || normalized.includes(dNorm) || d.id === normalized;
+  });
+  return found ? found.talukasEn : [];
+}
+
+export function getAllDistricts(): { id: string; nameEn: string; nameMr: string }[] {
+  return MAHARASHTRA_DISTRICTS.map(d => ({ id: d.nameEn, nameEn: d.nameEn, nameMr: d.nameMr }));
+}

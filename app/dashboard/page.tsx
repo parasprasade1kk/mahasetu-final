@@ -1,13 +1,39 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import Link from 'next/link';
 import { useApp } from '@/context/AppContext';
+import { evaluateAllSchemes, UserProfile } from '@/lib/eligibilityEngine';
 
 export default function DashboardPage() {
-  const { language, user, applications, consents } = useApp();
+  const { language, user, currentUser, userProfile, applications, consents } = useApp();
 
   const pendingConsent = consents.find((c) => c.status === 'Pending Approval');
+
+  // Dynamically evaluate schemes if userProfile is available
+  const evaluatedSchemes = useMemo(() => {
+    if (!userProfile) return [];
+    const engineProfile: UserProfile = {
+      category: userProfile.category === 'General/Open' ? 'OPEN' : userProfile.category,
+      annualIncome: userProfile.annualIncomeAmount,
+      age: userProfile.age,
+      occupation: userProfile.occupation.toLowerCase(),
+      educationLevel: userProfile.educationLevel,
+      isStudent: userProfile.isStudent,
+      hasDisability: userProfile.hasDisability,
+      isMaharashtraResident: true,
+      gender: userProfile.gender === 'Male' ? 'male' : userProfile.gender === 'Female' ? 'female' : 'any',
+      district: userProfile.district,
+    };
+    return evaluateAllSchemes(engineProfile);
+  }, [userProfile]);
+
+  const eligibleCount = useMemo(() => {
+    if (evaluatedSchemes.length > 0) {
+      return evaluatedSchemes.filter(s => s.status === 'eligible' || s.status === 'possible').length.toString();
+    }
+    return '6';
+  }, [evaluatedSchemes]);
 
   const stats = [
     {
@@ -37,7 +63,7 @@ export default function DashboardPage() {
     {
       labelEn: 'Eligible Schemes',
       labelMr: 'पात्र योजना',
-      count: '6',
+      count: eligibleCount,
       icon: 'military_tech',
       color: 'text-[#f47920]',
       bg: 'bg-orange-50 border-orange-200'
@@ -49,7 +75,7 @@ export default function DashboardPage() {
       {/* Welcome Citizen Header */}
       <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-gov border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-full bg-[#003b5a] text-white flex items-center justify-center text-2xl font-bold border-2 border-amber-400">
+          <div className="w-16 h-16 rounded-full bg-[#003b5a] text-white flex items-center justify-center text-2xl font-bold border-2 border-amber-400 flex-shrink-0">
             {user.name.charAt(0)}
           </div>
           <div>
@@ -59,13 +85,15 @@ export default function DashboardPage() {
               </h1>
               <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-800 text-xs font-bold px-2.5 py-0.5 rounded-full border border-emerald-300">
                 <span className="material-symbols-outlined text-[14px]">check_circle</span>
-                {language === 'mr' ? 'आधार प्रमाणीकृत' : 'Aadhaar Verified'}
+                {language === 'mr' ? 'आधार व मोबाईल प्रमाणीकृत' : 'Verified Citizen'}
               </span>
             </div>
-            <p className="text-xs text-slate-500 mt-1 flex items-center gap-3">
-              <span>{user.district}</span>
+            <p className="text-xs text-slate-500 mt-1.5 flex items-center gap-3 flex-wrap">
+              <span className="font-semibold text-slate-700">
+                {userProfile ? `${userProfile.district}, ${userProfile.taluka}` : user.district}
+              </span>
               <span>•</span>
-              <span className="font-mono">Aadhaar: {user.aadhaarMasked}</span>
+              <span className="font-mono text-slate-600">Mobile: {currentUser ? currentUser.mobile : user.mobile}</span>
               <span>•</span>
               <span className="text-blue-600 font-semibold flex items-center gap-1">
                 <span className="material-symbols-outlined text-[14px]">cloud_done</span> DigiLocker Active
@@ -76,21 +104,52 @@ export default function DashboardPage() {
 
         <div className="flex flex-wrap items-center gap-3">
           <Link
-            href="/services"
+            href="/scheme-finder"
             className="bg-[#f47920] hover:bg-[#d86815] text-white px-5 py-2.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-sm"
           >
-            <span className="material-symbols-outlined text-[18px]">add_circle</span>
-            <span>{language === 'mr' ? 'नवीन अर्ज करा' : 'Apply for Service'}</span>
+            <span className="material-symbols-outlined text-[18px]">auto_awesome</span>
+            <span>{language === 'mr' ? 'एआय योजना शोधा' : 'Find Schemes'}</span>
           </Link>
           <Link
-            href="/documents"
+            href="/onboarding"
             className="bg-[#003b5a] hover:bg-[#002840] text-white px-4 py-2.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-sm"
           >
-            <span className="material-symbols-outlined text-[18px]">folder</span>
-            <span>{language === 'mr' ? 'माझी कागदपत्रे' : 'My Documents'}</span>
+            <span className="material-symbols-outlined text-[18px]">badge</span>
+            <span>{language === 'mr' ? 'प्रोफाइल संपादित करा' : 'Update Profile'}</span>
           </Link>
         </div>
       </div>
+
+      {/* Citizen Profile Snapshot Badge (if profile exists) */}
+      {userProfile && (
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50/50 rounded-2xl p-5 border border-blue-200 shadow-sm flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <span className="w-10 h-10 rounded-xl bg-[#003b5a] text-amber-400 flex items-center justify-center flex-shrink-0">
+              <span className="material-symbols-outlined text-[20px]">assignment_ind</span>
+            </span>
+            <div>
+              <p className="text-xs font-bold text-[#003b5a]">
+                {language === 'mr' ? 'नागरिक प्रोफाइल तपशील सक्रिय' : 'Active Citizen Profile Details'}
+              </p>
+              <p className="text-[11px] text-slate-600 mt-0.5">
+                Category: <strong>{userProfile.category}</strong> • Occupation: <strong>{userProfile.occupation}</strong> • Age: <strong>{userProfile.age} yrs</strong> • Income: <strong>{userProfile.annualIncomeTier}</strong>
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-bold text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-full border border-emerald-300">
+              ✓ Smart Engine Synced
+            </span>
+            <Link
+              href="/eligibility-checker"
+              className="text-xs font-bold text-[#003b5a] hover:underline flex items-center gap-1"
+            >
+              <span>Check Eligibility</span>
+              <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* Metrics Row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
@@ -222,11 +281,15 @@ export default function DashboardPage() {
                 <span className="material-symbols-outlined text-emerald-600 text-[18px]">verified</span>
               </div>
               <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg border border-slate-100">
-                <span className="font-medium text-slate-700">Caste Certificate (OBC)</span>
+                <span className="font-medium text-slate-700">
+                  Caste Certificate ({userProfile ? userProfile.category : 'OBC'})
+                </span>
                 <span className="material-symbols-outlined text-emerald-600 text-[18px]">verified</span>
               </div>
               <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg border border-slate-100">
-                <span className="font-medium text-slate-700">7/12 Land Record (Gat 142)</span>
+                <span className="font-medium text-slate-700">
+                  Domicile Certificate ({userProfile ? userProfile.district : 'Maharashtra'})
+                </span>
                 <span className="material-symbols-outlined text-emerald-600 text-[18px]">verified</span>
               </div>
             </div>

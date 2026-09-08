@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { useApp } from '@/context/AppContext';
 import {
@@ -12,7 +12,7 @@ import {
 } from '@/lib/eligibilityEngine';
 
 export default function EligibilityCheckerPage() {
-  const { language } = useApp();
+  const { language, userProfile: savedProfile } = useApp();
 
   // ─── Citizen Demographics State ─────────────────────────────────────────────
   const [category, setCategory] = useState<string>('OBC');
@@ -25,6 +25,35 @@ export default function EligibilityCheckerPage() {
   const [isMaharashtraResident, setIsMaharashtraResident] = useState<boolean>(true);
   const [gender, setGender] = useState<'any' | 'male' | 'female'>('any');
   const [district, setDistrict] = useState<string>('Pune');
+
+  // Pre-fill state whenever savedProfile is available
+  useEffect(() => {
+    if (savedProfile) {
+      if (savedProfile.category) {
+        setCategory(savedProfile.category === 'General/Open' ? 'OPEN' : savedProfile.category);
+      }
+      if (savedProfile.annualIncomeTier) {
+        if (savedProfile.annualIncomeTier === 'under-50k' || savedProfile.annualIncomeTier === '50k-1L' || savedProfile.annualIncomeTier === '1L-2.5L') {
+          setIncomeRange('under-2.5L');
+          setExactIncome(savedProfile.annualIncomeAmount.toLocaleString('en-IN'));
+        } else if (savedProfile.annualIncomeTier === '2.5L-8L') {
+          setIncomeRange('2.5L-8L');
+          setExactIncome(savedProfile.annualIncomeAmount.toLocaleString('en-IN'));
+        } else {
+          setIncomeRange('above-8L');
+          setExactIncome(savedProfile.annualIncomeAmount.toLocaleString('en-IN'));
+        }
+      }
+      if (savedProfile.age) setAge(savedProfile.age);
+      if (savedProfile.occupation) setOccupation(savedProfile.occupation.toLowerCase());
+      if (savedProfile.educationLevel) setEducationLevel(savedProfile.educationLevel);
+      if (savedProfile.hasDisability !== undefined) setHasDisability(savedProfile.hasDisability);
+      if (savedProfile.gender) {
+        setGender(savedProfile.gender === 'Male' ? 'male' : savedProfile.gender === 'Female' ? 'female' : 'any');
+      }
+      if (savedProfile.district) setDistrict(savedProfile.district);
+    }
+  }, [savedProfile]);
 
   // ─── Results View State ─────────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState<'eligible' | 'possible' | 'ineligible' | 'all'>('eligible');
@@ -125,6 +154,15 @@ export default function EligibilityCheckerPage() {
             ? 'आपली वैयक्तिक माहिती प्रविष्ट करा; आमची प्रणाली सेकंदात आपल्यासाठी लागू असणाऱ्या योजनांची गणना करेल.'
             : 'Answer basic demographic questions to instantly calculate all welfare benefits and scholarships you qualify for.'}
         </p>
+
+        {savedProfile && (
+          <div className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs px-4 py-2 rounded-xl mt-2 font-medium shadow-sm">
+            <span className="material-symbols-outlined text-emerald-600 text-[18px]">verified_user</span>
+            <span>
+              Loaded from your verified profile ({savedProfile.fullName} • {savedProfile.district} • {savedProfile.category}). You can adjust parameters below to preview eligibility dynamically.
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
