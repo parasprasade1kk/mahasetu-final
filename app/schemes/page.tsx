@@ -18,41 +18,109 @@ interface Scheme {
   deadline: string;
   targetGroupEn: string;
   targetGroupMr: string;
+  /** Route for the application form — must match a serviceId in servicesConfig */
+  applicationRoute: string;
 }
 
 const schemesData: Scheme[] = [
   {
     id: 'scm-1',
     category: 'education',
-    nameEn: 'Post-Matric Tuition Fee and Examination Fee (Freeship)',
-    nameMr: 'मॅट्रिकोत्तर शिक्षण शुल्क व परीक्षा शुल्क प्रतिपूर्ती योजना (फ्रीशिप)',
+    nameEn: 'Post-Matric Scholarship & Freeship Scheme',
+    nameMr: 'मॅट्रिकोत्तर शिष्यवृत्ती व शिक्षण शुल्क प्रतिपूर्ती योजना',
     deptEn: 'Higher & Technical Education Department',
     deptMr: 'उच्च व तंत्रशिक्षण विभाग',
-    benefitEn: '100% Tuition & Exam Fee paid directly to Institute',
-    benefitMr: '१००% शिक्षण व परीक्षा शुल्क थेट महाविद्यालयास अदा',
+    benefitEn: '100% Tuition & Exam Fee paid directly to Institute + Maintenance allowance',
+    benefitMr: '१००% शिक्षण व परीक्षा शुल्क थेट महाविद्यालयास अदा + निर्वाह भत्ता',
     incomeLimitEn: 'Up to ₹8,00,000 / annum',
     incomeLimitMr: 'वार्षिक ₹८,००,००० पर्यंत',
     deadline: '31 Oct 2026',
-    targetGroupEn: 'OBC, EBC, SEBC College Students',
-    targetGroupMr: 'इमाव, ईबीसी, एसईबीसी महाविद्यालयीन विद्यार्थी'
+    targetGroupEn: 'OBC, EBC, SEBC, SC, ST College Students',
+    targetGroupMr: 'इमाव, ईबीसी, एसईबीसी, अजा, अज महाविद्यालयीन विद्यार्थी',
+    applicationRoute: '/apply/scheme/post-matric-scholarship'
   },
   {
     id: 'scm-2',
     category: 'education',
-    nameEn: 'Dr. Punjabrao Deshmukh Vastigruh Nirvah Bhatta Yojna',
-    nameMr: 'डॉ. पंजाबराव देशमुख वसतिगृह निर्वाह भत्ता योजना',
-    deptEn: 'Higher & Technical Education Department',
-    deptMr: 'उच्च व तंत्रशिक्षण विभाग',
-    benefitEn: '₹30,000 / year hostel allowance for professional courses',
-    benefitMr: 'व्यावसायिक अभ्यासक्रमांसाठी ₹३०,००० प्रति वर्ष वसतिगृह भत्ता',
-    incomeLimitEn: 'Children of registered alpabhudharak farmers or income < ₹8L',
-    incomeLimitMr: 'अल्पभूधारक शेतकरी कुटुंबे किंवा उत्पन्न < ₹८ लाख',
-    deadline: '31 Oct 2026',
-    targetGroupEn: 'Children of Marginal Farmers & Laborers',
-    targetGroupMr: 'अल्पभूधारक शेतकरी व शेतमजूर यांची मुले'
+    nameEn: 'Disability Scholarship & Education Support',
+    nameMr: 'दिव्यांग शिष्यवृत्ती व शिक्षण सहाय्य योजना',
+    deptEn: 'Social Justice & Special Assistance Department',
+    deptMr: 'सामाजिक न्याय व विशेष सहाय्य विभाग',
+    benefitEn: 'Monthly education stipend, reader allowance, and assistive devices grant',
+    benefitMr: 'मासिक शिक्षण विद्यावेतन, वाचक भत्ता व सहाय्यक साधने अनुदान',
+    incomeLimitEn: 'Up to ₹2,50,000 / annum',
+    incomeLimitMr: 'वार्षिक ₹२,५०,००० पर्यंत',
+    deadline: '31 Dec 2026',
+    targetGroupEn: 'Students with 40%+ certified disability (Divyangjan)',
+    targetGroupMr: '४०% पेक्षा जास्त प्रमाणित दिव्यांगत्व असलेले विद्यार्थी',
+    applicationRoute: '/apply/scheme/disability-scholarship'
   },
   {
     id: 'scm-3',
+    category: 'social',
+    nameEn: 'Senior Citizen Scheme (Shravanbal Yojana)',
+    nameMr: 'ज्येष्ठ नागरिक सहाय्य योजना (श्रावणबाळ योजना)',
+    deptEn: 'Social Justice & Special Assistance Department',
+    deptMr: 'सामाजिक न्याय व विशेष सहाय्य विभाग',
+    benefitEn: '₹1,500 / month direct pension to senior citizens aged 65+',
+    benefitMr: '६५ वर्षे व त्यावरील ज्येष्ठ नागरिकांना ₹१,५०० प्रति महिना थेट निवृत्तीवेतन',
+    incomeLimitEn: 'Family income up to ₹21,000 / annum or BPL',
+    incomeLimitMr: 'कौटुंबिक वार्षिक उत्पन्न ₹२१,००० पर्यंत किंवा दारिद्र्यरेषेखालील',
+    deadline: 'Open Throughout Year',
+    targetGroupEn: 'Senior citizens aged 65 years and above in Maharashtra',
+    targetGroupMr: 'महाराष्ट्रातील ६५ वर्षे व त्यावरील ज्येष्ठ नागरिक',
+    applicationRoute: '/apply/scheme/senior-citizen-scheme'
+  },
+  {
+    id: 'scm-4',
+    category: 'social',
+    nameEn: 'Financial Assistance Scheme for Low-Income Families',
+    nameMr: 'अल्प उत्पन्न कुटुंबांसाठी आर्थिक सहाय्य योजना',
+    deptEn: 'Social Justice & Special Assistance Department',
+    deptMr: 'सामाजिक न्याय व विशेष सहाय्य विभाग',
+    benefitEn: 'Direct one-time or recurring economic distress grant to bank account',
+    benefitMr: 'बँक खात्यात थेट एकरकमी किंवा आवर्ती आर्थिक संकट निवारण अनुदान',
+    incomeLimitEn: 'Family income up to ₹1,00,000 / annum',
+    incomeLimitMr: 'कौटुंबिक वार्षिक उत्पन्न ₹१,००,००० पर्यंत',
+    deadline: 'Open Throughout Year',
+    targetGroupEn: 'Low-income and distressed citizens',
+    targetGroupMr: 'अल्प उत्पन्न व संकटात सापडलेले नागरिक',
+    applicationRoute: '/apply/scheme/financial-assistance-scheme'
+  },
+  {
+    id: 'scm-5',
+    category: 'women',
+    nameEn: 'Women Welfare Scheme & Empowerment Grant',
+    nameMr: 'महिला कल्याण व सक्षमीकरण अनुदान योजना',
+    deptEn: 'Women & Child Development Department',
+    deptMr: 'महिला व बालविकास विभाग',
+    benefitEn: 'Financial security and self-help livelihood grant for women',
+    benefitMr: 'महिलांसाठी आर्थिक सुरक्षा व स्वयंसहाय्यता उपजीविका अनुदान',
+    incomeLimitEn: 'Family income up to ₹2,50,000 / annum',
+    incomeLimitMr: 'कौटुंबिक वार्षिक उत्पन्न ₹२,५०,००० पर्यंत',
+    deadline: 'Ongoing Enrollment',
+    targetGroupEn: 'Women aged 18-65 years in Maharashtra',
+    targetGroupMr: 'महाराष्ट्रातील १८ ते ६५ वयोगटातील महिला',
+    applicationRoute: '/apply/scheme/women-welfare-scheme'
+  },
+  {
+    id: 'scm-6',
+    category: 'women',
+    nameEn: 'Mukhyamantri Majhi Ladki Bahin Yojana',
+    nameMr: 'मुख्यमंत्री माझी लाडकी बहीण योजना',
+    deptEn: 'Women & Child Development Department',
+    deptMr: 'महिला व बालविकास विभाग',
+    benefitEn: '₹1,500 / month financial assistance directly in Aadhaar account',
+    benefitMr: 'पात्र महिलांच्या आधार जोडणी बँक खात्यात दरमहा ₹१,५००',
+    incomeLimitEn: 'Family income up to ₹2,50,000 / annum',
+    incomeLimitMr: 'कौटुंबिक वार्षिक उत्पन्न ₹२,५०,००० पर्यंत',
+    deadline: 'Ongoing Enrollment',
+    targetGroupEn: 'Women aged 21-65 years in Maharashtra',
+    targetGroupMr: 'महाराष्ट्रातील २१ ते ६५ वयोगटातील महिला',
+    applicationRoute: '/apply/scheme/majhi-ladki-bahin'
+  },
+  {
+    id: 'scm-7',
     category: 'farmer',
     nameEn: 'Namo Shetkari Mahasanman Nidhi Yojana',
     nameMr: 'नमो शेतकरी महासन्मान निधी योजना',
@@ -64,10 +132,43 @@ const schemesData: Scheme[] = [
     incomeLimitMr: 'सर्व पात्र जमीनधारक शेतकरी कुटुंबे',
     deadline: 'Open Throughout Year',
     targetGroupEn: 'Small and Marginal Farmers with 7/12 land records',
-    targetGroupMr: '७/१२ नोंदणी असलेले अल्प व अत्यल्प भूधारक शेतकरी'
+    targetGroupMr: '७/१२ नोंदणी असलेले अल्प व अत्यल्प भूधारक शेतकरी',
+    applicationRoute: '/apply/scheme/namo-shetkari'
   },
   {
-    id: 'scm-4',
+    id: 'scm-8',
+    category: 'farmer',
+    nameEn: 'Magel Tyala Saur Krushi Pump Yojana (Mukhyamantri Saur Krushi)',
+    nameMr: 'मागेल त्याला सौर कृषी पंप योजना',
+    deptEn: 'Energy & Agriculture Department',
+    deptMr: 'ऊर्जा व कृषी विभाग',
+    benefitEn: 'Up to 90-95% government subsidy on Solar Agricultural Pumps',
+    benefitMr: 'सौर कृषी पंपावर ९० ते ९५% पर्यंत शासकीय अनुदान',
+    incomeLimitEn: 'Farmers with verified agricultural water source',
+    incomeLimitMr: 'शेतात खात्रीशीर पाण्याचा स्रोत असलेले शेतकरी',
+    deadline: '15 Nov 2026',
+    targetGroupEn: 'Farmers requiring day-time solar power irrigation',
+    targetGroupMr: 'दिवसा सिंचनासाठी वीज आवश्यक असलेले शेतकरी',
+    applicationRoute: '/apply/scheme/saur-krushi-pump'
+  },
+  {
+    id: 'scm-9',
+    category: 'education',
+    nameEn: 'Dr. Punjabrao Deshmukh Vastigruh Nirvah Bhatta Yojna',
+    nameMr: 'डॉ. पंजाबराव देशमुख वसतिगृह निर्वाह भत्ता योजना',
+    deptEn: 'Higher & Technical Education Department',
+    deptMr: 'उच्च व तंत्रशिक्षण विभाग',
+    benefitEn: '₹30,000 / year hostel allowance for professional courses',
+    benefitMr: 'व्यावसायिक अभ्यासक्रमांसाठी ₹३०,००० प्रति वर्ष वसतिगृह भत्ता',
+    incomeLimitEn: 'Children of registered alpabhudharak farmers or income < ₹8L',
+    incomeLimitMr: 'अल्पभूधारक शेतकरी कुटुंबे किंवा उत्पन्न < ₹८ लाख',
+    deadline: '31 Oct 2026',
+    targetGroupEn: 'Children of Marginal Farmers & Laborers',
+    targetGroupMr: 'अल्पभूधारक शेतकरी व शेतमजूर यांची मुले',
+    applicationRoute: '/apply/scheme/rcsm-scholarship'
+  },
+  {
+    id: 'scm-10',
     category: 'social',
     nameEn: 'Sanjay Gandhi Niradhar Anudan Yojana',
     nameMr: 'संजय गांधी निराधार अनुदान योजना',
@@ -79,37 +180,8 @@ const schemesData: Scheme[] = [
     incomeLimitMr: 'कौटुंबिक वार्षिक उत्पन्न ₹२१,००० पर्यंत',
     deadline: 'Open Throughout Year',
     targetGroupEn: 'Destitute Persons, Widows, Physically Challenged',
-    targetGroupMr: 'निराधार, विधवा, दिव्यांग व गंभीर आजारी नागरिक'
-  },
-  {
-    id: 'scm-5',
-    category: 'women',
-    nameEn: 'Majhi Ladki Bahin Yojana',
-    nameMr: 'मुख्यमंत्री माझी लाडकी बहीण योजना',
-    deptEn: 'Women & Child Development Department',
-    deptMr: 'महिला व बालविकास विभाग',
-    benefitEn: '₹1,500 / month financial assistance directly in Aadhaar account',
-    benefitMr: 'पात्र महिलांच्या आधार जोडणी बँक खात्यात दरमहा ₹१,५००',
-    incomeLimitEn: 'Family income up to ₹2,50,000 / annum',
-    incomeLimitMr: 'कौटुंबिक वार्षिक उत्पन्न ₹२,५०,००० पर्यंत',
-    deadline: 'Ongoing Enrollment',
-    targetGroupEn: 'Women aged 21-65 years in Maharashtra',
-    targetGroupMr: 'महाराष्ट्रातील २१ ते ६५ वयोगटातील महिला'
-  },
-  {
-    id: 'scm-6',
-    category: 'farmer',
-    nameEn: 'Magel Tyala Saur Krishi Pump Yojana (Mukhyamantri Saur Krushi)',
-    nameMr: 'मागेल त्याला सौर कृषी पंप योजना',
-    deptEn: 'Energy & Agriculture Department',
-    deptMr: 'ऊर्जा व कृषी विभाग',
-    benefitEn: 'Up to 90-95% government subsidy on Solar Agricultural Pumps',
-    benefitMr: 'सौर कृषी पंपावर ९० ते ९५% पर्यंत शासकीय अनुदान',
-    incomeLimitEn: 'Farmers with verified agricultural water source',
-    incomeLimitMr: 'शेतात खात्रीशीर पाण्याचा स्रोत असलेले शेतकरी',
-    deadline: '15 Nov 2026',
-    targetGroupEn: 'Farmers requiring day-time solar power irrigation',
-    targetGroupMr: 'दिवसा सिंचनासाठी वीज आवश्यक असलेले शेतकरी'
+    targetGroupMr: 'निराधार, विधवा, दिव्यांग व गंभीर आजारी नागरिक',
+    applicationRoute: '/apply/scheme/sanjay-gandhi-niradhar'
   }
 ];
 
@@ -251,7 +323,7 @@ export default function SchemesPage() {
               </Link>
 
               <Link
-                href="/scholarship-application"
+                href={scm.applicationRoute}
                 className="bg-[#f47920] hover:bg-[#d86815] text-white font-bold py-2 px-5 rounded-lg text-xs transition shadow-sm flex items-center gap-1"
               >
                 <span>{language === 'mr' ? 'थेट अर्ज करा' : 'Apply Now'}</span>

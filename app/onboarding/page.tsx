@@ -52,6 +52,8 @@ export default function OnboardingProfilePage() {
   const [securityPin, setSecurityPin] = useState('');
   const [modalError, setModalError] = useState('');
   const [unlinkSuccessToast, setUnlinkSuccessToast] = useState(false);
+  const [aadhaarDigiConsent, setAadhaarDigiConsent] = useState<boolean>(false);
+  const [digiConsentError, setDigiConsentError] = useState<string>('');
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
@@ -806,10 +808,10 @@ export default function OnboardingProfilePage() {
             <span className="w-7 h-7 rounded-full bg-[#003b5a] text-white flex items-center justify-center text-xs font-bold">5</span>
             <div className="flex items-center gap-2">
               <h2 className="text-base font-bold text-[#003b5a]">
-                {language === 'mr' ? 'आपले डिजीलॉकर खाते जोडा' : 'Link Your DigiLocker Account'}
+                {language === 'mr' ? 'डिजीलॉकर खाते जोडा' : 'Link DigiLocker Account'}
               </h2>
               <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-800 border border-blue-200">
-                MeitY / Govt of India
+                Demo Integration
               </span>
             </div>
           </div>
@@ -817,7 +819,7 @@ export default function OnboardingProfilePage() {
           <p className="text-xs text-slate-600 mb-4 leading-relaxed">
             {language === 'mr'
               ? 'पात्र शासकीय कागदपत्रे सुरक्षितपणे मिळवण्यासाठी आणि वारंवार कागदपत्रे अपलोड करण्याचा त्रास टाळण्यासाठी आपले डिजीलॉकर खाते जोडा.'
-              : 'Connect DigiLocker to securely access eligible government-issued documents and reduce repeated document uploads.'}
+              : 'Link your DigiLocker account to securely access eligible government-issued documents and reduce repeated document uploads.'}
           </p>
 
           {unlinkSuccessToast && (
@@ -833,42 +835,86 @@ export default function OnboardingProfilePage() {
           )}
 
           {!digiLockerLinked ? (
-            <div className="bg-gradient-to-r from-blue-50/70 via-indigo-50/40 to-slate-50 border border-blue-200/80 rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 shadow-sm">
+            <div className="bg-gradient-to-r from-blue-50/70 via-indigo-50/40 to-slate-50 border border-blue-200/80 rounded-2xl p-5 sm:p-6 space-y-4 shadow-sm">
               <div className="flex items-start gap-4">
                 <div className="w-12 h-12 rounded-xl bg-blue-600 text-white flex items-center justify-center flex-shrink-0 shadow-md shadow-blue-500/20">
                   <span className="material-symbols-outlined text-[28px]">cloud_sync</span>
                 </div>
-                <div>
+                <div className="flex-1">
                   <h3 className="text-sm font-bold text-slate-900">
                     {language === 'mr' ? 'डिजिटल कागदपत्रे एका क्लिकवर' : 'Fetch Verified Documents Instantly'}
                   </h3>
-                  <p className="text-xs text-slate-600 mt-1 max-w-lg">
+                  <p className="text-xs text-slate-600 mt-1">
                     {language === 'mr'
                       ? 'आधार, उत्पन्नाचा दाखला, जात प्रमाणपत्र आणि इतर कागदपत्रे थेट डिजिटल स्वरूपात प्रमाणित केली जातील.'
                       : 'Sync Aadhaar, Income Certificate, Caste Certificate, and Domicile directly from official issuing authorities.'}
                   </p>
-                  <div className="flex flex-wrap gap-2 mt-3">
-                    <span className="text-[11px] font-semibold text-slate-600 bg-white px-2 py-0.5 rounded border border-slate-200">
-                      ✓ Instant e-KYC
-                    </span>
-                    <span className="text-[11px] font-semibold text-slate-600 bg-white px-2 py-0.5 rounded border border-slate-200">
-                      ✓ Zero Paperwork
-                    </span>
-                    <span className="text-[11px] font-semibold text-slate-600 bg-white px-2 py-0.5 rounded border border-slate-200">
-                      ✓ 100% Tamper-Proof
-                    </span>
-                  </div>
                 </div>
               </div>
 
-              <button
-                type="button"
-                onClick={handleOpenDigiLockerModal}
-                className="w-full sm:w-auto px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-md shadow-blue-600/20 transition flex items-center justify-center gap-2 flex-shrink-0 cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-[18px]">lock_open</span>
-                <span>{language === 'mr' ? 'डिजीलॉकर जोडा' : 'Link DigiLocker'}</span>
-              </button>
+              {/* Masked Aadhaar information */}
+              <div className="bg-white border border-slate-200 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-slate-400 text-[20px]">badge</span>
+                  <span className="text-xs font-bold text-slate-700">Aadhaar:</span>
+                </div>
+                <span className="text-xs font-mono font-bold text-[#003b5a] tracking-widest bg-slate-100 px-3 py-1 rounded-md border border-slate-200">
+                  {userProfile?.aadhaarMasked || (mobile ? `XXXX XXXX ${mobile.slice(-4)}` : 'XXXX XXXX 1234')}
+                </span>
+              </div>
+
+              {/* Explicit User Consent Checkbox — Not pre-selected */}
+              <div className="space-y-1">
+                <label className="flex items-start gap-3 cursor-pointer p-3.5 bg-white border border-slate-200 rounded-xl hover:border-slate-300 transition">
+                  <input
+                    type="checkbox"
+                    checked={aadhaarDigiConsent}
+                    onChange={(e) => {
+                      setAadhaarDigiConsent(e.target.checked);
+                      setDigiConsentError('');
+                    }}
+                    className="mt-0.5 w-4 h-4 text-[#003b5a] rounded border-slate-300 focus:ring-[#003b5a]"
+                  />
+                  <span className="text-xs text-slate-700 leading-relaxed font-medium">
+                    I consent to linking my DigiLocker account with my Aadhaar-based identity for the purpose of accessing and verifying eligible government documents.
+                  </span>
+                </label>
+                {digiConsentError && (
+                  <p className="text-xs text-red-600 font-semibold pl-1 flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[14px]">error</span>
+                    <span>{digiConsentError}</span>
+                  </p>
+                )}
+              </div>
+
+              {/* Action Buttons: Link DigiLocker and Skip for Now */}
+              <div className="flex flex-wrap items-center gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!aadhaarDigiConsent) {
+                      setDigiConsentError('Please check the consent box above before linking your DigiLocker account.');
+                      return;
+                    }
+                    handleOpenDigiLockerModal();
+                  }}
+                  className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-md shadow-blue-600/20 transition flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-[18px]">lock_open</span>
+                  <span>{language === 'mr' ? 'डिजीलॉकर जोडा' : 'Link DigiLocker'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const el = document.getElementById('confirmation-section');
+                    el?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold rounded-xl transition cursor-pointer"
+                >
+                  {language === 'mr' ? 'सध्या वगळा' : 'Skip for Now'}
+                </button>
+              </div>
             </div>
           ) : (
             <div className="bg-emerald-50/80 border border-emerald-300 rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 shadow-sm">
@@ -880,7 +926,7 @@ export default function OnboardingProfilePage() {
                   <div className="flex items-center gap-2">
                     <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-800 text-[11px] font-bold px-2.5 py-0.5 rounded-full border border-emerald-300">
                       <span className="material-symbols-outlined text-[13px]">check_circle</span>
-                      <span>✓ DigiLocker Connected</span>
+                      <span>✓ DigiLocker Connected (Demo)</span>
                     </span>
                     <span className="text-[11px] text-slate-500 font-mono font-semibold">
                       ID: {digiLockerId || `DL-MH-${mobile.slice(-4) || '8598'}`}
@@ -890,7 +936,7 @@ export default function OnboardingProfilePage() {
                     {language === 'mr' ? 'आपले डिजीलॉकर खाते जोडलेले आहे.' : 'Your DigiLocker account is linked.'}
                   </h3>
                   <p className="text-xs text-slate-600 mt-1">
-                    Linked via Mobile: <span className="font-mono font-bold text-slate-800">+91 ******{mobile.slice(-4) || '8598'}</span>
+                    Aadhaar: <span className="font-mono font-bold text-slate-800">{userProfile?.aadhaarMasked || (mobile ? `XXXX XXXX ${mobile.slice(-4)}` : 'XXXX XXXX 1234')}</span>
                   </p>
                   <div className="flex flex-wrap gap-2 mt-2">
                     <span className="text-[11px] font-semibold text-emerald-800 bg-white px-2 py-0.5 rounded border border-emerald-200">
@@ -989,8 +1035,8 @@ export default function OnboardingProfilePage() {
                   <span className="material-symbols-outlined text-[22px]">cloud_sync</span>
                 </div>
                 <div>
-                  <h3 className="font-bold text-sm">DigiLocker • Govt. of India</h3>
-                  <p className="text-[11px] text-slate-300">National Digital Document Repository</p>
+                  <h3 className="font-bold text-sm">Demo DigiLocker Connection</h3>
+                  <p className="text-[11px] text-slate-300">National Digital Document Repository (Demo Prototype)</p>
                 </div>
               </div>
               <button
@@ -1007,17 +1053,17 @@ export default function OnboardingProfilePage() {
               {modalStep === 'authenticating' && (
                 <div className="py-8 text-center space-y-3">
                   <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-                  <h4 className="text-sm font-bold text-slate-800">Connecting to DigiLocker (Government of India)...</h4>
-                  <p className="text-xs text-slate-500">Authenticating via Mobile / Aadhaar (+91 ******{mobile.slice(-4) || '8598'})...</p>
+                  <h4 className="text-sm font-bold text-slate-800">Connecting to DigiLocker (Demo Connector)...</h4>
+                  <p className="text-xs text-slate-500">Authenticating via Aadhaar-linked mobile identity...</p>
                 </div>
               )}
 
               {modalStep === 'enter_pin' && (
                 <div className="space-y-4">
                   <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-900">
-                    <p className="font-semibold">Consent & Authorization</p>
+                    <p className="font-semibold">Demo Consent & Authorization</p>
                     <p className="text-[11px] text-blue-800 mt-0.5">
-                      You are authorizing MahaSetu to securely retrieve your verified documents from DigiLocker repository.
+                      You are authorizing MahaSetu to simulate retrieving verified documents from your DigiLocker repository.
                     </p>
                   </div>
 
@@ -1076,8 +1122,8 @@ export default function OnboardingProfilePage() {
               {modalStep === 'verifying' && (
                 <div className="py-8 text-center space-y-3">
                   <div className="w-12 h-12 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-                  <h4 className="text-sm font-bold text-slate-800">Verifying Security PIN & Establishing Link...</h4>
-                  <p className="text-xs text-slate-500">Querying DigiLocker gateway (api.digitallocker.gov.in)...</p>
+                  <h4 className="text-sm font-bold text-slate-800">Verifying Security PIN (Demo Simulation)...</h4>
+                  <p className="text-xs text-slate-500">Connecting to DigiLocker sandbox...</p>
                 </div>
               )}
 
@@ -1087,7 +1133,7 @@ export default function OnboardingProfilePage() {
                     <span className="material-symbols-outlined text-[32px]">task_alt</span>
                   </div>
                   <div>
-                    <h4 className="text-base font-bold text-slate-900">DigiLocker account linked successfully!</h4>
+                    <h4 className="text-base font-bold text-slate-900">✓ DigiLocker Connected (Demo)</h4>
                     <p className="text-xs text-slate-600 mt-1">
                       Account ID: <span className="font-mono font-bold text-slate-800">{digiLockerId}</span>
                     </p>

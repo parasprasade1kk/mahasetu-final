@@ -19,10 +19,8 @@ function genCaptcha(): string {
   return r;
 }
 
-// ─── Mock OTP Generator ───────────────────────────────────────────────────────
-function genOtp(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString();
-}
+// ─── Demo OTP (centralized — replace with real SMS gateway in production) ──
+const DEMO_OTP = '123456';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -116,13 +114,13 @@ export default function LoginPage() {
         : 'This mobile number is not registered. Please create a new account.');
       return;
     }
-    const otp = genOtp();
+    const otp = DEMO_OTP;
     setLoginOtpGenerated(otp);
-    setLoginOtp(otp);
+    setLoginOtp(''); // user must type it manually
     setLoginOtpSent(true);
     setLoginSuccess(language === 'mr'
-      ? `${account.name} यांच्यासाठी OTP तयार केला आहे.`
-      : `OTP generated for ${account.name}. Check the code below.`);
+      ? `${account.name} यांच्यासाठी OTP पाठवला आहे. डेमो OTP: 123456`
+      : `OTP sent for ${account.name}. Enter the demo OTP: 123456`);
   };
 
   const handleLoginSubmit = (e: React.FormEvent) => {
@@ -147,8 +145,10 @@ export default function LoginPage() {
       setLoginError('Security CAPTCHA verification failed. Please check the code and try again.');
       refreshCaptcha(); return;
     }
-    if (!loginOtp || loginOtp.length < 6) {
-      setLoginError('Please enter the 6-digit OTP.'); return;
+    if (!loginOtp || loginOtp.trim() !== DEMO_OTP) {
+      setLoginError(language === 'mr'
+        ? 'अवैध OTP. कृपया योग्य डेमो OTP प्रविष्ट करा.'
+        : 'Invalid OTP. Please enter the correct demo OTP.'); return;
     }
 
     setLoginLoading(true);
@@ -181,19 +181,18 @@ export default function LoginPage() {
       setRegError(`This mobile number is already registered as "${existing.name}". Please use the Login tab.`);
       return;
     }
-    const otp = genOtp();
+    const otp = DEMO_OTP;
     setRegOtpGenerated(otp);
-    setRegOtp(otp);
+    setRegOtp(''); // user must type it manually
     setRegOtpSent(true);
-    setRegSuccess('OTP sent! Verify to continue. Check the code below.');
+    setRegSuccess('OTP sent! Enter the demo OTP: 123456 to continue.');
   };
 
   const handleRegVerifyOtp = () => {
     setRegError(''); setRegSuccess('');
-    if (!regOtp || regOtp.length < 6) {
-      setRegError('Please enter the 6-digit OTP.'); return;
+    if (!regOtp || regOtp.trim() !== DEMO_OTP) {
+      setRegError('Invalid OTP. Please enter the correct demo OTP.'); return;
     }
-    // In demo mode OTP auto-fills — verification always passes with correct code
     // PRODUCTION: call real OTP verification API here
     setRegStep('details');
     setRegSuccess('');
@@ -526,18 +525,16 @@ export default function LoginPage() {
                             required
                           />
                         </div>
-                        {loginOtpSent && loginOtpGenerated && (
-                          <div className="mt-1.5 p-2 bg-blue-50/70 border border-blue-200 rounded text-[11px] text-blue-900 flex items-center justify-between">
-                            <span className="flex items-center gap-1">
-                              <span className="material-symbols-outlined text-[14px] text-blue-600">sms</span>
-                              Demo OTP: <strong className="font-mono tracking-wider">{loginOtpGenerated}</strong>
-                            </span>
-                            <button type="button" onClick={() => setLoginOtp(loginOtpGenerated)}
-                              className="text-[10px] font-bold text-blue-700 underline hover:text-blue-900">
-                              Auto-fill
-                            </button>
-                          </div>
-                        )}
+                        <div className="mt-1.5 p-2 bg-blue-50/70 border border-blue-200 rounded text-[11px] text-blue-900 flex items-center justify-between">
+                          <span className="flex items-center gap-1">
+                            <span className="material-symbols-outlined text-[14px] text-blue-600">sms</span>
+                            <span>Demo OTP: <strong className="font-mono tracking-wider">{DEMO_OTP}</strong></span>
+                          </span>
+                          <button type="button" onClick={() => setLoginOtp(DEMO_OTP)}
+                            className="text-[10px] font-bold text-blue-700 underline hover:text-blue-900">
+                            Auto-fill
+                          </button>
+                        </div>
                       </div>
 
                       {/* 5. Security CAPTCHA */}

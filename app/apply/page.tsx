@@ -2,14 +2,12 @@
 
 import React, { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import ServiceApplicationPage from './[serviceId]/page';
+import ServiceApplicationForm from '@/components/ServiceApplicationForm';
 
 function ApplyContent() {
   const searchParams = useSearchParams();
-  const serviceId = searchParams.get('service') || searchParams.get('serviceId') || 'income-certificate';
-
-  // Render ServiceApplicationPage
-  return <ServiceApplicationPage />;
+  const serviceId = searchParams.get('scheme') || searchParams.get('schemeId') || searchParams.get('service') || searchParams.get('serviceId') || searchParams.get('id') || 'income-certificate';
+  return <ServiceApplicationForm forcedId={serviceId} />;
 }
 
 export default function ApplyPage() {

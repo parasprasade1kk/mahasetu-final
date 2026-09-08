@@ -717,22 +717,620 @@ export const ALL_SERVICES: ServiceConfig[] = [
         required: true
       }
     ]
+  },
+
+  // ─── Sanjay Gandhi Niradhar Anudan Yojana ────────────────────────────────────
+  {
+    id: 'sanjay-gandhi-niradhar',
+    deptId: 'social',
+    deptNameEn: 'Social Justice & Special Assistance Department',
+    deptNameMr: 'सामाजिक न्याय व विशेष सहाय्य विभाग',
+    titleEn: 'Sanjay Gandhi Niradhar Anudan Yojana',
+    titleMr: 'संजय गांधी निराधार अनुदान योजना',
+    descEn: 'Monthly financial assistance of ₹1,500 for destitute persons, widows, and physically challenged citizens.',
+    descMr: 'निराधार व्यक्ती, विधवा महिला आणि दिव्यांग नागरिकांना दरमहा ₹१,५०० आर्थिक सहाय्य.',
+    sla: '30 Days',
+    fees: 'Free (No Charge)',
+    feesMr: 'विनामूल्य',
+    category: 'Social Welfare',
+    categoryMr: 'सामाजिक कल्याण',
+    documentsEn: ['Aadhaar Card', 'Ration Card', 'Income Certificate', 'Proof of Destitution / Widow Certificate / Disability Certificate'],
+    documentsMr: ['आधार कार्ड', 'रेशन कार्ड', 'उत्पन्नाचा दाखला', 'निराधार / विधवा / दिव्यांग प्रमाणपत्र'],
+    eligibilityEn: [
+      'Family income must not exceed ₹21,000 per annum',
+      'Applicant must be a destitute person, widow, or physically challenged citizen',
+      'Permanent resident of Maharashtra State'
+    ],
+    eligibilityMr: [
+      'कौटुंबिक वार्षिक उत्पन्न ₹२१,००० पेक्षा जास्त नसावे',
+      'निराधार, विधवा किंवा दिव्यांग नागरिक असणे आवश्यक',
+      'महाराष्ट्र राज्याचे कायमचे रहिवासी'
+    ],
+    applicationRoute: '/apply/sanjay-gandhi-niradhar',
+    customFields: [
+      {
+        id: 'beneficiaryType',
+        labelEn: 'Type of Beneficiary',
+        labelMr: 'लाभार्थी प्रकार',
+        type: 'select',
+        options: [
+          { value: 'destitute', labelEn: 'Destitute / Niradhar Person', labelMr: 'निराधार व्यक्ती' },
+          { value: 'widow', labelEn: 'Widow / Vidhwa', labelMr: 'विधवा महिला' },
+          { value: 'disabled', labelEn: 'Physically Challenged (40%+)', labelMr: 'दिव्यांग (४०%+)' },
+          { value: 'serious_illness', labelEn: 'Seriously Ill Citizen', labelMr: 'गंभीर आजारी नागरिक' }
+        ],
+        defaultValue: 'destitute',
+        required: true
+      },
+      {
+        id: 'annualIncome',
+        labelEn: 'Annual Family Income (₹)',
+        labelMr: 'कौटुंबिक वार्षिक उत्पन्न (₹)',
+        type: 'number',
+        placeholderEn: 'Must be under ₹21,000',
+        placeholderMr: '₹२१,००० पेक्षा कमी असणे आवश्यक',
+        defaultValue: 18000,
+        required: true
+      },
+      {
+        id: 'bankAccount',
+        labelEn: 'Bank Account Number (for DBT)',
+        labelMr: 'बँक खाते क्रमांक (DBT साठी)',
+        type: 'text',
+        placeholderEn: 'Aadhaar-linked bank account number',
+        placeholderMr: 'आधार संलग्न बँक खाते क्रमांक',
+        defaultValue: '',
+        required: true
+      }
+    ]
+  },
+
+  // ─── Majhi Ladki Bahin Yojana ─────────────────────────────────────────────────
+  {
+    id: 'majhi-ladki-bahin',
+    deptId: 'social',
+    deptNameEn: 'Women & Child Development Department',
+    deptNameMr: 'महिला व बालविकास विभाग',
+    titleEn: 'Mukhyamantri Majhi Ladki Bahin Yojana',
+    titleMr: 'मुख्यमंत्री माझी लाडकी बहीण योजना',
+    descEn: 'Monthly financial assistance of ₹1,500 directly into Aadhaar-linked bank accounts for eligible women aged 21–65.',
+    descMr: 'पात्र महिलांच्या आधार जोडणी बँक खात्यात दरमहा ₹१,५०० थेट आर्थिक सहाय्य.',
+    sla: '21 Days',
+    fees: 'Free (No Charge)',
+    feesMr: 'विनामूल्य',
+    category: 'Women Welfare',
+    categoryMr: 'महिला कल्याण',
+    documentsEn: ['Aadhaar Card', 'Ration Card or Yellow Card', 'Birth Certificate (Age Proof)', 'Bank Passbook (Aadhaar Linked)'],
+    documentsMr: ['आधार कार्ड', 'रेशन कार्ड किंवा पिवळे कार्ड', 'जन्म प्रमाणपत्र (वय पुरावा)', 'बँक पासबुक (आधार जोडणी)'],
+    eligibilityEn: [
+      'Women aged between 21 and 65 years',
+      'Annual family income up to ₹2,50,000',
+      'Aadhaar-linked bank account mandatory',
+      'Permanent resident of Maharashtra'
+    ],
+    eligibilityMr: [
+      '२१ ते ६५ वयोगटातील महिला',
+      'कौटुंबिक वार्षिक उत्पन्न ₹२,५०,००० पर्यंत',
+      'आधार संलग्न बँक खाते अनिवार्य',
+      'महाराष्ट्राचे कायमचे रहिवासी'
+    ],
+    applicationRoute: '/apply/majhi-ladki-bahin',
+    customFields: [
+      {
+        id: 'dateOfBirth',
+        labelEn: 'Date of Birth',
+        labelMr: 'जन्मतारीख',
+        type: 'date',
+        required: true
+      },
+      {
+        id: 'rationCardNo',
+        labelEn: 'Ration Card Number',
+        labelMr: 'रेशन कार्ड क्रमांक',
+        type: 'text',
+        placeholderEn: 'Ration / Yellow Card number',
+        placeholderMr: 'रेशन / पिवळे कार्ड क्रमांक',
+        defaultValue: '',
+        required: true
+      },
+      {
+        id: 'bankAccount',
+        labelEn: 'Aadhaar-Linked Bank Account (for DBT)',
+        labelMr: 'आधार संलग्न बँक खाते (DBT साठी)',
+        type: 'text',
+        placeholderEn: 'Account number of Aadhaar-linked bank',
+        placeholderMr: 'आधार जोडणी बँकेचा खाते क्रमांक',
+        defaultValue: '',
+        required: true
+      },
+      {
+        id: 'maritalStatus',
+        labelEn: 'Marital Status',
+        labelMr: 'वैवाहिक स्थिती',
+        type: 'select',
+        options: [
+          { value: 'single', labelEn: 'Single / Unmarried', labelMr: 'अविवाहित' },
+          { value: 'married', labelEn: 'Married', labelMr: 'विवाहित' },
+          { value: 'widow', labelEn: 'Widow', labelMr: 'विधवा' },
+          { value: 'divorced', labelEn: 'Divorced / Separated', labelMr: 'घटस्फोटित / विभक्त' }
+        ],
+        defaultValue: 'single',
+        required: true
+      }
+    ]
+  },
+
+  // ─── Magel Tyala Saur Krushi Pump Yojana ────────────────────────────────────
+  {
+    id: 'saur-krushi-pump',
+    deptId: 'agriculture',
+    deptNameEn: 'Energy & Agriculture Department',
+    deptNameMr: 'ऊर्जा व कृषी विभाग',
+    titleEn: 'Magel Tyala Saur Krushi Pump Yojana',
+    titleMr: 'मागेल त्याला सौर कृषी पंप योजना',
+    descEn: 'Up to 90–95% government subsidy on Solar Agricultural Pumps for eligible farmers with verified water sources.',
+    descMr: 'पात्र शेतकऱ्यांना सौर कृषी पंपावर ९०–९५% शासकीय अनुदान.',
+    sla: '45 Days',
+    fees: '5–10% Farmer Contribution',
+    feesMr: '५–१०% शेतकरी अंशदान',
+    category: 'Agriculture Schemes',
+    categoryMr: 'कृषी योजना',
+    documentsEn: ['7/12 Land Extract', 'Aadhaar Card', 'Water Source Verification Certificate', 'Electricity Bill (Current Connection)'],
+    documentsMr: ['७/१२ उतारा', 'आधार कार्ड', 'पाण्याचा स्रोत पडताळणी प्रमाणपत्र', 'वीज बिल (सद्य जोडणी)'],
+    eligibilityEn: [
+      'Farmer must have a verified agricultural water source (well / borewell)',
+      'Land registered in applicant\'s name with 7/12 records',
+      'No existing solar pump on the same land',
+      'Enrolled under PM-KUSUM or state scheme'
+    ],
+    eligibilityMr: [
+      'खात्रीशीर पाण्याचा स्रोत (विहीर / बोअरवेल) असणे आवश्यक',
+      '७/१२ नोंदणीनुसार जमीन अर्जदाराच्या नावे असणे',
+      'त्याच जमिनीवर आधीपासून सौर पंप नसावा',
+      'PM-KUSUM किंवा राज्य योजनेत नोंदणी'
+    ],
+    applicationRoute: '/apply/saur-krushi-pump',
+    customFields: [
+      {
+        id: 'landGatNo',
+        labelEn: 'Survey / Gat Number',
+        labelMr: 'सर्वेक्षण / गट क्रमांक',
+        type: 'text',
+        placeholderEn: 'From 7/12 extract',
+        placeholderMr: '७/१२ उताऱ्यावरून',
+        defaultValue: '',
+        required: true
+      },
+      {
+        id: 'pumpCapacity',
+        labelEn: 'Required Pump Capacity (HP)',
+        labelMr: 'आवश्यक पंप क्षमता (HP)',
+        type: 'select',
+        options: [
+          { value: '3hp', labelEn: '3 HP (Up to 2.5 Acres)', labelMr: '३ HP (२.५ एकरपर्यंत)' },
+          { value: '5hp', labelEn: '5 HP (2.5 to 5 Acres)', labelMr: '५ HP (२.५ ते ५ एकर)' },
+          { value: '7.5hp', labelEn: '7.5 HP (5 to 10 Acres)', labelMr: '७.५ HP (५ ते १० एकर)' },
+          { value: '10hp', labelEn: '10 HP (Above 10 Acres)', labelMr: '१० HP (१० एकरपेक्षा जास्त)' }
+        ],
+        defaultValue: '3hp',
+        required: true
+      },
+      {
+        id: 'waterSourceType',
+        labelEn: 'Water Source Type',
+        labelMr: 'पाण्याचा स्रोत प्रकार',
+        type: 'select',
+        options: [
+          { value: 'well', labelEn: 'Open Well', labelMr: 'उघडी विहीर' },
+          { value: 'borewell', labelEn: 'Borewell / Tubewell', labelMr: 'बोअरवेल / नळ विहीर' },
+          { value: 'canal', labelEn: 'Canal / River Lift', labelMr: 'कालवा / नदी उचल' }
+        ],
+        defaultValue: 'well',
+        required: true
+      },
+      {
+        id: 'pmKisanId',
+        labelEn: 'PM-Kisan / PM-KUSUM Registration ID (if any)',
+        labelMr: 'PM-किसान / PM-KUSUM नोंदणी आयडी (असल्यास)',
+        type: 'text',
+        placeholderEn: 'Leave blank if not registered',
+        placeholderMr: 'नोंदणी नसल्यास रिकामे सोडा',
+        defaultValue: '',
+        required: false
+      }
+    ]
+  },
+
+  // ─── Disability Scholarship & Welfare Scheme ─────────────────────────────
+  {
+    id: 'disability-scholarship',
+    deptId: 'social',
+    deptNameEn: 'Social Justice & Special Assistance Department',
+    deptNameMr: 'सामाजिक न्याय व विशेष सहाय्य विभाग',
+    titleEn: 'Disability Scholarship & Welfare Scheme',
+    titleMr: 'दिव्यांग शिष्यवृत्ती व कल्याण योजना',
+    descEn: 'Educational scholarships, maintenance allowance, and assistive devices for students with certified disabilities (Divyangjan).',
+    descMr: 'प्रमाणित दिव्यांग विद्यार्थ्यांना (दिव्यांगजन) शिक्षण, निर्वाह भत्ता व सहाय्यक साधनांसाठी शासकीय आर्थिक सहाय्य.',
+    sla: '21 Days',
+    fees: 'Free (Government Welfare)',
+    feesMr: 'विनामूल्य (शासकीय कल्याण)',
+    category: 'Disability Welfare',
+    categoryMr: 'दिव्यांग कल्याण',
+    documentsEn: ['UDID / Disability Certificate', 'Aadhaar Card', 'Income Certificate', 'College/School Bonafide', 'Bank Passbook (DBT Linked)'],
+    documentsMr: ['युडीआयडी / दिव्यांग प्रमाणपत्र', 'आधार कार्ड', 'उत्पन्नाचा दाखला', 'महाविद्यालय/शाळा बोनाफाइड', 'बँक पासबुक (DBT जोडणी)'],
+    eligibilityEn: [
+      'Minimum 40% certified disability by competent medical authority',
+      'Permanent resident of Maharashtra state',
+      'Enrolled in recognized school, college, or university',
+      'Annual family income within prescribed welfare limits'
+    ],
+    eligibilityMr: [
+      'सक्षम वैद्यकीय प्राधिकरणाकडून किमान ४०% प्रमाणित दिव्यांगत्व',
+      'महाराष्ट्र राज्याचे कायमचे रहिवासी असणे आवश्यक',
+      'मान्यताप्राप्त शाळा, महाविद्यालय किंवा विद्यापीठात नियमित प्रवेश',
+      'कौटुंबिक वार्षिक उत्पन्न विहित मर्यादेत'
+    ],
+    applicationRoute: '/apply/scheme/disability-scholarship',
+    customFields: [
+      {
+        id: 'udidNumber',
+        labelEn: 'Unique Disability ID (UDID) / Certificate No.',
+        labelMr: 'युडीआयडी (UDID) / दिव्यांग प्रमाणपत्र क्रमांक',
+        type: 'text',
+        placeholderEn: 'e.g. MH271012000000000',
+        placeholderMr: 'उदा. MH271012000000000',
+        defaultValue: '',
+        required: true
+      },
+      {
+        id: 'disabilityType',
+        labelEn: 'Disability Category',
+        labelMr: 'दिव्यांगत्वाचा प्रकार',
+        type: 'select',
+        options: [
+          { value: 'locomotor', labelEn: 'Locomotor Disability / Orthopedic', labelMr: 'अस्थिव्यंग' },
+          { value: 'visual', labelEn: 'Visual Impairment (Blind / Low Vision)', labelMr: 'दृष्टिदोष / अंधत्व' },
+          { value: 'hearing', labelEn: 'Hearing & Speech Impairment', labelMr: 'कर्णबधिर व वाचादोष' },
+          { value: 'intellectual', labelEn: 'Intellectual / Mental Disability', labelMr: 'बौद्धिक दिव्यांगत्व' },
+          { value: 'multiple', labelEn: 'Multiple Disabilities', labelMr: 'बहु-दिव्यांगत्व' }
+        ],
+        defaultValue: 'locomotor',
+        required: true
+      },
+      {
+        id: 'disabilityPercentage',
+        labelEn: 'Disability Percentage (Min 40%)',
+        labelMr: 'दिव्यांगत्व टक्केवारी (किमान ४०%)',
+        type: 'number',
+        placeholderEn: '40 - 100',
+        defaultValue: 40,
+        required: true
+      },
+      {
+        id: 'instituteName',
+        labelEn: 'Enrolled Institute / College Name',
+        labelMr: 'प्रवेश घेतलेल्या संस्थेचे / महाविद्यालयाचे नाव',
+        type: 'text',
+        placeholderEn: 'Name of educational institution',
+        defaultValue: '',
+        required: true
+      }
+    ]
+  },
+
+  // ─── Senior Citizen Scheme ────────────────────────────────────────────────
+  {
+    id: 'senior-citizen-scheme',
+    deptId: 'social',
+    deptNameEn: 'Social Justice & Special Assistance Department',
+    deptNameMr: 'सामाजिक न्याय व विशेष सहाय्य विभाग',
+    titleEn: 'Senior Citizen Scheme (Shravanbal Yojana)',
+    titleMr: 'ज्येष्ठ नागरिक सहाय्य योजना (श्रावणबाळ योजना)',
+    descEn: 'Monthly pension and social security assistance for senior citizens aged 65 and above residing in Maharashtra.',
+    descMr: 'महाराष्ट्रातील ६५ वर्षे व त्यावरील ज्येष्ठ नागरिकांसाठी मासिक निवृत्तीवेतन व सामाजिक सुरक्षा सहाय्य.',
+    sla: '30 Days',
+    fees: 'Free (No Charge)',
+    feesMr: 'विनामूल्य',
+    category: 'Senior Citizen Welfare',
+    categoryMr: 'ज्येष्ठ नागरिक कल्याण',
+    documentsEn: ['Age Proof / Birth Certificate / Aadhaar', 'Income Certificate (Tehsildar)', 'Maharashtra Domicile Certificate', 'Bank Passbook (Aadhaar Linked)'],
+    documentsMr: ['वय पुरावा / जन्म प्रमाणपत्र / आधार', 'उत्पन्नाचा दाखला (तहसीलदार)', 'महाराष्ट्र अधिवास प्रमाणपत्र', 'बँक पासबुक (आधार जोडणी)'],
+    eligibilityEn: [
+      'Applicant age must be 65 years or above',
+      'Continuous residence in Maharashtra for at least 15 years',
+      'Annual family income up to ₹21,000 / annum (Category A) or BPL card holder',
+      'Not receiving any other government or civil pension'
+    ],
+    eligibilityMr: [
+      'अर्जदाराचे वय ६५ वर्षे किंवा त्याहून अधिक असणे आवश्यक',
+      'किमान १५ वर्षे महाराष्ट्रात सतत वास्तव्य',
+      'वार्षिक कौटुंबिक उत्पन्न ₹२१,००० पर्यंत किंवा बीपीएल शिधापत्रिकाधारक',
+      'इतर कोणतीही शासकीय किंवा सेवानिवृत्ती पेन्शन मिळत नसावी'
+    ],
+    applicationRoute: '/apply/scheme/senior-citizen-scheme',
+    customFields: [
+      {
+        id: 'applicantAge',
+        labelEn: 'Applicant Age (Years)',
+        labelMr: 'अर्जदाराचे वय (वर्षे)',
+        type: 'number',
+        placeholderEn: '65 or above',
+        defaultValue: 65,
+        required: true
+      },
+      {
+        id: 'residenceYears',
+        labelEn: 'Years of Residence in Maharashtra',
+        labelMr: 'महाराष्ट्रातील वास्तव्याची वर्षे',
+        type: 'number',
+        placeholderEn: 'Minimum 15 years',
+        defaultValue: 20,
+        required: true
+      },
+      {
+        id: 'bplCardNo',
+        labelEn: 'BPL / Antyodaya Card No. (if applicable)',
+        labelMr: 'बीपीएल / अंत्योदय कार्ड क्रमांक (असल्यास)',
+        type: 'text',
+        placeholderEn: 'Leave blank if not applicable',
+        defaultValue: '',
+        required: false
+      }
+    ]
+  },
+
+  // ─── Financial Assistance Scheme ───────────────────────────────────────────
+  {
+    id: 'financial-assistance-scheme',
+    deptId: 'social',
+    deptNameEn: 'Social Justice & Special Assistance Department',
+    deptNameMr: 'सामाजिक न्याय व विशेष सहाय्य विभाग',
+    titleEn: 'Financial Assistance Scheme',
+    titleMr: 'आर्थिक सहाय्य योजना',
+    descEn: 'Direct economic aid and distress relief grants for low-income citizens and families experiencing economic hardship.',
+    descMr: 'अल्प उत्पन्न गट व संकटात असलेल्या कुटुंबांसाठी थेट आर्थिक सहाय्य व जीवनमान सुधारणा अनुदान.',
+    sla: '21 Days',
+    fees: 'Free (No Charge)',
+    feesMr: 'विनामूल्य',
+    category: 'Financial Assistance',
+    categoryMr: 'आर्थिक सहाय्य',
+    documentsEn: ['Income Certificate', 'Aadhaar Card', 'Ration Card (Yellow / Orange)', 'Bank Passbook (DBT Linked)'],
+    documentsMr: ['उत्पन्नाचा दाखला', 'आधार कार्ड', 'रेशन कार्ड (पिवळे / केशरी)', 'बँक पासबुक (DBT जोडणी)'],
+    eligibilityEn: [
+      'Permanent resident of Maharashtra State',
+      'Family annual income under ₹1,00,000 / annum',
+      'Valid Aadhaar-linked active bank account'
+    ],
+    eligibilityMr: [
+      'महाराष्ट्र राज्याचे कायमचे रहिवासी असणे आवश्यक',
+      'कौटुंबिक वार्षिक उत्पन्न ₹१,००,००० पेक्षा कमी',
+      'वैध आधार जोडणी असलेले सक्रिय बँक खाते'
+    ],
+    applicationRoute: '/apply/scheme/financial-assistance-scheme',
+    customFields: [
+      {
+        id: 'annualIncome',
+        labelEn: 'Verified Annual Family Income (₹)',
+        labelMr: 'प्रमाणित कौटुंबिक वार्षिक उत्पन्न (₹)',
+        type: 'number',
+        placeholderEn: 'e.g. 50000',
+        defaultValue: 50000,
+        required: true
+      },
+      {
+        id: 'assistanceReason',
+        labelEn: 'Purpose of Financial Assistance',
+        labelMr: 'आर्थिक सहाय्याचे प्रयोजन',
+        type: 'select',
+        options: [
+          { value: 'education', labelEn: 'Children Higher Education Support', labelMr: 'मुलांचे उच्च शिक्षण सहाय्य' },
+          { value: 'medical', labelEn: 'Critical Medical Treatment / Health Aid', labelMr: 'गंभीर आजार व वैद्यकीय मदत' },
+          { value: 'livelihood', labelEn: 'Livelihood & Small Business Support', labelMr: 'रोजगार व लघु व्यवसाय उभारणी' },
+          { value: 'destitution', labelEn: 'Family Distress Relief', labelMr: 'कौटुंबिक संकट निवारण' }
+        ],
+        defaultValue: 'education',
+        required: true
+      },
+      {
+        id: 'bankAccount',
+        labelEn: 'Aadhaar-Linked Bank Account for DBT',
+        labelMr: 'DBT साठी आधार संलग्न बँक खाते क्रमांक',
+        type: 'text',
+        placeholderEn: 'Account number',
+        defaultValue: '',
+        required: true
+      }
+    ]
+  },
+
+  // ─── Women Welfare Scheme ─────────────────────────────────────────────────
+  {
+    id: 'women-welfare-scheme',
+    deptId: 'social',
+    deptNameEn: 'Women & Child Development Department',
+    deptNameMr: 'महिला व बालविकास विभाग',
+    titleEn: 'Women Welfare Scheme',
+    titleMr: 'महिला कल्याण योजना',
+    descEn: 'Comprehensive socio-economic empowerment, skill development, and financial security scheme for women.',
+    descMr: 'महाराष्ट्रातील महिलांसाठी सर्वसमावेशक सामाजिक-आर्थिक सक्षमीकरण, कौशल्य विकास व आर्थिक सुरक्षा योजना.',
+    sla: '21 Days',
+    fees: 'Free (No Charge)',
+    feesMr: 'विनामूल्य',
+    category: 'Women Welfare',
+    categoryMr: 'महिला कल्याण',
+    documentsEn: ['Aadhaar Card', 'Ration Card', 'Birth / Age Proof', 'Bank Passbook (DBT Linked)'],
+    documentsMr: ['आधार कार्ड', 'रेशन कार्ड', 'जन्म / वय पुरावा', 'बँक पासबुक (DBT जोडणी)'],
+    eligibilityEn: [
+      'Women resident of Maharashtra aged 18 to 65 years',
+      'Annual family income up to ₹2,50,000',
+      'Aadhaar-linked active bank account'
+    ],
+    eligibilityMr: [
+      '१८ ते ६५ वयोगटातील महाराष्ट्रातील महिला',
+      'कौटुंबिक वार्षिक उत्पन्न ₹२,५०,००० पर्यंत',
+      'आधार जोडणी असलेले सक्रिय बँक खाते'
+    ],
+    applicationRoute: '/apply/scheme/women-welfare-scheme',
+    customFields: [
+      {
+        id: 'applicantAge',
+        labelEn: 'Applicant Age (Years)',
+        labelMr: 'वय (वर्षे)',
+        type: 'number',
+        defaultValue: 25,
+        required: true
+      },
+      {
+        id: 'maritalStatus',
+        labelEn: 'Marital Status',
+        labelMr: 'वैवाहिक स्थिती',
+        type: 'select',
+        options: [
+          { value: 'single', labelEn: 'Unmarried / Single', labelMr: 'अविवाहित' },
+          { value: 'married', labelEn: 'Married', labelMr: 'विवाहित' },
+          { value: 'widow', labelEn: 'Widow', labelMr: 'विधवा' },
+          { value: 'separated', labelEn: 'Divorced / Separated', labelMr: 'घटस्फोटित / विभक्त' }
+        ],
+        defaultValue: 'married',
+        required: true
+      },
+      {
+        id: 'bankAccount',
+        labelEn: 'DBT Bank Account Number',
+        labelMr: 'DBT बँक खाते क्रमांक',
+        type: 'text',
+        placeholderEn: 'Bank account number',
+        defaultValue: '',
+        required: true
+      }
+    ]
   }
 ];
 
+function toTitleCase(str: string): string {
+  return str
+    .replace(/[-_]+/g, ' ')
+    .trim()
+    .split(' ')
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(' ');
+}
+
 export function getServiceConfig(id: string): ServiceConfig {
-  const cleanId = id.toLowerCase().trim();
-  const found = ALL_SERVICES.find(s => s.id === cleanId);
+  const cleanId = (id || '').toLowerCase().trim();
+  
+  // 1. Direct match in ALL_SERVICES
+  const found = ALL_SERVICES.find(s => s.id.toLowerCase() === cleanId);
   if (found) return found;
 
-  // Fuzzy match fallback
+  // 2. Fuzzy match within ALL_SERVICES
   const fuzzy = ALL_SERVICES.find(s =>
-    cleanId.includes(s.id) ||
-    s.id.includes(cleanId) ||
+    cleanId.includes(s.id.toLowerCase()) ||
+    s.id.toLowerCase().includes(cleanId) ||
     s.titleEn.toLowerCase().includes(cleanId)
   );
   if (fuzzy) return fuzzy;
 
-  // Default fallback: Income Certificate (NOT scholarship)
+  // 3. Dynamic scheme synthesis — NEVER fallback to Income Certificate for schemes!
+  const isSchemeRequest = cleanId.includes('scheme') ||
+    cleanId.includes('scholarship') ||
+    cleanId.includes('pension') ||
+    cleanId.includes('welfare') ||
+    cleanId.startsWith('edu-') ||
+    cleanId.startsWith('sw-') ||
+    cleanId.startsWith('scm-');
+
+  const formattedTitle = toTitleCase(cleanId);
+  const deptId: ServiceConfig['deptId'] = cleanId.includes('edu') || cleanId.includes('scholarship')
+    ? 'education'
+    : cleanId.includes('saur') || cleanId.includes('farm') || cleanId.includes('agri')
+    ? 'agriculture'
+    : cleanId.includes('rev') || cleanId.includes('land')
+    ? 'revenue'
+    : 'social';
+
+  const deptNameEn = deptId === 'education'
+    ? 'Higher & Technical Education Department'
+    : deptId === 'agriculture'
+    ? 'Agriculture Department'
+    : deptId === 'revenue'
+    ? 'Revenue Department'
+    : 'Social Justice & Special Assistance Department';
+
+  const deptNameMr = deptId === 'education'
+    ? 'उच्च व तंत्रशिक्षण विभाग'
+    : deptId === 'agriculture'
+    ? 'कृषी विभाग'
+    : deptId === 'revenue'
+    ? 'महसूल विभाग'
+    : 'सामाजिक न्याय व विशेष सहाय्य विभाग';
+
+  if (isSchemeRequest || cleanId !== 'income-certificate') {
+    return {
+      id: cleanId,
+      deptId,
+      deptNameEn,
+      deptNameMr,
+      titleEn: `${formattedTitle}${formattedTitle.toLowerCase().includes('application') ? '' : ' Application'}`,
+      titleMr: `${formattedTitle} अर्ज`,
+      descEn: `Official online government welfare and subsidy application form for ${formattedTitle}.`,
+      descMr: `${formattedTitle} साठी अधिकृत शासकीय कल्याणकारी योजना अर्ज.`,
+      sla: '21 Days',
+      fees: 'Free (Government Welfare)',
+      feesMr: 'विनामूल्य',
+      category: isSchemeRequest ? 'Welfare Schemes' : 'Government Services',
+      categoryMr: isSchemeRequest ? 'कल्याणकारी योजना' : 'शासकीय सेवा',
+      documentsEn: ['Aadhaar Card', 'Income Certificate', 'Maharashtra Domicile Certificate', 'Bank Passbook (DBT Linked)'],
+      documentsMr: ['आधार कार्ड', 'उत्पन्नाचा दाखला', 'महाराष्ट्र अधिवास प्रमाणपत्र', 'बँक पासबुक (DBT जोडणी)'],
+      eligibilityEn: [
+        'Resident of Maharashtra State',
+        'Valid Aadhaar-linked citizen profile',
+        'Eligibility criteria as prescribed under scheme guidelines'
+      ],
+      eligibilityMr: [
+        'महाराष्ट्र राज्याचे कायमचे रहिवासी असणे आवश्यक',
+        'वैध आधार संलग्न नागरिक ओळख',
+        'योजना मार्गदर्शक तत्त्वांनुसार विहित निकष'
+      ],
+      applicationRoute: `/apply/scheme/${cleanId}`,
+      customFields: [
+        {
+          id: 'applicantCategory',
+          labelEn: 'Social Category',
+          labelMr: 'सामाजिक प्रवर्ग',
+          type: 'select',
+          options: [
+            { value: 'open', labelEn: 'Open / General', labelMr: 'खुला प्रवर्ग' },
+            { value: 'obc', labelEn: 'OBC', labelMr: 'इतर मागास प्रवर्ग (OBC)' },
+            { value: 'sc', labelEn: 'SC (Scheduled Caste)', labelMr: 'अनुसूचित जाती (SC)' },
+            { value: 'st', labelEn: 'ST (Scheduled Tribe)', labelMr: 'अनुसूचित जमाती (ST)' },
+            { value: 'ews', labelEn: 'EWS', labelMr: 'आर्थिकदृष्ट्या दुर्बल घटक (EWS)' }
+          ],
+          defaultValue: 'obc',
+          required: true
+        },
+        {
+          id: 'annualIncome',
+          labelEn: 'Annual Family Income (₹)',
+          labelMr: 'कौटुंबिक वार्षिक उत्पन्न (₹)',
+          type: 'number',
+          placeholderEn: 'e.g. 150000',
+          defaultValue: 150000,
+          required: true
+        },
+        {
+          id: 'bankAccount',
+          labelEn: 'Aadhaar-Linked Bank Account (for DBT)',
+          labelMr: 'आधार संलग्न बँक खाते क्रमांक (DBT साठी)',
+          type: 'text',
+          placeholderEn: 'Account number',
+          defaultValue: '',
+          required: true
+        }
+      ]
+    };
+  }
+
+  // Only if cleanId === 'income-certificate' or empty
   return ALL_SERVICES[0];
 }

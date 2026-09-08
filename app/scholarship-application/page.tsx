@@ -2,13 +2,12 @@
 
 import React, { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import ServiceApplicationPage from '../apply/[serviceId]/page';
+import ServiceApplicationForm from '@/components/ServiceApplicationForm';
 
 function ScholarshipAppContent() {
   const searchParams = useSearchParams();
-  const serviceId = searchParams.get('service') || searchParams.get('serviceId') || 'post-matric-scholarship';
-
-  return <ServiceApplicationPage />;
+  const serviceId = searchParams.get('scheme') || searchParams.get('service') || searchParams.get('serviceId') || 'post-matric-scholarship';
+  return <ServiceApplicationForm forcedId={serviceId} />;
 }
 
 export default function LegacyScholarshipApplicationPage() {
