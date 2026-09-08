@@ -44,7 +44,7 @@ const jayProfile: CitizenProfile = {
   dob: '1998-08-20',
   age: 28,
   gender: 'Male',
-  category: 'Open',
+  category: 'General/Open',
   religion: 'Hindu',
   maritalStatus: 'Married',
   state: 'Maharashtra',
@@ -123,7 +123,7 @@ if (!changed) {
 
 console.log('\n=== TEST 4: JAY PROFILE IS NOT AFFECTED ===');
 console.log('Jay remains:', jayProfile.fullName, 'in', jayProfile.district, 'with category:', jayProfile.category);
-if (jayProfile.category !== 'Open') {
+if (jayProfile.category !== 'General/Open') {
   throw new Error("Jay's profile was incorrectly modified!");
 }
 
