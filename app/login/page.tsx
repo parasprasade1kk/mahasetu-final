@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
-import { normalizeMobileNumber, findAccount, SEED_ACCOUNTS } from '@/lib/authConfig';
+import { normalizeMobileNumber, findAccount, SEED_ACCOUNTS, DEMO_OTP } from '@/lib/authConfig';
 
 // ─── Tab Type ─────────────────────────────────────────────────────────────────
 type ActiveTab = 'login' | 'register';
@@ -18,9 +18,6 @@ function genCaptcha(): string {
   for (let i = 0; i < 5; i++) r += chars.charAt(Math.floor(Math.random() * chars.length));
   return r;
 }
-
-// ─── Demo OTP (centralized — replace with real SMS gateway in production) ──
-const DEMO_OTP = '123456';
 
 export default function LoginPage() {
   const router = useRouter();

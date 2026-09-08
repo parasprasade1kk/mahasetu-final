@@ -64,12 +64,14 @@ export interface CitizenProfile {
   digiLockerLinked?: boolean;
   digiLockerLinkedAt?: string;
   digiLockerId?: string;
+  aadhaarMasked?: string;
 }
 
-/**
- * Mask raw 12-digit Aadhaar number for security (format: XXXX XXXX 1234)
- * Raw Aadhaar digits must NEVER be stored or displayed anywhere in the system.
- */
+// ─── Centralized Configurable Demo OTP ──────────────────────────────────────
+// ONLY this OTP is accepted in prototype/demo mode.
+// In production, this configuration is replaced with a real SMS / Aadhaar OTP gateway.
+export const DEMO_OTP = '123456';
+
 export function maskAadhaar(raw: string): string {
   const digits = raw.replace(/\D/g, '');
   const last4 = digits.length >= 4 ? digits.slice(-4) : '0000';

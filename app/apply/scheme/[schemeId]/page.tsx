@@ -4,17 +4,17 @@ import React, { Suspense } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import ServiceApplicationForm from '@/components/ServiceApplicationForm';
 
-function SchemeAppContent() {
+function SchemeAppContent({ initialSchemeId }: { initialSchemeId?: string }) {
   const params = useParams();
   const searchParams = useSearchParams();
-  const schemeId = (params?.schemeId as string) || searchParams?.get('scheme') || searchParams?.get('id') || 'post-matric-scholarship';
+  const schemeId = (params?.schemeId as string) || initialSchemeId || searchParams?.get('scheme') || searchParams?.get('id') || 'post-matric-scholarship';
   return <ServiceApplicationForm forcedId={schemeId} />;
 }
 
-export default function SchemeApplicationPage() {
+export default function SchemeApplicationPage({ params }: { params?: { schemeId?: string } }) {
   return (
     <Suspense fallback={<div className="p-12 text-center text-slate-500 text-xs">Loading Scheme Application...</div>}>
-      <SchemeAppContent />
+      <SchemeAppContent initialSchemeId={params?.schemeId} />
     </Suspense>
   );
 }

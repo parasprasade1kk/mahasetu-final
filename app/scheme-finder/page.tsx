@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useApp } from '@/context/AppContext';
 import { findMatchingSchemes, ScoredScheme } from '@/lib/schemeMatcher';
-import { Scheme, ALL_SCHEMES } from '@/lib/schemeDatabase';
+import { Scheme, SchemeDocument, ALL_SCHEMES } from '@/lib/schemeDatabase';
 import { evaluateAllSchemes, UserProfile } from '@/lib/eligibilityEngine';
 
 // ─── Translations ─────────────────────────────────────────────────────────────
@@ -398,14 +398,78 @@ export default function SchemeFinderPage() {
     setSelectedScheme(scored.scheme);
     setSelectedMatchReasons(scored.matchReasons);
     setMatchReasonsOpen(false);
+    // Reset per-scheme document state
+    setDigiLockerRetrievedDocs({});
+    setGovtConnectorDocs({});
+    setUploadedDocsMap({});
+    setActiveUploadDocId(null);
     goTo(5);
   };
 
-  // ─── Document upload state (Bug 2: File picker without Drag & Drop) ──────
+  // ─── Document Acquisition Priority State ────────────────────────────────────
+  // Priority 1: DigiLocker
+  const [digiLockerRetrievedDocs, setDigiLockerRetrievedDocs] = useState<Record<string, boolean>>({});
+  const [fetchingDigiDocId, setFetchingDigiDocId] = useState<string | null>(null);
+
+  // Priority 2: Authorized Government Department APIs (Demo Government Connector)
+  const [govtConnectorDocs, setGovtConnectorDocs] = useState<
+    Record<string, { consentGranted: boolean; retrieved: boolean; status: 'granted' | 'denied'; timestamp: string; source: string }>
+  >({});
+  const [govtConsentModalDoc, setGovtConsentModalDoc] = useState<SchemeDocument | null>(null);
+
+  // Priority 3: Citizen Upload
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const [activeUploadDocId, setActiveUploadDocId] = useState<string | null>(null);
   const [uploadedDocsMap, setUploadedDocsMap] = useState<Record<string, { fileName: string; fileSize: string; uploadedAt: string }>>({});
   const [fileUploadError, setFileUploadError] = useState<string>('');
+
+  const handleFetchFromDigiLocker = (docId: string) => {
+    setFetchingDigiDocId(docId);
+    setTimeout(() => {
+      setDigiLockerRetrievedDocs(prev => ({ ...prev, [docId]: true }));
+      setFetchingDigiDocId(null);
+    }, 350);
+  };
+
+  const handleOpenGovtConsent = (doc: SchemeDocument) => {
+    setGovtConsentModalDoc(doc);
+  };
+
+  const handleGrantGovtConsent = () => {
+    if (!govtConsentModalDoc) return;
+    const docId = govtConsentModalDoc.id;
+    const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const src = `${govtConsentModalDoc.source || 'Authorized Government Department'} (Demo Government Connector)`;
+    setGovtConnectorDocs(prev => ({
+      ...prev,
+      [docId]: {
+        consentGranted: true,
+        retrieved: true,
+        status: 'granted',
+        timestamp: now,
+        source: src,
+      },
+    }));
+    setGovtConsentModalDoc(null);
+  };
+
+  const handleDenyGovtConsent = () => {
+    if (!govtConsentModalDoc) return;
+    const docId = govtConsentModalDoc.id;
+    const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const src = `${govtConsentModalDoc.source || 'Authorized Government Department'} (Demo Government Connector)`;
+    setGovtConnectorDocs(prev => ({
+      ...prev,
+      [docId]: {
+        consentGranted: false,
+        retrieved: false,
+        status: 'denied',
+        timestamp: now,
+        source: src,
+      },
+    }));
+    setGovtConsentModalDoc(null);
+  };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFileUploadError('');
@@ -449,26 +513,93 @@ export default function SchemeFinderPage() {
     });
   };
 
-  // ─── Document helpers (Connected to DigiLocker per-user status) ───────────
+  // ─── Document helpers (Determined dynamically by Priority 1, 2, 3) ───────────
+  const isDocReady = (doc: SchemeDocument) => {
+    if (digiLockerRetrievedDocs[doc.id]) return true;
+    if (user.digiLockerLinked && doc.available) return true;
+    if (govtConnectorDocs[doc.id]?.status === 'granted' && govtConnectorDocs[doc.id]?.retrieved) return true;
+    if (uploadedDocsMap[doc.id]) return true;
+    return false;
+  };
+
   const availableDocs = useMemo(() => {
     if (!selectedScheme) return [];
-    return selectedScheme.requiredDocuments.filter(d => {
-      if (user.digiLockerLinked && d.available) return true;
-      if (uploadedDocsMap[d.id]) return true;
-      return false;
-    });
-  }, [selectedScheme, user.digiLockerLinked, uploadedDocsMap]);
+    return selectedScheme.requiredDocuments.filter(isDocReady);
+  }, [selectedScheme, digiLockerRetrievedDocs, user.digiLockerLinked, govtConnectorDocs, uploadedDocsMap]);
 
   const missingDocs = useMemo(() => {
     if (!selectedScheme) return [];
-    return selectedScheme.requiredDocuments.filter(d => {
-      if (user.digiLockerLinked && d.available) return false;
-      if (uploadedDocsMap[d.id]) return false;
-      return true;
-    });
-  }, [selectedScheme, user.digiLockerLinked, uploadedDocsMap]);
+    return selectedScheme.requiredDocuments.filter(d => !isDocReady(d));
+  }, [selectedScheme, digiLockerRetrievedDocs, user.digiLockerLinked, govtConnectorDocs, uploadedDocsMap]);
 
   const totalDocs = selectedScheme?.requiredDocuments.length ?? 0;
+
+  // ─── Document Audit Record Helper ──────────────────────────────────────────
+  const getDocAuditInfo = (doc: SchemeDocument) => {
+    const isDigiRetrieved = Boolean(digiLockerRetrievedDocs[doc.id]);
+    const isDigiAvailable = Boolean(user.digiLockerLinked && doc.available);
+    const govt = govtConnectorDocs[doc.id];
+    const upload = uploadedDocsMap[doc.id];
+
+    if (isDigiRetrieved || isDigiAvailable) {
+      return {
+        source: 'DigiLocker (Demo)',
+        consentStatus: 'Authorized via Linked DigiLocker',
+        retrievalStatus: isDigiRetrieved ? '✓ Retrieved from DigiLocker (Demo)' : '✓ Available in DigiLocker',
+        verificationStatus: '✓ Verified Document (Demo)',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        badge: isDigiRetrieved ? '✓ Retrieved — DigiLocker (Demo)' : '✓ Available — DigiLocker',
+        badgeClass: 'bg-emerald-100 text-emerald-800 border-emerald-300',
+        isSatisfied: true,
+      };
+    }
+    if (govt?.status === 'granted' && govt.retrieved) {
+      return {
+        source: 'Demo Government Connector',
+        consentStatus: '✓ Consent Granted',
+        retrievalStatus: '✓ Retrieved — Government Source',
+        verificationStatus: '✓ Verified Document (Demo)',
+        timestamp: govt.timestamp,
+        badge: '✓ Retrieved — Government Source',
+        badgeClass: 'bg-blue-100 text-blue-800 border-blue-300',
+        isSatisfied: true,
+      };
+    }
+    if (upload) {
+      return {
+        source: 'User Upload',
+        consentStatus: 'Citizen Attested',
+        retrievalStatus: 'Uploaded by Citizen',
+        verificationStatus: 'Citizen Attested',
+        timestamp: upload.uploadedAt,
+        badge: '✓ Uploaded — User',
+        badgeClass: 'bg-indigo-100 text-indigo-800 border-indigo-300',
+        isSatisfied: true,
+      };
+    }
+    if (govt?.status === 'denied') {
+      return {
+        source: 'Demo Government Connector',
+        consentStatus: 'Consent Denied / Cancelled',
+        retrievalStatus: 'Consent not provided — Upload Required',
+        verificationStatus: 'Action Required',
+        timestamp: govt.timestamp,
+        badge: 'Consent not provided — Upload Required',
+        badgeClass: 'bg-amber-100 text-amber-800 border-amber-300',
+        isSatisfied: false,
+      };
+    }
+    return {
+      source: 'None',
+      consentStatus: 'Pending',
+      retrievalStatus: 'Missing',
+      verificationStatus: 'Action Required',
+      timestamp: '-',
+      badge: '⚠ Missing — Action Required',
+      badgeClass: 'bg-red-50 text-red-700 border-red-300',
+      isSatisfied: false,
+    };
+  };
 
   // ─── Submit handler — uses selectedScheme dynamically ─────────────────────
   const handleSubmit = () => {
@@ -1007,7 +1138,7 @@ export default function SchemeFinderPage() {
       )}
 
       {/* ═══════════════════════════════════════════════════════════════════════
-          SCREEN 6: Document Locker Check — DYNAMIC
+          SCREEN 6: Document Locker Check — DYNAMIC 3-TIER DOCUMENT ACQUISITION
          ═══════════════════════════════════════════════════════════════════════ */}
       {screen === 6 && selectedScheme && (
         <div className="space-y-4 animate-fadeIn">
@@ -1022,65 +1153,128 @@ export default function SchemeFinderPage() {
               </p>
               <div className="flex gap-4 mt-2 text-xs">
                 <span className="text-slate-500">Required: <span className="font-bold text-[#003b5a]">{totalDocs}</span></span>
-                <span className="text-emerald-600">Available: <span className="font-bold">{availableDocs.length}</span></span>
-                <span className="text-red-500">Missing: <span className="font-bold">{missingDocs.length}</span></span>
+                <span className="text-emerald-600">Ready/Verified: <span className="font-bold">{availableDocs.length}</span></span>
+                <span className="text-red-500">Pending Action: <span className="font-bold">{missingDocs.length}</span></span>
               </div>
             </div>
 
-            <p className="text-sm text-slate-600">{tx(lang, 'doc_check_desc')}</p>
+            {/* Document Acquisition Priority Guide */}
+            <div className="bg-[#e5eeff]/60 border border-[#9bccf6] p-3 rounded-lg text-xs space-y-1 text-slate-700">
+              <span className="font-bold text-[#003b5a] flex items-center gap-1">
+                <span className="material-symbols-outlined text-[16px]">verified</span>
+                Document Acquisition Priority
+              </span>
+              <p className="text-[11px] text-slate-600">
+                1. DigiLocker Vault &nbsp;•&nbsp; 2. Demo Government Connector (Explicit User Consent) &nbsp;•&nbsp; 3. Citizen Upload
+              </p>
+            </div>
 
-            {/* Verified Documents */}
-            {availableDocs.length > 0 && (
-              <div className="space-y-2">
-                <h4 className="text-sm font-bold text-emerald-700 flex items-center gap-1">
-                  <span className="material-symbols-outlined text-sm">check_circle</span>
-                  <span>{tx(lang, 'sec_verified')} ({availableDocs.length})</span>
-                </h4>
-                {availableDocs.map((doc) => (
-                  <div key={doc.id} className="bg-[#f8f9ff] p-3 rounded-lg border border-slate-200 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <span className="material-symbols-outlined text-emerald-600">description</span>
-                      <div>
-                        <h5 className="text-sm font-semibold">{lang === 'mr' ? doc.nameMr : doc.name}</h5>
-                        <span className="text-xs text-slate-500">
-                          {uploadedDocsMap[doc.id]
-                            ? (lang === 'mr' ? 'नागरिक अपलोडद्वारे सत्यापित' : 'Attested via Citizen Upload')
-                            : (lang === 'mr' ? 'डिजिलॉकरद्वारे उपलब्ध' : 'Available via DigiLocker')}
-                        </span>
-                      </div>
-                    </div>
-                    <span className="text-xs bg-emerald-100 text-emerald-800 px-2 py-1 rounded font-medium border border-emerald-200">
-                      {tx(lang, 'badge_verified')}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
+            {/* Required Documents List with Priority 1 & 2 Actions */}
+            <div className="space-y-3 pt-1">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-600">
+                Required Documents for {lang === 'mr' ? selectedScheme.nameMr : selectedScheme.name}
+              </h4>
 
-            {/* Missing Documents */}
-            {missingDocs.length > 0 && (
-              <div className="space-y-2 pt-2">
-                <h4 className="text-sm font-bold text-red-600 flex items-center gap-1">
-                  <span className="material-symbols-outlined text-sm">error</span>
-                  <span>{tx(lang, 'sec_missing')} ({missingDocs.length})</span>
-                </h4>
-                {missingDocs.map((doc) => (
-                  <div key={doc.id} className="bg-[#f8f9ff] p-3 rounded-lg border border-red-200 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <span className="material-symbols-outlined text-red-500">upload_file</span>
+              {selectedScheme.requiredDocuments.map((doc) => {
+                const isDigiAvailable = Boolean(user.digiLockerLinked && doc.available);
+                const isDigiRetrieved = Boolean(digiLockerRetrievedDocs[doc.id]);
+                const govt = govtConnectorDocs[doc.id];
+                const uploaded = uploadedDocsMap[doc.id];
+
+                return (
+                  <div key={doc.id} className="bg-[#f8f9ff] p-4 rounded-xl border border-slate-200 space-y-2.5">
+                    <div className="flex items-start justify-between gap-2">
                       <div>
-                        <h5 className="text-sm font-semibold">{lang === 'mr' ? doc.nameMr : doc.name}</h5>
-                        <span className="text-xs text-red-500">
-                          {!user.digiLockerLinked
-                            ? (lang === 'mr' ? 'गहाळ — डिजिलॉकर जोडलेले नाही / अपलोड आवश्यक' : 'Missing — Upload Required')
-                            : (lang === 'mr' ? 'गहाळ — अपलोड आवश्यक' : 'Missing — Upload Required')}
-                        </span>
+                        <h5 className="text-sm font-bold text-slate-900">
+                          {lang === 'mr' ? doc.nameMr : doc.name}
+                        </h5>
+                        <p className="text-xs text-slate-500">
+                          Issuing Authority: {lang === 'mr' ? doc.sourceMr : doc.source}
+                        </p>
                       </div>
+
+                      {/* Status Badges */}
+                      {isDigiRetrieved ? (
+                        <span className="text-[11px] bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-full font-bold border border-emerald-300 flex-shrink-0">
+                          ✓ Retrieved from DigiLocker (Demo)
+                        </span>
+                      ) : isDigiAvailable ? (
+                        <span className="text-[11px] bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full font-bold border border-emerald-200 flex-shrink-0">
+                          ✓ Available in DigiLocker
+                        </span>
+                      ) : govt?.status === 'granted' && govt.retrieved ? (
+                        <span className="text-[11px] bg-blue-100 text-blue-800 px-2.5 py-1 rounded-full font-bold border border-blue-300 flex-shrink-0">
+                          ✓ Retrieved — Government Source
+                        </span>
+                      ) : govt?.status === 'denied' ? (
+                        <span className="text-[11px] bg-amber-100 text-amber-800 px-2.5 py-1 rounded-full font-bold border border-amber-300 flex-shrink-0">
+                          Consent not provided — Upload Required
+                        </span>
+                      ) : uploaded ? (
+                        <span className="text-[11px] bg-indigo-100 text-indigo-800 px-2.5 py-1 rounded-full font-bold border border-indigo-300 flex-shrink-0">
+                          ✓ Uploaded — User
+                        </span>
+                      ) : (
+                        <span className="text-[11px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded border border-slate-300 flex-shrink-0">
+                          Not in DigiLocker
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Acquisition Flow Actions */}
+                    <div className="pt-2 border-t border-slate-200/80 flex flex-wrap items-center justify-between gap-2 text-xs">
+                      {isDigiAvailable ? (
+                        <div className="flex items-center gap-2">
+                          <span className="text-emerald-700 font-medium text-[11px]">
+                            {isDigiRetrieved ? '✓ Verified Document' : 'DigiLocker vault match confirmed.'}
+                          </span>
+                          {!isDigiRetrieved && (
+                            <button
+                              type="button"
+                              onClick={() => handleFetchFromDigiLocker(doc.id)}
+                              disabled={fetchingDigiDocId === doc.id}
+                              className="bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-1.5 rounded-lg font-bold text-xs transition flex items-center gap-1"
+                            >
+                              {fetchingDigiDocId === doc.id ? (
+                                <span>Fetching...</span>
+                              ) : (
+                                <>
+                                  <span className="material-symbols-outlined text-[15px]">download</span>
+                                  <span>Fetch from DigiLocker</span>
+                                </>
+                              )}
+                            </button>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 w-full">
+                          <div className="text-[11px] text-slate-500">
+                            {govt?.status === 'granted' ? (
+                              <span className="text-blue-700 font-medium">✓ Consent Granted • Verified Document (Demo Government Connector)</span>
+                            ) : govt?.status === 'denied' ? (
+                              <span className="text-amber-700 font-medium">Consent not provided — Please upload document manually</span>
+                            ) : (
+                              <span className="text-slate-600">Permission Required • Available via Demo Government Connector</span>
+                            )}
+                          </div>
+
+                          {(!govt || govt.status === 'denied') && !uploaded && (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenGovtConsent(doc)}
+                              className="bg-[#003b5a] hover:bg-[#002840] text-white px-3 py-1.5 rounded-lg font-bold text-xs transition flex items-center gap-1 self-start sm:self-auto"
+                            >
+                              <span className="material-symbols-outlined text-[15px]">security</span>
+                              <span>{govt?.status === 'denied' ? 'Request Consent Again' : 'Fetch from Government Source'}</span>
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
+                );
+              })}
+            </div>
 
             <div className="pt-2">
               <button
@@ -1091,6 +1285,58 @@ export default function SchemeFinderPage() {
               </button>
             </div>
           </div>
+
+          {/* Explicit Consent Modal for Government Source Fetching */}
+          {govtConsentModalDoc && (
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fadeIn">
+              <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+                <div className="flex items-center gap-3 text-[#003b5a]">
+                  <div className="w-10 h-10 rounded-full bg-[#003b5a]/10 flex items-center justify-center text-[#003b5a] flex-shrink-0">
+                    <span className="material-symbols-outlined text-2xl">verified_user</span>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-base text-[#003b5a]">Government Document Retrieval Consent</h3>
+                    <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+                      Demo Government Connector
+                    </span>
+                  </div>
+                </div>
+
+                <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-1">
+                  <p className="text-xs text-slate-500">Document requested:</p>
+                  <p className="text-sm font-bold text-slate-800">{govtConsentModalDoc.name}</p>
+                  <p className="text-xs text-slate-500">
+                    Department: {govtConsentModalDoc.source || 'Authorized Government Department'}
+                  </p>
+                </div>
+
+                <div className="bg-amber-50 p-3.5 rounded-xl border border-amber-200 text-xs text-amber-900 leading-relaxed font-semibold">
+                  &ldquo;I authorize MahaSetu to retrieve this document from the relevant authorised government department for the purpose of completing my selected application.&rdquo;
+                </div>
+
+                <p className="text-[11px] text-slate-500 italic">
+                  Note: In prototype mode, simulated authorized retrieval is logged into the application audit trail without claiming unauthorized live government access.
+                </p>
+
+                <div className="grid grid-cols-2 gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={handleDenyGovtConsent}
+                    className="w-full py-2.5 px-4 rounded-xl border border-slate-300 text-slate-700 text-xs font-bold hover:bg-slate-50 transition text-center"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleGrantGovtConsent}
+                    className="w-full py-2.5 px-4 rounded-xl bg-[#003b5a] text-white text-xs font-bold hover:bg-[#002840] transition text-center shadow-md"
+                  >
+                    Give Consent
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -1161,7 +1407,7 @@ export default function SchemeFinderPage() {
               className="hidden"
             />
 
-            {/* Simple Clean File Upload Component — NO DRAG AND DROP */}
+            {/* Simple Clean File Upload Component */}
             <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 text-center space-y-3">
               <div className="w-12 h-12 rounded-full bg-[#003b5a]/10 text-[#003b5a] flex items-center justify-center mx-auto">
                 <span className="material-symbols-outlined text-[26px]">upload_file</span>
@@ -1201,17 +1447,18 @@ export default function SchemeFinderPage() {
             {/* Missing documents list with individual status and file selection */}
             <div className="space-y-3 pt-2">
               <h4 className="text-xs font-bold uppercase tracking-wider text-slate-600">
-                {lang === 'mr' ? 'आवश्यक कागदपत्रे स्थिती' : 'Required Documents Status'}
+                {lang === 'mr' ? 'कागदपत्रे स्थिती व मॅन्युअल अपलोड' : 'Document Status & Citizen Upload'}
               </h4>
 
               {missingDocs.length === 0 ? (
                 <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 flex items-center gap-2">
                   <span className="material-symbols-outlined text-emerald-600">check_circle</span>
-                  <span>{lang === 'mr' ? 'सर्व कागदपत्रे जोडली गेली आहेत!' : 'All required documents have been attested!'}</span>
+                  <span>{lang === 'mr' ? 'सर्व कागदपत्रे जोडली गेली आहेत!' : 'All required documents have been retrieved or attested!'}</span>
                 </div>
               ) : (
                 missingDocs.map((doc) => {
                   const uploaded = uploadedDocsMap[doc.id];
+                  const govt = govtConnectorDocs[doc.id];
                   return (
                     <div key={doc.id} className="bg-[#f8f9ff] p-4 rounded-xl border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div className="flex items-start gap-3">
@@ -1228,11 +1475,15 @@ export default function SchemeFinderPage() {
                           </h5>
                           {uploaded ? (
                             <p className="text-[11px] text-emerald-700 font-medium">
-                              ✓ {uploaded.fileName} ({uploaded.fileSize}) • Verified
+                              ✓ {uploaded.fileName} ({uploaded.fileSize}) • Citizen Uploaded
+                            </p>
+                          ) : govt?.status === 'denied' ? (
+                            <p className="text-[11px] text-amber-700 font-medium">
+                              Consent not provided — Upload Required from citizen
                             </p>
                           ) : (
                             <p className="text-[11px] text-slate-500">
-                              Required from citizen • Select file from device
+                              Missing from DigiLocker • Upload Required from device
                             </p>
                           )}
                         </div>
@@ -1294,7 +1545,7 @@ export default function SchemeFinderPage() {
       )}
 
       {/* ═══════════════════════════════════════════════════════════════════════
-          SCREEN 9: Smart Document Pack — DYNAMIC with DigiLocker Integration
+          SCREEN 9: Smart Document Pack — DYNAMIC with Strict Acquisition Status
          ═══════════════════════════════════════════════════════════════════════ */}
       {screen === 9 && selectedScheme && (
         <div className="space-y-4 animate-fadeIn">
@@ -1312,49 +1563,73 @@ export default function SchemeFinderPage() {
               <span className="material-symbols-outlined text-3xl text-emerald-600">verified_user</span>
             </div>
 
-            {/* Document List — all scheme docs connected to DigiLocker and citizen uploads */}
+            {/* Document List with Exact Four Status Badges */}
             <div className="space-y-2.5">
               {selectedScheme.requiredDocuments.map((doc) => {
-                const isViaDigiLocker = user.digiLockerLinked && doc.available;
-                const isUserUploaded = Boolean(uploadedDocsMap[doc.id]);
-                const isAvailable = isViaDigiLocker || isUserUploaded;
+                const audit = getDocAuditInfo(doc);
 
                 return (
-                  <div key={doc.id} className="bg-[#f8f9ff] p-3 rounded-xl border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs sm:text-sm">
+                  <div key={doc.id} className="bg-[#f8f9ff] p-3.5 rounded-xl border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs sm:text-sm">
                     <div className="flex items-center gap-2.5">
-                      <span className={`material-symbols-outlined text-[20px] ${isAvailable ? 'text-emerald-600' : 'text-amber-500'}`}>
-                        {isAvailable ? 'check_circle' : 'pending'}
+                      <span className={`material-symbols-outlined text-[20px] ${audit.isSatisfied ? 'text-emerald-600' : 'text-amber-500'}`}>
+                        {audit.isSatisfied ? 'check_circle' : 'pending'}
                       </span>
                       <div>
                         <span className="font-semibold text-slate-800 block">
                           {lang === 'mr' ? doc.nameMr : doc.name}
                         </span>
                         <span className="text-[11px] text-slate-500">
-                          {isViaDigiLocker
-                            ? (lang === 'mr' ? 'डिजिलॉकरद्वारे सत्यापित दस्तऐवज' : 'Verified via DigiLocker Vault')
-                            : isUserUploaded
-                            ? `Uploaded: ${uploadedDocsMap[doc.id].fileName}`
-                            : (lang === 'mr' ? doc.sourceMr : doc.source)}
+                          Authority: {lang === 'mr' ? doc.sourceMr : doc.source} • Source: {audit.source}
                         </span>
                       </div>
                     </div>
 
-                    <span className={`text-[11px] px-2.5 py-1 rounded-full font-bold border self-start sm:self-center ${
-                      isViaDigiLocker
-                        ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
-                        : isUserUploaded
-                        ? 'bg-blue-100 text-blue-800 border-blue-200'
-                        : 'bg-red-50 text-red-700 border-red-200'
-                    }`}>
-                      {isViaDigiLocker
-                        ? (lang === 'mr' ? 'डिजिलॉकरद्वारे उपलब्ध' : 'Available via DigiLocker')
-                        : isUserUploaded
-                        ? (lang === 'mr' ? 'नागरिक अपलोड' : 'Citizen Uploaded')
-                        : (lang === 'mr' ? 'गहाळ — अपलोड आवश्यक' : 'Missing — Upload Required')}
+                    {/* Standardized Final Badges:
+                        ✓ Available — DigiLocker / ✓ Retrieved — DigiLocker (Demo)
+                        ✓ Retrieved — Government Source
+                        ✓ Uploaded — User
+                        ⚠ Missing — Action Required */}
+                    <span className={`text-[11px] px-2.5 py-1 rounded-full font-bold border self-start sm:self-center ${audit.badgeClass}`}>
+                      {audit.badge}
                     </span>
                   </div>
                 );
               })}
+            </div>
+
+            {/* Complete Verification & Consent Audit Trail Record */}
+            <div className="mt-4 border border-slate-200 rounded-xl p-4 bg-slate-50 space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-bold text-[#003b5a] uppercase tracking-wider flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-[16px]">history_edu</span>
+                  <span>Document Acquisition & Verification Audit Trail</span>
+                </h4>
+                <span className="text-[10px] font-semibold text-slate-500 bg-white px-2 py-0.5 rounded border border-slate-200">
+                  MahaSetu Audit Log
+                </span>
+              </div>
+
+              <div className="space-y-2 text-xs">
+                {selectedScheme.requiredDocuments.map((doc) => {
+                  const audit = getDocAuditInfo(doc);
+                  return (
+                    <div key={doc.id} className="bg-white p-2.5 rounded-lg border border-slate-200 space-y-1 shadow-xs">
+                      <div className="flex items-center justify-between font-semibold text-slate-800">
+                        <span>{doc.name}</span>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${audit.badgeClass}`}>
+                          {audit.badge}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-[11px] text-slate-600 pt-1 border-t border-slate-100">
+                        <div><span className="text-slate-400">Source:</span> <span className="font-medium text-slate-700">{audit.source}</span></div>
+                        <div><span className="text-slate-400">Consent:</span> <span className="font-medium text-slate-700">{audit.consentStatus}</span></div>
+                        <div><span className="text-slate-400">Retrieval:</span> <span className="font-medium text-slate-700">{audit.retrievalStatus}</span></div>
+                        <div><span className="text-slate-400">Time:</span> <span className="font-medium text-slate-700">{audit.timestamp}</span></div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
 
             <div className="pt-2">
