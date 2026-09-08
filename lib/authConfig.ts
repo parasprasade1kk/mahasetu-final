@@ -1,16 +1,27 @@
-// ─── Centralized Authentication & User Registry Configuration ─────────────────
-// Only authorized citizens registered with the Government of Maharashtra can access MahaSetu.
+// ─── MahaSetu Citizen Authentication & Account Registry ──────────────────────
+// Open Registration Platform — Government of Maharashtra
+// Any citizen with a valid mobile number can register and access MahaSetu.
+// The 6 original demo citizens are pre-seeded on first load.
+//
+// PRODUCTION NOTE: Replace localStorage helpers with real API calls.
+// The OTP flow should be replaced with a real SMS/Aadhaar OTP gateway.
 
-export interface RegisteredUser {
+// ─── Account Interface ────────────────────────────────────────────────────────
+export interface CitizenAccount {
   id: string;
   name: string;
-  nameMr: string;
+  nameMr?: string;            // Optional: Marathi name (pre-seeded accounts have this)
   mobile: string;
-  email: string;
-  aadhaarMasked: string;
+  email?: string;
+  aadhaarMasked?: string;
+  createdAt: string;
   role: 'citizen';
 }
 
+// Backward-compatibility alias — used in older imports
+export type RegisteredUser = CitizenAccount;
+
+// ─── Citizen Profile (unchanged) ─────────────────────────────────────────────
 export interface CitizenProfile {
   // Personal
   fullName: string;
@@ -50,8 +61,11 @@ export interface CitizenProfile {
   completedAt: string;
 }
 
-// ─── 6 Authorized Registered Citizens ───────────────────────────────────────────
-export const AUTHORIZED_USERS: RegisteredUser[] = [
+// ─── 6 Pre-Seeded Demo Citizen Accounts ──────────────────────────────────────
+// These are no longer an "authorized whitelist" — they are simply the first
+// 6 demo accounts pre-registered in the platform for demonstration purposes.
+// New citizens can register freely alongside these accounts.
+export const SEED_ACCOUNTS: CitizenAccount[] = [
   {
     id: 'MH-CIT-001',
     name: 'Paras Prasade',
@@ -59,6 +73,7 @@ export const AUTHORIZED_USERS: RegisteredUser[] = [
     mobile: '7276218598',
     email: 'paras.prasade@citizen.mahasetu.gov.in',
     aadhaarMasked: 'XXXX-XXXX-7276',
+    createdAt: '2026-01-01T00:00:00.000Z',
     role: 'citizen',
   },
   {
@@ -68,6 +83,7 @@ export const AUTHORIZED_USERS: RegisteredUser[] = [
     mobile: '9588647927',
     email: 'jay.sawale@citizen.mahasetu.gov.in',
     aadhaarMasked: 'XXXX-XXXX-9588',
+    createdAt: '2026-01-01T00:00:00.000Z',
     role: 'citizen',
   },
   {
@@ -77,6 +93,7 @@ export const AUTHORIZED_USERS: RegisteredUser[] = [
     mobile: '7447571077',
     email: 'aniruddha.nawale@citizen.mahasetu.gov.in',
     aadhaarMasked: 'XXXX-XXXX-7447',
+    createdAt: '2026-01-01T00:00:00.000Z',
     role: 'citizen',
   },
   {
@@ -86,6 +103,7 @@ export const AUTHORIZED_USERS: RegisteredUser[] = [
     mobile: '7249517306',
     email: 'anshul.patil@citizen.mahasetu.gov.in',
     aadhaarMasked: 'XXXX-XXXX-7249',
+    createdAt: '2026-01-01T00:00:00.000Z',
     role: 'citizen',
   },
   {
@@ -95,6 +113,7 @@ export const AUTHORIZED_USERS: RegisteredUser[] = [
     mobile: '8329895972',
     email: 'aman.chaudhary@citizen.mahasetu.gov.in',
     aadhaarMasked: 'XXXX-XXXX-8329',
+    createdAt: '2026-01-01T00:00:00.000Z',
     role: 'citizen',
   },
   {
@@ -104,15 +123,25 @@ export const AUTHORIZED_USERS: RegisteredUser[] = [
     mobile: '8767867760',
     email: 'shrushti.shinde@citizen.mahasetu.gov.in',
     aadhaarMasked: 'XXXX-XXXX-8767',
+    createdAt: '2026-01-01T00:00:00.000Z',
     role: 'citizen',
   },
 ];
 
-export const ACCESS_DENIED_ERROR_MESSAGE = 'Access denied. This mobile number is not registered with MahaSetu.';
-export const ACCESS_DENIED_ERROR_MESSAGE_MR = 'प्रवेश नाकारला. हा मोबाईल क्रमांक महासेतू पोर्टलवर नोंदणीकृत नाही.';
+// ─── localStorage Key for Account Registry ────────────────────────────────────
+const ACCOUNTS_STORAGE_KEY = 'mahasetu_accounts';
 
+// ─── Unique ID Generator ──────────────────────────────────────────────────────
+export function generateUserId(): string {
+  const ts = Date.now().toString(36).toUpperCase();
+  const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
+  return `MH-CIT-${ts}-${rand}`;
+}
+
+// ─── Mobile Number Normalization ──────────────────────────────────────────────
 /**
- * Standardizes a 10-digit mobile number by stripping country code (+91 / 91), spaces, and dashes.
+ * Standardizes a 10-digit mobile number by stripping +91 / 91 / 0 prefix,
+ * spaces, and dashes.
  */
 export function normalizeMobileNumber(input: string): string {
   const digitsOnly = input.replace(/\D/g, '');
@@ -125,15 +154,85 @@ export function normalizeMobileNumber(input: string): string {
   return digitsOnly;
 }
 
+// ─── Account Registry CRUD ────────────────────────────────────────────────────
+
 /**
- * Verifies if mobile belongs to one of the 6 authorized users.
+ * Load all registered accounts from localStorage.
+ * Seeds the 6 demo accounts if the registry is empty.
  */
-export function findAuthorizedUser(mobile: string): RegisteredUser | null {
-  const cleanMobile = normalizeMobileNumber(mobile);
-  return AUTHORIZED_USERS.find(user => user.mobile === cleanMobile) || null;
+export function loadAccounts(): CitizenAccount[] {
+  if (typeof window === 'undefined') return [...SEED_ACCOUNTS];
+  try {
+    const stored = localStorage.getItem(ACCOUNTS_STORAGE_KEY);
+    if (stored) {
+      const parsed: CitizenAccount[] = JSON.parse(stored);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+    // First boot: seed the 6 demo accounts
+    localStorage.setItem(ACCOUNTS_STORAGE_KEY, JSON.stringify(SEED_ACCOUNTS));
+    return [...SEED_ACCOUNTS];
+  } catch {
+    return [...SEED_ACCOUNTS];
+  }
 }
 
-// ─── Welfare Scheme Interest Categories ────────────────────────────────────────
+/**
+ * Persist the account registry to localStorage.
+ */
+export function saveAccounts(accounts: CitizenAccount[]): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(ACCOUNTS_STORAGE_KEY, JSON.stringify(accounts));
+  } catch {
+    // Storage quota or private mode — ignore silently
+  }
+}
+
+/**
+ * Find a registered account by mobile number.
+ * Returns null if the mobile is not yet registered.
+ */
+export function findAccount(mobile: string): CitizenAccount | null {
+  const clean = normalizeMobileNumber(mobile);
+  return loadAccounts().find(a => a.mobile === clean) || null;
+}
+
+/**
+ * Backward-compatibility alias for findAccount.
+ * Previously this checked against a hardcoded whitelist — now it simply looks
+ * up any registered account, enabling open registration.
+ */
+export function findAuthorizedUser(mobile: string): CitizenAccount | null {
+  return findAccount(mobile);
+}
+
+/**
+ * Register a new citizen account.
+ * If the mobile is already registered, returns the existing account.
+ * Persists to localStorage and returns the new CitizenAccount.
+ */
+export function registerAccount(name: string, mobile: string): CitizenAccount {
+  const clean = normalizeMobileNumber(mobile);
+  const accounts = loadAccounts();
+  const existing = accounts.find(a => a.mobile === clean);
+  if (existing) return existing;
+
+  const newAccount: CitizenAccount = {
+    id: generateUserId(),
+    name: name.trim(),
+    mobile: clean,
+    email: `citizen.${clean}@mahasetu.gov.in`,
+    aadhaarMasked: `XXXX-XXXX-${clean.slice(-4)}`,
+    createdAt: new Date().toISOString(),
+    role: 'citizen',
+  };
+
+  accounts.push(newAccount);
+  saveAccounts(accounts);
+  return newAccount;
+}
+
+// ─── Welfare Scheme Interest Categories ──────────────────────────────────────
 export const SCHEME_INTEREST_CATEGORIES = [
   { id: 'agriculture', nameEn: 'Agriculture & Farmer Welfare', nameMr: 'कृषी आणि शेतकरी कल्याण', icon: 'agriculture' },
   { id: 'education', nameEn: 'Education & Scholarships', nameMr: 'शिक्षण आणि शिष्यवृत्ती', icon: 'school' },

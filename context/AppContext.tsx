@@ -1,7 +1,14 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { RegisteredUser, CitizenProfile, findAuthorizedUser, ACCESS_DENIED_ERROR_MESSAGE } from '@/lib/authConfig';
+import {
+  CitizenAccount,
+  CitizenProfile,
+  findAccount,
+  registerAccount,
+  loadAccounts,
+  SEED_ACCOUNTS,
+} from '@/lib/authConfig';
 
 type Language = 'en' | 'mr';
 type FontSize = 'normal' | 'large' | 'xlarge';
@@ -53,10 +60,13 @@ interface AppContextType {
   // Authentication & Profile State
   isAuthLoaded: boolean;
   isLoggedIn: boolean;
-  currentUser: RegisteredUser | null;
+  currentUser: CitizenAccount | null;
   userProfile: CitizenProfile | null;
   isProfileComplete: boolean;
-  loginWithMobile: (mobile: string) => { success: boolean; user?: RegisteredUser; error?: string };
+
+  // Auth Actions
+  loginWithMobile: (mobile: string) => { success: boolean; user?: CitizenAccount; error?: string };
+  registerUser: (name: string, mobile: string) => { success: boolean; user?: CitizenAccount; error?: string };
   saveUserProfile: (profile: CitizenProfile) => void;
   login: () => void; // Legacy fallback
   logout: () => void;
@@ -71,6 +81,7 @@ interface AppContextType {
   toggleConsent: (id: string) => void;
 }
 
+// ─── Default Seed Applications (shown for first-time sessions) ───────────────
 const initialApplications: ApplicationRecord[] = [
   {
     id: 'MH-REV-2025-88319',
@@ -82,8 +93,8 @@ const initialApplications: ApplicationRecord[] = [
     status: 'Approved / Issued',
     statusColor: 'bg-emerald-100 text-emerald-800 border-emerald-300',
     downloadUrl: '#',
-    applicantName: 'Paras Prasade',
-    district: 'Pune'
+    applicantName: 'Citizen',
+    district: 'Maharashtra'
   },
   {
     id: 'MH-EDU-2026-44102',
@@ -94,8 +105,8 @@ const initialApplications: ApplicationRecord[] = [
     appliedDate: '04 Sep 2026',
     status: 'Under Scrutiny',
     statusColor: 'bg-amber-100 text-amber-800 border-amber-300',
-    applicantName: 'Paras Prasade',
-    district: 'Pune'
+    applicantName: 'Citizen',
+    district: 'Maharashtra'
   },
   {
     id: 'MH-SOC-2026-11928',
@@ -106,8 +117,8 @@ const initialApplications: ApplicationRecord[] = [
     appliedDate: '28 Aug 2026',
     status: 'Field Verification',
     statusColor: 'bg-blue-100 text-blue-800 border-blue-300',
-    applicantName: 'Paras Prasade',
-    district: 'Pune'
+    applicantName: 'Citizen',
+    district: 'Maharashtra'
   }
 ];
 
@@ -163,35 +174,40 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // Authentication State
   const [isAuthLoaded, setIsAuthLoaded] = useState<boolean>(false);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
-  const [currentUser, setCurrentUser] = useState<RegisteredUser | null>(null);
+  const [currentUser, setCurrentUser] = useState<CitizenAccount | null>(null);
   const [userProfile, setUserProfile] = useState<CitizenProfile | null>(null);
 
   const [applications, setApplications] = useState<ApplicationRecord[]>(initialApplications);
   const [consents, setConsents] = useState<ConsentItem[]>(initialConsents);
 
-  // Load authentication from localStorage on mount
+  // ─── Hydrate session from localStorage on mount ───────────────────────────
   useEffect(() => {
+    // Ensure the 6 seed accounts are always available in the registry
+    loadAccounts();
+
     try {
       const savedUserStr = localStorage.getItem(STORAGE_KEY_AUTH_USER);
       if (savedUserStr) {
-        const savedUser: RegisteredUser = JSON.parse(savedUserStr);
-        // Verify user is legitimately authorized
-        const verified = findAuthorizedUser(savedUser.mobile);
+        const savedUser: CitizenAccount = JSON.parse(savedUserStr);
+        // Verify the saved user still exists in the account registry
+        // (open to any registered citizen, no whitelist)
+        const verified = findAccount(savedUser.mobile);
         if (verified) {
           setCurrentUser(verified);
           setIsLoggedIn(true);
 
-          // Check if profile exists for this mobile
+          // Load this user's saved profile (isolated by mobile)
           const savedProfileStr = localStorage.getItem(`${STORAGE_KEY_USER_PROFILE}${verified.mobile}`);
           if (savedProfileStr) {
             setUserProfile(JSON.parse(savedProfileStr));
           }
         } else {
+          // Session references an account that no longer exists — clear it
           localStorage.removeItem(STORAGE_KEY_AUTH_USER);
         }
       }
     } catch {
-      // Ignore JSON parse errors on invalid storage
+      // Ignore JSON parse errors on corrupt storage
     } finally {
       setIsAuthLoaded(true);
     }
@@ -199,20 +215,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const isProfileComplete = Boolean(userProfile && userProfile.confirmedAccurate);
 
-  const loginWithMobile = (mobile: string): { success: boolean; user?: RegisteredUser; error?: string } => {
-    const authorized = findAuthorizedUser(mobile);
-    if (!authorized) {
+  // ─── Login (existing registered citizen) ─────────────────────────────────
+  const loginWithMobile = (mobile: string): { success: boolean; user?: CitizenAccount; error?: string } => {
+    const account = findAccount(mobile);
+    if (!account) {
       return {
         success: false,
-        error: ACCESS_DENIED_ERROR_MESSAGE
+        error: 'No account found for this mobile number. Please create a new account.'
       };
     }
 
-    setCurrentUser(authorized);
+    setCurrentUser(account);
     setIsLoggedIn(true);
     try {
-      localStorage.setItem(STORAGE_KEY_AUTH_USER, JSON.stringify(authorized));
-      const profileKey = `${STORAGE_KEY_USER_PROFILE}${authorized.mobile}`;
+      localStorage.setItem(STORAGE_KEY_AUTH_USER, JSON.stringify(account));
+      const profileKey = `${STORAGE_KEY_USER_PROFILE}${account.mobile}`;
       const existingProfileStr = localStorage.getItem(profileKey);
       if (existingProfileStr) {
         setUserProfile(JSON.parse(existingProfileStr));
@@ -223,37 +240,56 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       // Storage quota or browser privacy mode
     }
 
-    return {
-      success: true,
-      user: authorized
-    };
+    return { success: true, user: account };
   };
 
+  // ─── Register (new citizen) ───────────────────────────────────────────────
+  const registerUser = (name: string, mobile: string): { success: boolean; user?: CitizenAccount; error?: string } => {
+    if (!name || name.trim().length < 2) {
+      return { success: false, error: 'Please enter your full name (at least 2 characters).' };
+    }
+    const clean = mobile.replace(/\D/g, '');
+    if (clean.length !== 10) {
+      return { success: false, error: 'Please enter a valid 10-digit mobile number.' };
+    }
+
+    try {
+      const account = registerAccount(name, mobile);
+      setCurrentUser(account);
+      setIsLoggedIn(true);
+      setUserProfile(null); // Fresh registration — no profile yet
+      localStorage.setItem(STORAGE_KEY_AUTH_USER, JSON.stringify(account));
+      return { success: true, user: account };
+    } catch {
+      return { success: false, error: 'Failed to create account. Please try again.' };
+    }
+  };
+
+  // ─── Save / Update Citizen Profile ────────────────────────────────────────
   const saveUserProfile = (profile: CitizenProfile) => {
     setUserProfile(profile);
     if (currentUser) {
       try {
         localStorage.setItem(`${STORAGE_KEY_USER_PROFILE}${currentUser.mobile}`, JSON.stringify(profile));
       } catch {
-        // Handle error gracefully
+        // Handle quota errors gracefully
       }
     }
   };
 
+  // ─── Legacy Fallback Login (backward compat) ──────────────────────────────
   const login = () => {
-    // Default fallback to first authorized citizen if called without args
-    const defaultUser = findAuthorizedUser('7276218598');
-    if (defaultUser) {
-      setCurrentUser(defaultUser);
-      setIsLoggedIn(true);
-      try {
-        localStorage.setItem(STORAGE_KEY_AUTH_USER, JSON.stringify(defaultUser));
-      } catch {
-        // Ignore
-      }
+    const firstSeed = SEED_ACCOUNTS[0];
+    setCurrentUser(firstSeed);
+    setIsLoggedIn(true);
+    try {
+      localStorage.setItem(STORAGE_KEY_AUTH_USER, JSON.stringify(firstSeed));
+    } catch {
+      // Ignore
     }
   };
 
+  // ─── Logout ───────────────────────────────────────────────────────────────
   const logout = () => {
     setIsLoggedIn(false);
     setCurrentUser(null);
@@ -281,17 +317,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     );
   };
 
-  // Dynamically constructed backward-compatible user object
+  // ─── Backward-Compatible User Object ─────────────────────────────────────
+  // Prefer the profile's fullName if it exists, then account name, then fallback.
+  const displayName = userProfile?.fullName || currentUser?.name || (language === 'mr' ? 'नागरिक' : 'Citizen');
+  const displayNameMr = currentUser?.nameMr || displayName;
+
   const user: AppUser = {
-    name: currentUser
-      ? (language === 'mr' ? currentUser.nameMr : currentUser.name)
-      : (language === 'mr' ? 'नागरिक' : 'Citizen'),
-    aadhaarMasked: currentUser ? currentUser.aadhaarMasked : 'XXXX-XXXX-0000',
+    name: language === 'mr' ? displayNameMr : displayName,
+    aadhaarMasked: currentUser?.aadhaarMasked || 'XXXX-XXXX-0000',
     mobile: currentUser ? `+91 ${currentUser.mobile}` : '+91 XXXXX XXXXX',
-    email: currentUser ? currentUser.email : 'citizen@mahasetu.gov.in',
+    email: currentUser?.email || 'citizen@mahasetu.gov.in',
     district: userProfile
       ? (language === 'mr' ? `${userProfile.district} (महाराष्ट्र)` : `${userProfile.district} (Maharashtra)`)
-      : (language === 'mr' ? 'पुणे (महाराष्ट्र)' : 'Pune (Maharashtra)'),
+      : (language === 'mr' ? 'महाराष्ट्र' : 'Maharashtra'),
     digiLockerLinked: true
   };
 
@@ -310,6 +348,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         userProfile,
         isProfileComplete,
         loginWithMobile,
+        registerUser,
         saveUserProfile,
         login,
         logout,
