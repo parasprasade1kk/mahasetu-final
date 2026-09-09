@@ -318,25 +318,27 @@ export default function LoginPage() {
         </div>
 
         {/* ── Right Panel: Auth Forms ──────────────────────────────────────── */}
-        <div className="w-full lg:w-7/12 flex flex-col justify-center items-center p-6 sm:p-12 bg-[#f8f9ff]">
-          <div className="w-full max-w-md">
+        <div className="w-full lg:w-7/12 flex flex-col justify-center items-center p-6 sm:p-8 bg-[#f8f9ff]">
+          <div className="w-full max-w-4xl flex flex-col xl:flex-row gap-6 items-start justify-center">
 
-            {/* Mobile logo */}
-            <div className="lg:hidden flex items-center gap-2 mb-6">
-              <div className="w-10 h-10 rounded-full bg-[#003b5a] text-amber-400 flex items-center justify-center p-2 border border-amber-400/30">
-                <span className="material-symbols-outlined text-[22px]">account_balance</span>
+            {/* ── Citizen Card Container ── */}
+            <div className="w-full max-w-md mx-auto xl:mx-0 flex-1">
+              {/* Mobile logo */}
+              <div className="lg:hidden flex items-center gap-2 mb-6">
+                <div className="w-10 h-10 rounded-full bg-[#003b5a] text-amber-400 flex items-center justify-center p-2 border border-amber-400/30">
+                  <span className="material-symbols-outlined text-[22px]">account_balance</span>
+                </div>
+                <div>
+                  <span className="text-xl font-bold text-[#003b5a]">MahaSetu | महासेतू</span>
+                  <p className="text-[10px] text-slate-500">Government of Maharashtra</p>
+                </div>
               </div>
-              <div>
-                <span className="text-xl font-bold text-[#003b5a]">MahaSetu | महासेतू</span>
-                <p className="text-[10px] text-slate-500">Government of Maharashtra</p>
-              </div>
-            </div>
 
-            {/* Card */}
-            <div className="bg-white rounded-2xl shadow-gov-lg border border-slate-200 overflow-hidden">
+              {/* Card */}
+              <div className="bg-white rounded-2xl shadow-gov-lg border border-slate-200 overflow-hidden">
 
-              {/* Tab Bar */}
-              <div className="flex border-b border-slate-200">
+                {/* Tab Bar */}
+                <div className="flex border-b border-slate-200">
                 <button
                   onClick={() => switchTab('login')}
                   className={`flex-1 py-4 text-xs font-bold tracking-wide transition-all flex items-center justify-center gap-2 ${
@@ -850,8 +852,82 @@ export default function LoginPage() {
               </span>
             </div>
           </div>
+
+          {/* ── Government / Admin Access Card (Beside Citizen Login) ── */}
+          <div className="w-full max-w-md xl:w-80 mx-auto xl:mx-0 bg-white rounded-2xl shadow-gov-lg border border-slate-200 overflow-hidden flex flex-col justify-between self-stretch">
+            {/* Top Sovereign Tricolor Accent */}
+            <div className="h-1.5 bg-gradient-to-r from-[#f47920] via-[#ffffff] to-[#138808] w-full" />
+
+            <div className="p-6 sm:p-7 space-y-5">
+              {/* Official Seal / Icon */}
+              <div className="flex items-center justify-between">
+                <div className="w-12 h-12 rounded-xl bg-[#002840] text-amber-400 flex items-center justify-center p-2 shadow-sm border border-amber-400/40">
+                  <span className="material-symbols-outlined text-[26px]">admin_panel_settings</span>
+                </div>
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-amber-50 text-amber-900 border border-amber-200 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                  GAD Mantralaya
+                </span>
+              </div>
+
+              <div>
+                <h2 className="text-lg sm:text-xl font-bold text-[#003b5a]">
+                  {language === 'mr' ? 'शासकीय / प्रशासक प्रवेश' : 'Government / Admin Access'}
+                </h2>
+                <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                  {language === 'mr'
+                    ? 'अधिकृत शासकीय अधिकारी व प्रशासक महासेतू प्रशासन पोर्टलवर प्रवेश करू शकतात.'
+                    : 'Authorized administrators can access the MahaSetu administration portal.'}
+                </p>
+              </div>
+
+              {/* Administrative Features Checklist */}
+              <div className="bg-[#f0f5fa] rounded-xl p-4 border border-slate-200 space-y-2.5 text-xs text-slate-700">
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[#003b5a] text-[16px]">manage_accounts</span>
+                  <span>Citizen Registry & Profiles</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[#003b5a] text-[16px]">assignment_turned_in</span>
+                  <span>Scheme & Service Processing</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[#003b5a] text-[16px]">analytics</span>
+                  <span>Real-Time State Analytics</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[#003b5a] text-[16px]">security</span>
+                  <span>DPDP Audit & Security Logs</span>
+                </div>
+              </div>
+
+              {/* Statutory Warning */}
+              <div className="p-3 bg-amber-50/70 border border-amber-200 rounded-lg text-[11px] text-amber-900 flex items-start gap-2">
+                <span className="material-symbols-outlined text-amber-600 text-[16px] flex-shrink-0 mt-0.5">shield</span>
+                <span>Restricted to authorized officials of Government of Maharashtra.</span>
+              </div>
+
+              {/* Action Button */}
+              <button
+                type="button"
+                onClick={() => router.push('/admin/login')}
+                className="w-full h-11 bg-gradient-to-r from-[#002840] to-[#003b5a] hover:from-[#001c30] hover:to-[#002840] text-amber-300 hover:text-white rounded-xl text-xs font-bold shadow-gov transition-all flex items-center justify-center gap-2 border border-amber-400/30"
+              >
+                <span className="material-symbols-outlined text-[18px]">lock</span>
+                <span>{language === 'mr' ? 'प्रशासक लॉगिन' : 'Admin Login'}</span>
+                <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+              </button>
+            </div>
+
+            {/* Bottom Card Footer */}
+            <div className="bg-slate-50 px-6 py-3 border-t border-slate-100 text-[11px] text-slate-500 text-center">
+              Secured with Multi-Factor Session Authorization
+            </div>
+          </div>
+
         </div>
       </div>
+    </div>
 
       {/* ─── Privacy Notice Modal ───────────────────────────────────────────── */}
       {showPrivacyModal && (

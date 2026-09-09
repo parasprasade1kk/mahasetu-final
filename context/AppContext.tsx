@@ -10,6 +10,15 @@ import {
   SEED_ACCOUNTS,
   maskAadhaar,
 } from '@/lib/authConfig';
+import {
+  authApi,
+  profileApi,
+  applicationApi,
+  consentApi,
+  setCitizenToken,
+  removeCitizenToken,
+  getCitizenToken,
+} from '@/lib/api';
 
 type Language = 'en' | 'mr';
 type FontSize = 'normal' | 'large' | 'xlarge';
@@ -181,44 +190,114 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [applications, setApplications] = useState<ApplicationRecord[]>(initialApplications);
   const [consents, setConsents] = useState<ConsentItem[]>(initialConsents);
 
-  // ─── Hydrate session from localStorage on mount ───────────────────────────
+  // ─── Hydrate session on mount (from MongoDB API / localStorage) ───────────
   useEffect(() => {
-    // Ensure the 6 seed accounts are always available in the registry
     loadAccounts();
 
-    try {
-      const savedUserStr = localStorage.getItem(STORAGE_KEY_AUTH_USER);
-      if (savedUserStr) {
-        const savedUser: CitizenAccount = JSON.parse(savedUserStr);
-        // Verify the saved user still exists in the account registry
-        // (open to any registered citizen, no whitelist)
-        const verified = findAccount(savedUser.mobile);
-        if (verified) {
-          setCurrentUser(verified);
-          setIsLoggedIn(true);
+    async function hydrate() {
+      const token = getCitizenToken();
+      if (token) {
+        try {
+          const res = await authApi.getMe();
+          if (res.success && res.user) {
+            const citizenAccount: CitizenAccount = {
+              id: res.user.userId,
+              name: res.user.fullName,
+              nameMr: res.user.fullNameMr || res.user.fullName,
+              mobile: res.user.mobile,
+              email: res.user.email,
+              aadhaarMasked: res.user.aadhaarMasked,
+              createdAt: res.user.createdAt,
+              role: 'citizen',
+            };
+            setCurrentUser(citizenAccount);
+            setIsLoggedIn(true);
 
-          // Load this user's saved profile (isolated by mobile)
-          const savedProfileStr = localStorage.getItem(`${STORAGE_KEY_USER_PROFILE}${verified.mobile}`);
-          if (savedProfileStr) {
-            setUserProfile(JSON.parse(savedProfileStr));
+            if (res.profile) {
+              setUserProfile(res.profile);
+            }
+
+            // Load user's applications and consents from MongoDB
+            const [appsRes, consentsRes] = await Promise.all([
+              applicationApi.getMy(),
+              consentApi.getMy(),
+            ]);
+
+            if (appsRes.success && Array.isArray(appsRes.applications) && appsRes.applications.length > 0) {
+              setApplications(
+                appsRes.applications.map((a: any) => ({
+                  id: a.applicationId,
+                  serviceName: a.serviceName,
+                  serviceNameMr: a.serviceNameMr || a.serviceName,
+                  department: a.department,
+                  departmentMr: a.departmentMr || a.department,
+                  appliedDate: a.appliedDate,
+                  status: a.status,
+                  statusColor: a.statusColor,
+                  downloadUrl: a.downloadUrl,
+                  applicantName: a.applicantName,
+                  district: a.district,
+                }))
+              );
+            }
+
+            if (consentsRes.success && Array.isArray(consentsRes.consents) && consentsRes.consents.length > 0) {
+              setConsents(
+                consentsRes.consents.map((c: any) => ({
+                  id: c.consentId,
+                  requestingDept: c.requestingDept,
+                  requestingDeptMr: c.requestingDeptMr || c.requestingDept,
+                  sourceDept: c.sourceDept,
+                  sourceDeptMr: c.sourceDeptMr || c.sourceDept,
+                  purpose: c.purpose,
+                  purposeMr: c.purposeMr || c.purpose,
+                  dataFields: c.dataFields || [],
+                  status: c.status,
+                  validUntil: c.validUntil,
+                }))
+              );
+            }
+            setIsAuthLoaded(true);
+            return;
           }
-        } else {
-          // Session references an account that no longer exists — clear it
-          localStorage.removeItem(STORAGE_KEY_AUTH_USER);
+        } catch {
+          // Fallback to local storage
         }
       }
-    } catch {
-      // Ignore JSON parse errors on corrupt storage
-    } finally {
-      setIsAuthLoaded(true);
+
+      // Local storage fallback
+      try {
+        const savedUserStr = localStorage.getItem(STORAGE_KEY_AUTH_USER);
+        if (savedUserStr) {
+          const savedUser: CitizenAccount = JSON.parse(savedUserStr);
+          const verified = findAccount(savedUser.mobile);
+          if (verified) {
+            setCurrentUser(verified);
+            setIsLoggedIn(true);
+            const savedProfileStr = localStorage.getItem(`${STORAGE_KEY_USER_PROFILE}${verified.mobile}`);
+            if (savedProfileStr) {
+              setUserProfile(JSON.parse(savedProfileStr));
+            }
+          }
+        }
+      } catch {
+        // Ignore JSON error
+      } finally {
+        setIsAuthLoaded(true);
+      }
     }
+
+    hydrate();
   }, []);
 
   const isProfileComplete = Boolean(userProfile && userProfile.confirmedAccurate);
 
   // ─── Login (existing registered citizen) ─────────────────────────────────
   const loginWithMobile = (mobile: string, aadhaar?: string): { success: boolean; user?: CitizenAccount; error?: string } => {
-    const account = findAccount(mobile);
+    const clean = mobile.replace(/\D/g, '');
+
+    // Synchronous fallback verification
+    const account = findAccount(clean);
     if (!account) {
       return {
         success: false,
@@ -232,6 +311,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     setCurrentUser(account);
     setIsLoggedIn(true);
+
     try {
       localStorage.setItem(STORAGE_KEY_AUTH_USER, JSON.stringify(account));
       const profileKey = `${STORAGE_KEY_USER_PROFILE}${account.mobile}`;
@@ -242,8 +322,55 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setUserProfile(null);
       }
     } catch {
-      // Storage quota or browser privacy mode
+      // Ignore
     }
+
+    // Call backend API asynchronously in background to sync with MongoDB
+    authApi.login(clean, aadhaar, '123456').then(async (res) => {
+      if (res.success) {
+        if (res.token) setCitizenToken(res.token);
+        if (res.profile) setUserProfile(res.profile);
+
+        // Fetch isolated applications and consents from MongoDB
+        const [appsRes, consentsRes] = await Promise.all([
+          applicationApi.getMy(),
+          consentApi.getMy(),
+        ]);
+        if (appsRes.success && Array.isArray(appsRes.applications) && appsRes.applications.length > 0) {
+          setApplications(
+            appsRes.applications.map((a: any) => ({
+              id: a.applicationId,
+              serviceName: a.serviceName,
+              serviceNameMr: a.serviceNameMr || a.serviceName,
+              department: a.department,
+              departmentMr: a.departmentMr || a.department,
+              appliedDate: a.appliedDate,
+              status: a.status,
+              statusColor: a.statusColor,
+              downloadUrl: a.downloadUrl,
+              applicantName: a.applicantName,
+              district: a.district,
+            }))
+          );
+        }
+        if (consentsRes.success && Array.isArray(consentsRes.consents) && consentsRes.consents.length > 0) {
+          setConsents(
+            consentsRes.consents.map((c: any) => ({
+              id: c.consentId,
+              requestingDept: c.requestingDept,
+              requestingDeptMr: c.requestingDeptMr || c.requestingDept,
+              sourceDept: c.sourceDept,
+              sourceDeptMr: c.sourceDeptMr || c.sourceDept,
+              purpose: c.purpose,
+              purposeMr: c.purposeMr || c.purpose,
+              dataFields: c.dataFields || [],
+              status: c.status,
+              validUntil: c.validUntil,
+            }))
+          );
+        }
+      }
+    }).catch(() => {});
 
     return { success: true, user: account };
   };
@@ -264,6 +391,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setIsLoggedIn(true);
       setUserProfile(null); // Fresh registration — no profile yet
       localStorage.setItem(STORAGE_KEY_AUTH_USER, JSON.stringify(account));
+
+      // Call backend API to persist new citizen in MongoDB Atlas
+      authApi.register(name, clean, aadhaar, '123456').then((res) => {
+        if (res.success && res.token) {
+          setCitizenToken(res.token);
+          if (res.profile) setUserProfile(res.profile);
+        }
+      }).catch(() => {});
+
       return { success: true, user: account };
     } catch {
       return { success: false, error: 'Failed to create account. Please try again.' };
@@ -279,6 +415,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       } catch {
         // Handle quota errors gracefully
       }
+      // Save to MongoDB Atlas via backend API
+      profileApi.updateProfile(profile).catch((err) => {
+        console.warn('Backend profile update deferred:', err);
+      });
     }
   };
 
@@ -299,6 +439,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setIsLoggedIn(false);
     setCurrentUser(null);
     setUserProfile(null);
+    removeCitizenToken();
     try {
       localStorage.removeItem(STORAGE_KEY_AUTH_USER);
     } catch {
@@ -308,6 +449,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const addApplication = (app: ApplicationRecord) => {
     setApplications(prev => [app, ...prev]);
+    // Persist to MongoDB
+    applicationApi.submit({
+      serviceName: app.serviceName,
+      serviceNameMr: app.serviceNameMr,
+      department: app.department,
+      departmentMr: app.departmentMr,
+      district: app.district,
+      appliedDate: app.appliedDate,
+      status: app.status,
+    }).catch(() => {});
   };
 
   const toggleConsent = (id: string) => {
@@ -320,6 +471,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         return item;
       })
     );
+    consentApi.toggle(id).catch(() => {});
   };
 
   // ─── Backward-Compatible User Object ─────────────────────────────────────

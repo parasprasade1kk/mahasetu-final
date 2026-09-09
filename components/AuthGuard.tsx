@@ -10,6 +10,16 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const { isAuthLoaded, isLoggedIn, isProfileComplete } = useApp();
 
   useEffect(() => {
+    // Exclude /admin paths from citizen AuthGuard
+    if (pathname.startsWith('/admin')) {
+      if (isLoggedIn && pathname !== '/admin/login') {
+        // Logged-in citizen attempting to access admin route
+        alert('Access Denied: Citizen accounts cannot access the Government Administrator Portal. Please log in as an administrator.');
+        router.replace('/dashboard');
+      }
+      return;
+    }
+
     if (!isAuthLoaded) return;
 
     // Case 1: Citizen is NOT logged in
@@ -50,6 +60,11 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         <p className="text-[11px] text-slate-500 mt-1">Verifying Sovereign Citizen Session...</p>
       </div>
     );
+  }
+
+  // Allow /admin paths to render through
+  if (pathname.startsWith('/admin')) {
+    return <>{children}</>;
   }
 
   // Prevent rendering protected content before redirection executes

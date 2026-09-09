@@ -6,6 +6,7 @@ import { useApp } from '@/context/AppContext';
 import { findMatchingSchemes, ScoredScheme } from '@/lib/schemeMatcher';
 import { Scheme, SchemeDocument, ALL_SCHEMES } from '@/lib/schemeDatabase';
 import { evaluateAllSchemes, UserProfile } from '@/lib/eligibilityEngine';
+import { schemeApi } from '@/lib/api';
 
 // ─── Translations ─────────────────────────────────────────────────────────────
 const t: Record<string, Record<string, string>> = {
@@ -387,7 +388,17 @@ export default function SchemeFinderPage() {
   }, [evaluatedList]);
 
   // ─── Run Matching ──────────────────────────────────────────────────────────
-  const runFinder = (q: string) => {
+  const runFinder = async (q: string) => {
+    try {
+      const dbRes = await schemeApi.matchSchemes(q);
+      if (dbRes && Array.isArray(dbRes.matchedSchemes) && dbRes.matchedSchemes.length > 0) {
+        setMatchedSchemes(dbRes.matchedSchemes as ScoredScheme[]);
+        goTo(4);
+        return;
+      }
+    } catch {
+      // Fallback seamlessly to local algorithm if backend API is offline
+    }
     const results = findMatchingSchemes(q);
     setMatchedSchemes(results);
     goTo(4);
