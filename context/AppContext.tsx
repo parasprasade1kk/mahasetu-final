@@ -75,8 +75,8 @@ interface AppContextType {
   isProfileComplete: boolean;
 
   // Auth Actions
-  loginWithMobile: (mobile: string, aadhaar?: string) => { success: boolean; user?: CitizenAccount; error?: string };
-  registerUser: (name: string, mobile: string, aadhaar?: string) => { success: boolean; user?: CitizenAccount; error?: string };
+  loginWithMobile: (mobile: string, aadhaar?: string) => Promise<{ success: boolean; user?: CitizenAccount; error?: string }>;
+  registerUser: (name: string, mobile: string, aadhaar?: string) => Promise<{ success: boolean; user?: CitizenAccount; error?: string }>;
   saveUserProfile: (profile: CitizenProfile) => void;
   login: () => void; // Legacy fallback
   logout: () => void;
@@ -293,90 +293,125 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const isProfileComplete = Boolean(userProfile && userProfile.confirmedAccurate);
 
   // ─── Login (existing registered citizen) ─────────────────────────────────
-  const loginWithMobile = (mobile: string, aadhaar?: string): { success: boolean; user?: CitizenAccount; error?: string } => {
+  const loginWithMobile = async (
+    mobile: string,
+    aadhaar?: string
+  ): Promise<{ success: boolean; user?: CitizenAccount; error?: string }> => {
     const clean = mobile.replace(/\D/g, '');
 
-    // Synchronous fallback verification
-    const account = findAccount(clean);
-    if (!account) {
+    try {
+      const res = await authApi.login(clean, aadhaar, '123456');
+
+      if (res.success && res.user) {
+        const citizenAccount: CitizenAccount = {
+          id: res.user.userId,
+          name: res.user.fullName,
+          nameMr: res.user.fullNameMr || res.user.fullName,
+          mobile: res.user.mobile,
+          email: res.user.email,
+          aadhaarMasked: res.user.aadhaarMasked,
+          createdAt: res.user.createdAt,
+          role: 'citizen',
+        };
+
+        if (res.token) setCitizenToken(res.token);
+        setCurrentUser(citizenAccount);
+        setIsLoggedIn(true);
+
+        if (res.profile) {
+          setUserProfile(res.profile);
+        }
+
+        try {
+          localStorage.setItem(STORAGE_KEY_AUTH_USER, JSON.stringify(citizenAccount));
+          const profileKey = `${STORAGE_KEY_USER_PROFILE}${citizenAccount.mobile}`;
+          if (res.profile) {
+            localStorage.setItem(profileKey, JSON.stringify(res.profile));
+          }
+        } catch {}
+
+        // Hydrate applications and consents from MongoDB
+        try {
+          const [appsRes, consentsRes] = await Promise.all([
+            applicationApi.getMy(),
+            consentApi.getMy(),
+          ]);
+          if (appsRes.success && Array.isArray(appsRes.applications) && appsRes.applications.length > 0) {
+            setApplications(
+              appsRes.applications.map((a: any) => ({
+                id: a.applicationId,
+                serviceName: a.serviceName,
+                serviceNameMr: a.serviceNameMr || a.serviceName,
+                department: a.department,
+                departmentMr: a.departmentMr || a.department,
+                appliedDate: a.appliedDate,
+                status: a.status,
+                statusColor: a.statusColor,
+                downloadUrl: a.downloadUrl,
+                applicantName: a.applicantName,
+                district: a.district,
+              }))
+            );
+          }
+          if (consentsRes.success && Array.isArray(consentsRes.consents) && consentsRes.consents.length > 0) {
+            setConsents(
+              consentsRes.consents.map((c: any) => ({
+                id: c.consentId,
+                requestingDept: c.requestingDept,
+                requestingDeptMr: c.requestingDeptMr || c.requestingDept,
+                sourceDept: c.sourceDept,
+                sourceDeptMr: c.sourceDeptMr || c.sourceDept,
+                purpose: c.purpose,
+                purposeMr: c.purposeMr || c.purpose,
+                dataFields: c.dataFields || [],
+                status: c.status,
+                validUntil: c.validUntil,
+              }))
+            );
+          }
+        } catch {}
+
+        return { success: true, user: citizenAccount };
+      }
+
+      // If backend fails or not found, check local account
+      const localAccount = findAccount(clean);
+      if (localAccount) {
+        if (aadhaar && aadhaar.replace(/\D/g, '').length === 12) {
+          localAccount.aadhaarMasked = maskAadhaar(aadhaar);
+        }
+        setCurrentUser(localAccount);
+        setIsLoggedIn(true);
+        try {
+          localStorage.setItem(STORAGE_KEY_AUTH_USER, JSON.stringify(localAccount));
+        } catch {}
+        return { success: true, user: localAccount };
+      }
+
       return {
         success: false,
-        error: 'No account found for this mobile number. Please create a new account.'
+        error: res.error || 'No account found for this mobile number. Please create a new account.',
+      };
+    } catch (err: any) {
+      const localAccount = findAccount(clean);
+      if (localAccount) {
+        setCurrentUser(localAccount);
+        setIsLoggedIn(true);
+        return { success: true, user: localAccount };
+      }
+      return {
+        success: false,
+        error: err.message || 'Login failed. Please try again.',
       };
     }
-
-    if (aadhaar && aadhaar.replace(/\D/g, '').length === 12) {
-      account.aadhaarMasked = maskAadhaar(aadhaar);
-    }
-
-    setCurrentUser(account);
-    setIsLoggedIn(true);
-
-    try {
-      localStorage.setItem(STORAGE_KEY_AUTH_USER, JSON.stringify(account));
-      const profileKey = `${STORAGE_KEY_USER_PROFILE}${account.mobile}`;
-      const existingProfileStr = localStorage.getItem(profileKey);
-      if (existingProfileStr) {
-        setUserProfile(JSON.parse(existingProfileStr));
-      } else {
-        setUserProfile(null);
-      }
-    } catch {
-      // Ignore
-    }
-
-    // Call backend API asynchronously in background to sync with MongoDB
-    authApi.login(clean, aadhaar, '123456').then(async (res) => {
-      if (res.success) {
-        if (res.token) setCitizenToken(res.token);
-        if (res.profile) setUserProfile(res.profile);
-
-        // Fetch isolated applications and consents from MongoDB
-        const [appsRes, consentsRes] = await Promise.all([
-          applicationApi.getMy(),
-          consentApi.getMy(),
-        ]);
-        if (appsRes.success && Array.isArray(appsRes.applications) && appsRes.applications.length > 0) {
-          setApplications(
-            appsRes.applications.map((a: any) => ({
-              id: a.applicationId,
-              serviceName: a.serviceName,
-              serviceNameMr: a.serviceNameMr || a.serviceName,
-              department: a.department,
-              departmentMr: a.departmentMr || a.department,
-              appliedDate: a.appliedDate,
-              status: a.status,
-              statusColor: a.statusColor,
-              downloadUrl: a.downloadUrl,
-              applicantName: a.applicantName,
-              district: a.district,
-            }))
-          );
-        }
-        if (consentsRes.success && Array.isArray(consentsRes.consents) && consentsRes.consents.length > 0) {
-          setConsents(
-            consentsRes.consents.map((c: any) => ({
-              id: c.consentId,
-              requestingDept: c.requestingDept,
-              requestingDeptMr: c.requestingDeptMr || c.requestingDept,
-              sourceDept: c.sourceDept,
-              sourceDeptMr: c.sourceDeptMr || c.sourceDept,
-              purpose: c.purpose,
-              purposeMr: c.purposeMr || c.purpose,
-              dataFields: c.dataFields || [],
-              status: c.status,
-              validUntil: c.validUntil,
-            }))
-          );
-        }
-      }
-    }).catch(() => {});
-
-    return { success: true, user: account };
   };
 
   // ─── Register (new citizen) ───────────────────────────────────────────────
-  const registerUser = (name: string, mobile: string, aadhaar?: string): { success: boolean; user?: CitizenAccount; error?: string } => {
+  const registerUser = async (
+    name: string,
+    mobile: string,
+    aadhaar?: string
+  ): Promise<{ success: boolean; user?: CitizenAccount; error?: string }> => {
     if (!name || name.trim().length < 2) {
       return { success: false, error: 'Please enter your full name (at least 2 characters).' };
     }
@@ -386,23 +421,43 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      const account = registerAccount(name, mobile, aadhaar);
-      setCurrentUser(account);
-      setIsLoggedIn(true);
-      setUserProfile(null); // Fresh registration — no profile yet
-      localStorage.setItem(STORAGE_KEY_AUTH_USER, JSON.stringify(account));
+      // 1. Persist new citizen in MongoDB Atlas via /api/auth/register
+      const res = await authApi.register(name.trim(), clean, aadhaar, '123456');
 
-      // Call backend API to persist new citizen in MongoDB Atlas
-      authApi.register(name, clean, aadhaar, '123456').then((res) => {
-        if (res.success && res.token) {
-          setCitizenToken(res.token);
-          if (res.profile) setUserProfile(res.profile);
-        }
-      }).catch(() => {});
+      if (res.success && res.user) {
+        const citizenAccount: CitizenAccount = {
+          id: res.user.userId,
+          name: res.user.fullName,
+          nameMr: res.user.fullNameMr || res.user.fullName,
+          mobile: res.user.mobile,
+          email: res.user.email,
+          aadhaarMasked: res.user.aadhaarMasked,
+          createdAt: res.user.createdAt,
+          role: 'citizen',
+        };
 
-      return { success: true, user: account };
-    } catch {
-      return { success: false, error: 'Failed to create account. Please try again.' };
+        if (res.token) setCitizenToken(res.token);
+        setCurrentUser(citizenAccount);
+        setIsLoggedIn(true);
+        setUserProfile(res.profile || null);
+
+        try {
+          localStorage.setItem(STORAGE_KEY_AUTH_USER, JSON.stringify(citizenAccount));
+          registerAccount(name, clean, aadhaar);
+        } catch {}
+
+        return { success: true, user: citizenAccount };
+      }
+
+      return {
+        success: false,
+        error: res.error || 'Failed to create account. Please try again.',
+      };
+    } catch (err: any) {
+      return {
+        success: false,
+        error: err.message || 'Failed to create account. Please try again.',
+      };
     }
   };
 

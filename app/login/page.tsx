@@ -103,24 +103,17 @@ export default function LoginPage() {
       return;
     }
 
-    // Check if account exists
-    const account = findAccount(clean);
-    if (!account) {
-      setLoginError(language === 'mr'
-        ? 'हा मोबाईल क्रमांक नोंदणीकृत नाही. कृपया नवीन खाते तयार करा.'
-        : 'This mobile number is not registered. Please create a new account.');
-      return;
-    }
     const otp = DEMO_OTP;
     setLoginOtpGenerated(otp);
     setLoginOtp(''); // user must type it manually
     setLoginOtpSent(true);
+    const account = findAccount(clean);
     setLoginSuccess(language === 'mr'
-      ? `${account.name} यांच्यासाठी OTP पाठवला आहे. डेमो OTP: 123456`
-      : `OTP sent for ${account.name}. Enter the demo OTP: 123456`);
+      ? `${account ? account.name + ' यांच्यासाठी ' : ''}OTP पाठवला आहे. डेमो OTP: 123456`
+      : `OTP sent${account ? ' for ' + account.name : ''}. Enter the demo OTP: 123456`);
   };
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError(''); setLoginSuccess('');
 
@@ -149,8 +142,8 @@ export default function LoginPage() {
     }
 
     setLoginLoading(true);
-    setTimeout(() => {
-      const result = loginWithMobile(clean, cleanAadhaar);
+    try {
+      const result = await loginWithMobile(clean, cleanAadhaar);
       setLoginLoading(false);
       if (result.success) {
         const profileKey = `mahasetu_user_profile_${clean}`;
@@ -159,7 +152,10 @@ export default function LoginPage() {
       } else {
         setLoginError(result.error || 'Login failed. Please try again.');
       }
-    }, 600);
+    } catch (err: any) {
+      setLoginLoading(false);
+      setLoginError(err.message || 'Login failed. Please try again.');
+    }
   };
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -171,12 +167,6 @@ export default function LoginPage() {
     const clean = normalizeMobileNumber(regMobile);
     if (!clean || clean.length !== 10) {
       setRegError('Please enter a valid 10-digit mobile number.'); return;
-    }
-    // Check if already registered
-    const existing = findAccount(clean);
-    if (existing) {
-      setRegError(`This mobile number is already registered as "${existing.name}". Please use the Login tab.`);
-      return;
     }
     const otp = DEMO_OTP;
     setRegOtpGenerated(otp);
@@ -190,12 +180,12 @@ export default function LoginPage() {
     if (!regOtp || regOtp.trim() !== DEMO_OTP) {
       setRegError('Invalid OTP. Please enter the correct demo OTP.'); return;
     }
-    // PRODUCTION: call real OTP verification API here
+    // Verified DEMO OTP
     setRegStep('details');
     setRegSuccess('');
   };
 
-  const handleRegCreateAccount = (e: React.FormEvent) => {
+  const handleRegCreateAccount = async (e: React.FormEvent) => {
     e.preventDefault();
     setRegError(''); setRegSuccess('');
 
@@ -204,15 +194,18 @@ export default function LoginPage() {
     }
 
     setRegLoading(true);
-    setTimeout(() => {
-      const result = registerUser(regName.trim(), regMobile);
+    try {
+      const result = await registerUser(regName.trim(), regMobile, regAadhaar);
       setRegLoading(false);
       if (result.success) {
         router.push('/onboarding');
       } else {
         setRegError(result.error || 'Failed to create account. Please try again.');
       }
-    }, 700);
+    } catch (err: any) {
+      setRegLoading(false);
+      setRegError(err.message || 'Failed to create account. Please try again.');
+    }
   };
 
   // ─── Shared Alert Components ──────────────────────────────────────────────

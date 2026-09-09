@@ -25,18 +25,30 @@ export default function AdminDashboardPage() {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [lastUpdated, setLastUpdated] = useState<string>('');
 
   const fetchAnalytics = async () => {
     setLoading(true);
+    setError('');
     try {
       const res = await adminApi.getAnalytics();
       if (res.success && res.data) {
         setData(res.data);
+        setError('');
+        const now = new Date();
+        setLastUpdated(
+          now.toLocaleTimeString('en-IN', {
+            hour: 'numeric',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: true,
+          })
+        );
       } else {
-        setError(res.error || 'Failed to retrieve database metrics.');
+        setError(res.error || 'Unable to load live dashboard data.');
       }
     } catch (err: any) {
-      setError(err.message || 'Error communicating with MongoDB backend.');
+      setError(err.message || 'Unable to load live dashboard data.');
     } finally {
       setLoading(false);
     }
@@ -46,7 +58,7 @@ export default function AdminDashboardPage() {
     fetchAnalytics();
   }, []);
 
-  if (loading) {
+  if (loading && !data) {
     return (
       <div className="space-y-6">
         <div className="h-8 w-64 bg-slate-200 animate-pulse rounded"></div>
@@ -59,17 +71,40 @@ export default function AdminDashboardPage() {
     );
   }
 
+  if (!data && error) {
+    return (
+      <div className="space-y-6">
+        <div className="p-8 bg-red-50 border-2 border-red-200 rounded-2xl text-center space-y-4 shadow-sm">
+          <div className="w-14 h-14 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto">
+            <span className="material-symbols-outlined text-[32px]">cloud_off</span>
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-red-950">Unable to load live dashboard data.</h3>
+            <p className="text-xs text-red-700 mt-1 max-w-md mx-auto">{error}</p>
+          </div>
+          <button
+            onClick={fetchAnalytics}
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#002840] hover:bg-[#001c30] text-white rounded-xl text-xs font-bold transition shadow-sm"
+          >
+            <span className="material-symbols-outlined text-[16px]">refresh</span>
+            <span>Retry Loading Database Data</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const d = data || {
-    totalCitizens: 6,
-    verifiedCitizens: 6,
-    totalApplications: 4,
-    pendingApplications: 3,
-    approvedApplications: 1,
+    totalCitizens: 0,
+    verifiedCitizens: 0,
+    totalApplications: 0,
+    pendingApplications: 0,
+    approvedApplications: 0,
     rejectedApplications: 0,
-    totalSchemes: 4,
-    documentsSubmitted: 18,
-    digiLockerUsers: 4,
-    activeConsents: 12,
+    totalSchemes: 0,
+    documentsSubmitted: 0,
+    digiLockerUsers: 0,
+    activeConsents: 0,
     departmentStats: [],
     statusStats: [],
     districtStats: [],
@@ -171,6 +206,11 @@ export default function AdminDashboardPage() {
             <span className="text-xs text-slate-500 font-mono">
               Live Database: MongoDB Atlas
             </span>
+            {lastUpdated && (
+              <span className="text-xs text-slate-500 font-mono">
+                • Last updated: {lastUpdated}
+              </span>
+            )}
           </div>
           <h1 className="text-2xl sm:text-3xl font-black text-[#002840] mt-1.5 tracking-tight">
             Government Administration Dashboard
