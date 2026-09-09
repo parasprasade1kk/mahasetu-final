@@ -9,9 +9,9 @@ async function connectDB() {
 
   const uri = process.env.MONGODB_URI;
 
-  if (!uri || uri.includes('<username>') || uri.includes('password@cluster0.mahasetu')) {
-    console.warn('\n⚠️  [MahaSetu DB Notice]: MONGODB_URI is using placeholder credentials in .env.');
-    console.warn('   To connect to your live MongoDB Atlas database, update MONGODB_URI in .env with your cluster URI.');
+  if (!uri || uri.includes('<username>') || uri.includes('<db_password>') || uri.includes('password@cluster0.mahasetu')) {
+    console.warn('\n⚠️  [MahaSetu DB Notice]: MONGODB_URI contains a placeholder (<db_password>) in .env.');
+    console.warn('   Please replace <db_password> with your actual MongoDB Atlas database user password in .env.');
     console.warn('   Backend will attempt connection and continue safely with fallback resilience.\n');
   }
 
