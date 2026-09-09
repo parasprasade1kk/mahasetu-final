@@ -67,15 +67,17 @@ export async function apiRequest<T = any>(
       let friendlyError = data.error;
       if (!friendlyError) {
         if (res.status === 404) {
-          friendlyError = 'Administrator authentication service is unavailable.';
+          friendlyError = `Admin API returned 404 (${cleanEndpoint}). Ensure the Express backend is running on port 5000.`;
         } else if (res.status === 401) {
           friendlyError = 'Invalid Administrator ID or password.';
         } else if (res.status === 403) {
           friendlyError = 'Access denied. Dedicated Government Administrator privilege required.';
-        } else if (res.status >= 500) {
-          friendlyError = 'Administration service is temporarily unavailable.';
+        } else if (res.status === 500) {
+          friendlyError = 'Admin API returned 500. Check server logs and MongoDB Atlas connection.';
+        } else if (res.status === 502 || res.status === 503 || res.status === 504) {
+          friendlyError = 'Backend unavailable. Please verify the Express server is running on port 5000.';
         } else {
-          friendlyError = 'Unable to complete administrative authentication. Please try again.';
+          friendlyError = `Authentication error (HTTP ${res.status}).`;
         }
       }
       return {
@@ -89,7 +91,7 @@ export async function apiRequest<T = any>(
   } catch (err: any) {
     return {
       success: false,
-      error: 'Unable to connect to the administration server. Please try again.',
+      error: 'Backend unavailable: Connection refused. Ensure the backend server is running on port 5000.',
     };
   }
 }

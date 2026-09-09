@@ -18,7 +18,7 @@ const backend = spawn('node', ['server/index.js'], {
 });
 
 // 2. Start Next.js Frontend
-const frontend = spawn(nextBin, ['dev'], {
+const frontend = spawn(isWin ? 'npm.cmd' : 'npm', ['run', 'next:dev'], {
   stdio: 'inherit',
   cwd: rootDir,
   shell: true,

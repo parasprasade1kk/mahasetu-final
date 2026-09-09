@@ -3,6 +3,7 @@ require('dotenv').config(); // also fallback to server/.env
 
 const express = require('express');
 const cors = require('cors');
+const mongoose = require('mongoose');
 const { connectDB } = require('./config/db');
 
 // Import route modules
@@ -55,10 +56,12 @@ app.use((req, res, next) => {
   next();
 });
 
-// Health check
+// Health check: GET /api/health
 app.get('/api/health', (req, res) => {
+  const isDbConnected = mongoose.connection.readyState === 1;
   res.json({
-    status: 'healthy',
+    status: isDbConnected ? 'ok' : 'error',
+    database: isDbConnected ? 'connected' : 'disconnected',
     platform: 'MahaSetu Government Citizen & Admin Backend',
     state: 'Maharashtra',
     timestamp: new Date().toISOString(),

@@ -159,6 +159,18 @@ router.get('/me', verifyToken, requireAdmin, async (req, res) => {
   }
 });
 
+// ─── GET /api/admin/health (PUBLIC) ──────────────────────────────────────────
+router.get('/health', (req, res) => {
+  const isDbConnected = mongoose.connection.readyState === 1;
+  res.json({
+    service: 'MahaSetu Administrator Management Subsystem',
+    status: isDbConnected ? 'ok' : 'degraded',
+    database: isDbConnected ? 'connected' : 'disconnected',
+    adminAccountConfigured: true,
+    timestamp: new Date().toISOString(),
+  });
+});
+
 // All subsequent routes in this router require valid Admin authentication
 router.use(verifyToken, requireAdmin);
 
