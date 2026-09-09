@@ -98,6 +98,9 @@ function validateMongoUri(): { uri: string | null; exists: boolean; safeReason?:
     };
   }
 
+  return { uri: normalizeMongoUri(trimmed), exists: true };
+}
+
 let lastDbError: string | null = null;
 
 export function getLastDbError(): string | null {

@@ -1,20 +1,31 @@
 import mongoose from 'mongoose';
-import { MongoMemoryServer } from 'mongodb-memory-server';
 
 async function runTests() {
   console.log('====================================================');
   console.log('🧪 MAHASETU REAL MONGODB KPI & AUTH FLOW VERIFICATION');
   console.log('====================================================\n');
 
-  console.log('Step 0: Starting Real MongoDB Instance...');
-  const mongod = await MongoMemoryServer.create();
-  const uri = mongod.getUri();
+  console.log('Step 0: Initializing MongoDB Connection...');
+  let mongod = null;
+  let uri = process.env.MONGODB_URI;
+
+  try {
+    const memoryServerModule = await import('mongodb-memory-server');
+    mongod = await memoryServerModule.MongoMemoryServer.create();
+    uri = mongod.getUri();
+  } catch {
+    if (!uri) {
+      console.error('No MONGODB_URI available to run test suite.');
+      process.exit(1);
+    }
+  }
+
   process.env.MONGODB_URI = uri;
   process.env.JWT_SECRET = 'mahasetu_secure_jwt_secret_key_2026_gov_maharashtra_dpi';
   process.env.ADMIN_ID = '1120610';
 
   await mongoose.connect(uri);
-  console.log('Connected to MongoDB test instance:', uri);
+  console.log('Connected to MongoDB instance:', uri.replace(/\/\/.*@/, '//<redacted>@'));
 
   // Import models and seed helper
   const {
