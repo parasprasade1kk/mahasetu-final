@@ -67,15 +67,21 @@ export async function apiRequest<T = any>(
       let friendlyError = data.error;
       if (!friendlyError) {
         if (res.status === 404) {
-          friendlyError = `Admin API returned 404 (${cleanEndpoint}). Ensure the Express backend is running on port 5000.`;
+          friendlyError = cleanEndpoint.includes('/admin')
+            ? 'Administrator authentication service is temporarily unavailable. Please try again.'
+            : `Service endpoint not found (${cleanEndpoint}).`;
         } else if (res.status === 401) {
           friendlyError = 'Invalid Administrator ID or password.';
         } else if (res.status === 403) {
           friendlyError = 'Access denied. Dedicated Government Administrator privilege required.';
         } else if (res.status === 500) {
-          friendlyError = 'Admin API returned 500. Check server logs and MongoDB Atlas connection.';
+          friendlyError = cleanEndpoint.includes('/admin')
+            ? 'Administrator authentication service is temporarily unavailable. Please try again.'
+            : 'Internal server error. Please try again later.';
         } else if (res.status === 502 || res.status === 503 || res.status === 504) {
-          friendlyError = 'Backend unavailable. Please verify the Express server is running on port 5000.';
+          friendlyError = cleanEndpoint.includes('/admin')
+            ? 'Administrator authentication service is temporarily unavailable. Please try again.'
+            : 'Service temporarily unavailable. Please try again shortly.';
         } else {
           friendlyError = `Authentication error (HTTP ${res.status}).`;
         }
@@ -89,9 +95,10 @@ export async function apiRequest<T = any>(
 
     return data;
   } catch (err: any) {
+    console.error('API Client Network/Fetch Error:', err);
     return {
       success: false,
-      error: 'Backend unavailable: Connection refused. Ensure the backend server is running on port 5000.',
+      error: 'Administrator authentication service is temporarily unavailable. Please try again.',
     };
   }
 }
