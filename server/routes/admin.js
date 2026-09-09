@@ -1,7 +1,12 @@
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+
 const User = require('../models/User');
 const Profile = require('../models/Profile');
+const AdminUser = require('../models/AdminUser');
 const Scheme = require('../models/Scheme');
 const Application = require('../models/Application');
 const Document = require('../models/Document');
@@ -9,10 +14,152 @@ const Consent = require('../models/Consent');
 const AuditLog = require('../models/AuditLog');
 const Notification = require('../models/Notification');
 const DigiLockerConnection = require('../models/DigiLockerConnection');
-const { verifyToken, requireAdmin } = require('../middleware/auth');
+const { verifyToken, requireAdmin, JWT_SECRET } = require('../middleware/auth');
 const { createAuditLog } = require('../utils/auditLogger');
 
-// All routes in this router require valid Admin authentication
+// ─── POST /api/admin/login (PUBLIC: Unauthenticated) ─────────────────────────
+router.post('/login', async (req, res) => {
+  try {
+    const { adminId, password } = req.body || {};
+
+    if (!adminId || !password) {
+      return res.status(400).json({
+        success: false,
+        error: 'Please provide both Administrator ID and Password.',
+      });
+    }
+
+    const trimmedId = String(adminId).trim();
+    const ADMIN_ID = process.env.ADMIN_ID || '1120610';
+    const ADMIN_PASSWORD_HASH =
+      process.env.ADMIN_PASSWORD_HASH ||
+      '$2a$10$ZB4s9wtLu841OUnZwDw/G.bU6Woe.BTNeyarNiH9jj3b25Qdnj11O';
+
+    let admin = null;
+    let isPasswordValid = false;
+
+    // Check database connection
+    const isDbConnected = mongoose.connection.readyState === 1;
+
+    if (isDbConnected) {
+      admin = await AdminUser.findOne({ adminId: trimmedId });
+      if (admin && admin.passwordHash) {
+        isPasswordValid = bcrypt.compareSync(password, admin.passwordHash);
+      } else if (trimmedId === ADMIN_ID) {
+        // Fallback check against env hash and bootstrap DB record
+        isPasswordValid = bcrypt.compareSync(password, ADMIN_PASSWORD_HASH);
+        if (isPasswordValid) {
+          admin = await AdminUser.findOneAndUpdate(
+            { adminId: ADMIN_ID },
+            {
+              adminId: ADMIN_ID,
+              name: 'Shri. S. K. Deshmukh',
+              department: 'General Administration Department (GAD), Mantralaya, Mumbai',
+              role: 'admin',
+              passwordHash: ADMIN_PASSWORD_HASH,
+              isActive: true,
+              lastLogin: new Date(),
+            },
+            { upsert: true, new: true }
+          );
+        }
+      }
+    } else {
+      // Database not connected or reconnecting: verify against env credentials
+      if (trimmedId === ADMIN_ID) {
+        isPasswordValid = bcrypt.compareSync(password, ADMIN_PASSWORD_HASH);
+      }
+    }
+
+    if (!isPasswordValid) {
+      if (isDbConnected) {
+        await createAuditLog({
+          actorId: trimmedId,
+          actorRole: 'admin',
+          action: 'ADMIN_LOGIN_FAILED',
+          targetResource: 'AdminPortal',
+          status: 'FAILURE',
+          metadata: { attemptedId: trimmedId },
+        });
+      }
+
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid Administrator ID or password.',
+      });
+    }
+
+    if (admin && isDbConnected) {
+      admin.lastLogin = new Date();
+      await admin.save();
+    }
+
+    if (isDbConnected) {
+      await createAuditLog({
+        actorId: trimmedId,
+        actorRole: 'admin',
+        action: 'ADMIN_LOGIN_SUCCESS',
+        targetResource: 'AdminPortal',
+        targetId: trimmedId,
+      });
+    }
+
+    const token = jwt.sign(
+      {
+        adminId: trimmedId,
+        role: 'admin',
+        name: admin ? admin.name : 'Shri. S. K. Deshmukh',
+      },
+      JWT_SECRET,
+      { expiresIn: '12h' }
+    );
+
+    return res.json({
+      success: true,
+      message: 'Government Administrator session authorized.',
+      token,
+      admin: {
+        adminId: trimmedId,
+        name: admin ? admin.name : 'Shri. S. K. Deshmukh',
+        role: 'admin',
+        department: admin
+          ? admin.department
+          : 'General Administration Department (GAD), Mantralaya, Mumbai',
+      },
+    });
+  } catch (err) {
+    console.error('Admin login error:', err);
+    return res.status(500).json({
+      success: false,
+      error: 'Administration service is temporarily unavailable.',
+    });
+  }
+});
+
+// ─── GET /api/admin/me (PROTECTED) ───────────────────────────────────────────
+router.get('/me', verifyToken, requireAdmin, async (req, res) => {
+  try {
+    const isDbConnected = mongoose.connection.readyState === 1;
+    let admin = null;
+    if (isDbConnected) {
+      admin = await AdminUser.findOne({ adminId: req.user.adminId }).select('-passwordHash');
+    }
+
+    return res.json({
+      success: true,
+      admin: admin || {
+        adminId: req.user.adminId,
+        name: req.user.name || 'Shri. S. K. Deshmukh',
+        role: 'admin',
+        department: 'General Administration Department (GAD), Mantralaya, Mumbai',
+      },
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// All subsequent routes in this router require valid Admin authentication
 router.use(verifyToken, requireAdmin);
 
 // ─── GET /api/admin/analytics ─────────────────────────────────────────────────

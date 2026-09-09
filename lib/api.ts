@@ -64,9 +64,23 @@ export async function apiRequest<T = any>(
     const data = await res.json().catch(() => ({}));
 
     if (!res.ok) {
+      let friendlyError = data.error;
+      if (!friendlyError) {
+        if (res.status === 404) {
+          friendlyError = 'Administrator authentication service is unavailable.';
+        } else if (res.status === 401) {
+          friendlyError = 'Invalid Administrator ID or password.';
+        } else if (res.status === 403) {
+          friendlyError = 'Access denied. Dedicated Government Administrator privilege required.';
+        } else if (res.status >= 500) {
+          friendlyError = 'Administration service is temporarily unavailable.';
+        } else {
+          friendlyError = 'Unable to complete administrative authentication. Please try again.';
+        }
+      }
       return {
         success: false,
-        error: data.error || `HTTP ${res.status}: ${res.statusText}`,
+        error: friendlyError,
         status: res.status,
       };
     }
@@ -75,7 +89,7 @@ export async function apiRequest<T = any>(
   } catch (err: any) {
     return {
       success: false,
-      error: err.message || 'Network connection to MahaSetu server failed.',
+      error: 'Unable to connect to the administration server. Please try again.',
     };
   }
 }
@@ -103,10 +117,10 @@ export const authApi = {
 
   getMe: () => apiRequest('/auth/me'),
 
-  // Admin Auth
+  // Canonical Admin Auth: POST /api/admin/login
   adminLogin: (adminId: string, password: string) =>
     apiRequest(
-      '/auth/admin-login',
+      '/admin/login',
       {
         method: 'POST',
         body: JSON.stringify({ adminId, password }),
@@ -114,7 +128,7 @@ export const authApi = {
       false
     ),
 
-  getAdminMe: () => apiRequest('/auth/admin-me', {}, true),
+  getAdminMe: () => apiRequest('/admin/me', {}, true),
 };
 
 // ─── Profile API ─────────────────────────────────────────────────────────────

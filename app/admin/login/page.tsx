@@ -12,6 +12,7 @@ export default function AdminLoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
 
   useEffect(() => {
     // If already authenticated as admin, redirect directly to dashboard
@@ -27,6 +28,7 @@ export default function AdminLoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading || isSuccess) return;
     setError('');
 
     if (!adminId.trim()) {
@@ -41,17 +43,20 @@ export default function AdminLoginPage() {
     setLoading(true);
     try {
       const res = await authApi.adminLogin(adminId.trim(), password);
-      setLoading(false);
 
       if (res.success && res.token) {
         setAdminToken(res.token);
-        router.push('/admin/dashboard');
+        setIsSuccess(true);
+        setTimeout(() => {
+          router.push('/admin/dashboard');
+        }, 400);
       } else {
-        setError(res.error || 'Invalid Administrator ID or Password. Access denied.');
+        setLoading(false);
+        setError(res.error || 'Invalid Administrator ID or password.');
       }
     } catch (err: any) {
       setLoading(false);
-      setError(err.message || 'Connection to MahaSetu authentication gateway failed.');
+      setError('Unable to connect to the administration server. Please try again.');
     }
   };
 
@@ -189,13 +194,18 @@ export default function AdminLoginPage() {
               {/* Submit */}
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || isSuccess}
                 className="w-full h-11 bg-[#002840] hover:bg-[#001c30] text-amber-300 hover:text-white rounded-lg text-xs font-bold shadow-gov transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? (
+                {isSuccess ? (
+                  <>
+                    <span className="material-symbols-outlined text-[18px] text-emerald-400">check_circle</span>
+                    <span className="text-emerald-300">Authentication successful. Redirecting...</span>
+                  </>
+                ) : loading ? (
                   <>
                     <div className="w-4 h-4 border-2 border-amber-300 border-t-transparent rounded-full animate-spin" />
-                    <span>Verifying Credentials...</span>
+                    <span>Authenticating...</span>
                   </>
                 ) : (
                   <>
