@@ -98,7 +98,31 @@ function validateMongoUri(): { uri: string | null; exists: boolean; safeReason?:
     };
   }
 
-  return { uri: normalizeMongoUri(trimmed), exists: true };
+let lastDbError: string | null = null;
+
+export function getLastDbError(): string | null {
+  return lastDbError;
+}
+
+export function getDbDiagnostics() {
+  const raw = process.env.MONGODB_URI || '';
+  const exists = Boolean(raw && raw.trim());
+  const hasDbPasswordPlaceholder = raw.includes('<db_password>');
+  const hasUsernamePlaceholder = raw.includes('<username>');
+  const hasExamplePlaceholder = raw.includes('password@cluster0.mahasetu');
+
+  return {
+    uriConfigured: exists,
+    placeholderDetected: hasDbPasswordPlaceholder || hasUsernamePlaceholder || hasExamplePlaceholder,
+    placeholderType: hasDbPasswordPlaceholder
+      ? '<db_password>'
+      : hasUsernamePlaceholder
+      ? '<username>'
+      : hasExamplePlaceholder
+      ? 'example_cluster'
+      : null,
+    lastError: lastDbError,
+  };
 }
 
 export async function connectToDatabase(): Promise<typeof mongoose | null> {
@@ -108,7 +132,8 @@ export async function connectToDatabase(): Promise<typeof mongoose | null> {
   console.log(`[DB] MONGODB_URI exists: ${exists}`);
 
   if (!uri) {
-    console.error(`[DB] MongoDB connection failed: ${safeReason || 'Invalid configuration'}`);
+    lastDbError = safeReason || 'Invalid configuration';
+    console.error(`[DB] MongoDB connection failed: ${lastDbError}`);
     return null;
   }
 
@@ -131,11 +156,13 @@ export async function connectToDatabase(): Promise<typeof mongoose | null> {
     cached.promise = mongoose
       .connect(uri, opts)
       .then((m) => {
+        lastDbError = null;
         console.log('[DB] MongoDB connection successful');
         return m;
       })
       .catch((err) => {
         const safeMessage = err?.message || 'Unknown network or driver error';
+        lastDbError = safeMessage;
         console.error(`[DB] MongoDB connection failed: ${safeMessage}`);
         cached.promise = null;
         cached.conn = null;
