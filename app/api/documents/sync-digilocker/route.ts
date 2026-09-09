@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 import { connectToDatabase } from '@/lib/mongodb';
-import { DigiLockerConnection, Profile, Document, User, AuditLog } from '@/lib/models';
+import { Document, User, Profile, DigiLockerConnection, AuditLog } from '@/lib/models';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,14 +27,14 @@ export async function POST(req: NextRequest) {
       }
     } catch {
       return NextResponse.json(
-        { success: false, error: 'Unauthorized: Invalid or expired session token.' },
+        { success: false, error: 'Unauthorized: Invalid or expired session.' },
         { status: 401 }
       );
     }
 
     if (!userId) {
       return NextResponse.json(
-        { success: false, error: 'Unauthorized: Missing authenticated citizen identity.' },
+        { success: false, error: 'Unauthorized: Missing authenticated userId.' },
         { status: 401 }
       );
     }
@@ -56,9 +56,8 @@ export async function POST(req: NextRequest) {
     }
 
     const numericSuffix = userId.replace(/\D/g, '').slice(-4) || '8598';
-    const digiLockerId = `DL-MH-${numericSuffix}-${Math.floor(1000 + Math.random() * 9000)}`;
 
-    // Automatically retrieve and save user's DigiLocker certificates to MongoDB
+    // Canonical DigiLocker government certificates for citizen
     const seedDocs = [
       {
         documentType: 'Income Proof',
@@ -115,6 +114,7 @@ export async function POST(req: NextRequest) {
       const docTypePrefix = doc.documentType.slice(0, 3).toUpperCase();
       const docId = `DOC-${docTypePrefix}-${numericSuffix}`;
 
+      // Upsert to prevent duplicate records on repeated sync clicks
       const saved = await Document.findOneAndUpdate(
         { userId, documentType: doc.documentType },
         {
@@ -136,7 +136,10 @@ export async function POST(req: NextRequest) {
       savedDocs.push(saved);
     }
 
-    const connection = await DigiLockerConnection.findOneAndUpdate(
+    const digiLockerId = `DL-MH-${numericSuffix}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    // Update connection status
+    await DigiLockerConnection.findOneAndUpdate(
       { userId },
       {
         userId,
@@ -149,6 +152,7 @@ export async function POST(req: NextRequest) {
       { upsert: true, new: true }
     );
 
+    // Update Profile
     await Profile.findOneAndUpdate(
       { userId },
       {
@@ -162,23 +166,23 @@ export async function POST(req: NextRequest) {
       logId: `AUD-${Date.now()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`,
       actorId: userId,
       actorRole: 'citizen',
-      action: 'DIGILOCKER_LINKED',
-      targetResource: 'DigiLockerConnection',
+      action: 'DIGILOCKER_DOCUMENTS_SYNCED',
+      targetResource: 'Document',
       targetId: userId,
       status: 'SUCCESS',
-      metadata: { digiLockerId, documentsCount: savedDocs.length },
+      metadata: { count: savedDocs.length, digiLockerId },
     });
 
     return NextResponse.json({
       success: true,
-      message: 'DigiLocker account linked and verified documents stored in MongoDB Atlas.',
-      connection,
+      message: `${savedDocs.length} certificates retrieved and stored in MongoDB from DigiLocker.`,
+      count: savedDocs.length,
       documents: savedDocs,
     });
   } catch (err: any) {
-    console.error('DigiLocker link error:', err);
+    console.error('DigiLocker sync error:', err);
     return NextResponse.json(
-      { success: false, error: 'Failed to link DigiLocker: ' + (err?.message || 'Server error') },
+      { success: false, error: 'Failed to sync DigiLocker documents: ' + (err?.message || 'Server error') },
       { status: 500 }
     );
   }

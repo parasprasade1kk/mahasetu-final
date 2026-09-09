@@ -15,16 +15,32 @@ export async function POST(
 ) {
   try {
     const authHeader = req.headers.get('authorization');
-    let userId = 'MH-CIT-001';
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized: Citizen authentication required.' },
+        { status: 401 }
+      );
+    }
 
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      try {
-        const token = authHeader.split(' ')[1];
-        const decoded: any = jwt.verify(token, JWT_SECRET);
-        if (decoded && decoded.userId) {
-          userId = decoded.userId;
-        }
-      } catch {}
+    let userId = '';
+    try {
+      const token = authHeader.split(' ')[1];
+      const decoded: any = jwt.verify(token, JWT_SECRET);
+      if (decoded && decoded.userId) {
+        userId = decoded.userId;
+      }
+    } catch {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized: Invalid session token.' },
+        { status: 401 }
+      );
+    }
+
+    if (!userId) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized: Missing authenticated userId.' },
+        { status: 401 }
+      );
     }
 
     const conn = await connectToDatabase();

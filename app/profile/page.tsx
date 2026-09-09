@@ -347,6 +347,32 @@ export default function UpdateProfilePage() {
               <p className="text-[10px] text-slate-500 mt-1">Associated with your sovereign authenticated account.</p>
             </div>
 
+            {/* Aadhaar Number (READ-ONLY) */}
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-bold text-slate-700" htmlFor="aadhaar">
+                  {language === 'mr' ? 'आधार क्रमांक (Aadhaar Number)' : 'Aadhaar Number'}
+                </label>
+                <span className="text-[10px] text-emerald-700 uppercase font-bold flex items-center gap-0.5">
+                  <span className="material-symbols-outlined text-[12px] text-emerald-600">verified</span> Verified / Provided
+                </span>
+              </div>
+              <div className="relative">
+                <input
+                  id="aadhaar"
+                  type="text"
+                  value={currentUser?.aadhaarMasked || userProfile?.aadhaarMasked || 'XXXX XXXX 0000'}
+                  readOnly
+                  disabled
+                  className="w-full h-11 px-3.5 bg-slate-100 border border-slate-300 rounded-lg text-xs font-mono font-bold text-slate-600 cursor-not-allowed"
+                />
+                <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-emerald-600">
+                  <span className="material-symbols-outlined text-[18px]">lock</span>
+                </span>
+              </div>
+              <p className="text-[10px] text-slate-500 mt-1">Sovereign identity locked to citizen account.</p>
+            </div>
+
             {/* Date of Birth */}
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1" htmlFor="dob">

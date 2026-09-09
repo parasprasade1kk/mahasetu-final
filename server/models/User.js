@@ -25,10 +25,22 @@ const userSchema = new mongoose.Schema(
       index: true,
       trim: true,
     },
+    aadhaarHash: {
+      type: String,
+      sparse: true,
+      index: true,
+    },
     aadhaarMasked: {
       type: String,
       required: true,
       trim: true,
+    },
+    aadhaarConsentGiven: {
+      type: Boolean,
+      default: false,
+    },
+    aadhaarConsentAt: {
+      type: Date,
     },
     email: {
       type: String,

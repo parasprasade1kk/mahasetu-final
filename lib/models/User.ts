@@ -6,6 +6,10 @@ export interface IUser extends Document {
   fullNameMr?: string;
   mobile: string;
   aadhaarMasked: string;
+  aadhaarHash?: string;
+  aadhaarLinked?: boolean;
+  aadhaarConsentGiven?: boolean;
+  aadhaarConsentAt?: Date | null;
   email?: string;
   role: 'citizen';
   isVerified: boolean;
@@ -44,6 +48,19 @@ const UserSchema = new Schema<IUser>(
       type: String,
       required: true,
       trim: true,
+    },
+    aadhaarHash: {
+      type: String,
+      sparse: true,
+      index: true,
+    },
+    aadhaarConsentGiven: {
+      type: Boolean,
+      default: false,
+    },
+    aadhaarConsentAt: {
+      type: Date,
+      default: null,
     },
     email: {
       type: String,

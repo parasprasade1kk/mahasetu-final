@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { fullName, mobile, aadhaar, otp } = body || {};
+    const { fullName, mobile, aadhaar, consent, otp } = body || {};
 
     if (!fullName || String(fullName).trim().length < 2) {
       return NextResponse.json(
@@ -49,6 +49,31 @@ export async function POST(req: NextRequest) {
     if (!cleanMobile || cleanMobile.length !== 10) {
       return NextResponse.json(
         { success: false, error: 'Please enter a valid 10-digit mobile number.' },
+        { status: 400 }
+      );
+    }
+
+    // ── Aadhaar Validation ──────────────────────────────────────────────────
+    if (!aadhaar || String(aadhaar).trim() === '') {
+      return NextResponse.json(
+        { success: false, error: 'Aadhaar Number is required.' },
+        { status: 400 }
+      );
+    }
+
+    // Remove whitespace and validate exactly 12 numeric digits
+    const cleanAadhaar = String(aadhaar).replace(/\s+/g, '');
+    if (!/^\d{12}$/.test(cleanAadhaar)) {
+      return NextResponse.json(
+        { success: false, error: 'Please enter a valid 12-digit Aadhaar Number.' },
+        { status: 400 }
+      );
+    }
+
+    // ── Aadhaar Consent Validation ──────────────────────────────────────────
+    if (consent !== true && consent !== 'true') {
+      return NextResponse.json(
+        { success: false, error: 'Please provide Aadhaar consent to continue.' },
         { status: 400 }
       );
     }
@@ -72,38 +97,49 @@ export async function POST(req: NextRequest) {
 
     await ensureDatabaseSeeded();
 
-    // Check if citizen already exists in MongoDB
-    let existingUser = await User.findOne({ mobile: cleanMobile });
-    if (existingUser) {
-      const token = jwt.sign(
-        { userId: existingUser.userId, mobile: existingUser.mobile, role: 'citizen' },
-        JWT_SECRET,
-        { expiresIn: '7d' }
+    // Compute cryptographic SHA-256 hash of the clean 12-digit Aadhaar
+    const crypto = await import('crypto');
+    const aadhaarHash = crypto.createHash('sha256').update(cleanAadhaar).digest('hex');
+    const masked = maskAadhaar(cleanAadhaar, cleanMobile);
+
+    // 1. Enforce unique Aadhaar across MahaSetu accounts
+    const existingAadhaarUser = await User.findOne({ aadhaarHash });
+    if (existingAadhaarUser) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'This Aadhaar number is already associated with an existing account. Please log in using your existing account.',
+        },
+        { status: 409 }
       );
+    }
 
-      const profile = await Profile.findOne({ userId: existingUser.userId });
-
-      return NextResponse.json({
-        success: true,
-        message: 'Existing citizen account verified.',
-        token,
-        user: existingUser,
-        profile,
-      });
+    // 2. Check if citizen mobile is already registered
+    const existingMobileUser = await User.findOne({ mobile: cleanMobile });
+    if (existingMobileUser) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'This mobile number is already associated with an existing account. Please log in using your existing account.',
+        },
+        { status: 409 }
+      );
     }
 
     // Generate unique citizen ID
     const ts = Date.now().toString(36).toUpperCase();
     const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
     const userId = `MH-CIT-${ts}-${rand}`;
-    const masked = maskAadhaar(aadhaar, cleanMobile);
 
-    // Create real User document in MongoDB
+    // Create real User document in MongoDB with secure canonical Aadhaar identity
     const newUser = await User.create({
       userId,
       fullName: String(fullName).trim(),
       mobile: cleanMobile,
+      aadhaarHash,
       aadhaarMasked: masked,
+      aadhaarConsentGiven: true,
+      aadhaarConsentAt: new Date(),
       email: `citizen.${cleanMobile}@mahasetu.gov.in`,
       role: 'citizen',
       isVerified: true,
@@ -121,7 +157,7 @@ export async function POST(req: NextRequest) {
 
     // Brand-new citizen starts with zero consents, applications, or documents in MongoDB.
 
-    // Create audit log
+    // Create audit log (never logging raw Aadhaar)
     await AuditLog.create({
       logId: `AUD-${Date.now()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`,
       actorId: userId,
@@ -130,7 +166,7 @@ export async function POST(req: NextRequest) {
       targetResource: 'User',
       targetId: userId,
       status: 'SUCCESS',
-      metadata: { fullName: newUser.fullName, mobile: newUser.mobile },
+      metadata: { fullName: newUser.fullName, mobile: newUser.mobile, aadhaarMasked: masked },
     });
 
     const token = jwt.sign(
@@ -139,12 +175,17 @@ export async function POST(req: NextRequest) {
       { expiresIn: '7d' }
     );
 
+    // Sanitize user object: never expose raw aadhaar or hash
+    const userObj: any = newUser.toObject ? newUser.toObject() : { ...newUser };
+    delete userObj.aadhaarHash;
+    userObj.aadhaarLinked = true;
+
     return NextResponse.json(
       {
         success: true,
         message: 'Citizen account created successfully in MongoDB Atlas.',
         token,
-        user: newUser,
+        user: userObj,
         profile: newProfile,
       },
       { status: 201 }

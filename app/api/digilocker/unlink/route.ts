@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 import { connectToDatabase } from '@/lib/mongodb';
-import { Document, AuditLog } from '@/lib/models';
+import { DigiLockerConnection, Profile, AuditLog } from '@/lib/models';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
       }
     } catch {
       return NextResponse.json(
-        { success: false, error: 'Unauthorized: Invalid session token.' },
+        { success: false, error: 'Unauthorized: Invalid or expired session token.' },
         { status: 401 }
       );
     }
@@ -47,53 +47,39 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const body = await req.json();
-    const { documentName, documentType, authorityEn, issueDate } = body || {};
+    await DigiLockerConnection.findOneAndUpdate(
+      { userId },
+      {
+        isConnected: false,
+        linkedAt: null,
+      }
+    );
 
-    if (!documentName || !documentType) {
-      return NextResponse.json(
-        { success: false, error: 'Document name and type are required.' },
-        { status: 400 }
-      );
-    }
-
-    const docId = `DOC-UPL-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
-
-    const newDoc = await Document.create({
-      documentId: docId,
-      userId,
-      documentType,
-      documentName,
-      authorityEn: authorityEn || 'Government Authority',
-      issueDate: issueDate || new Date().toISOString().split('T')[0],
-      source: 'User Upload',
-      verificationStatus: 'Citizen Uploaded',
-      verified: true,
-      uploadedAt: new Date(),
-    });
+    await Profile.findOneAndUpdate(
+      { userId },
+      {
+        digiLockerLinked: false,
+      }
+    );
 
     await AuditLog.create({
       logId: `AUD-${Date.now()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`,
       actorId: userId,
       actorRole: 'citizen',
-      action: 'DOCUMENT_UPLOAD',
-      targetResource: 'Document',
-      targetId: docId,
+      action: 'DIGILOCKER_UNLINKED',
+      targetResource: 'DigiLockerConnection',
+      targetId: userId,
       status: 'SUCCESS',
-      metadata: { documentName, documentType },
+      metadata: {},
     });
 
-    return NextResponse.json(
-      {
-        success: true,
-        message: 'Document uploaded successfully to MongoDB Atlas.',
-        document: newDoc,
-      },
-      { status: 201 }
-    );
+    return NextResponse.json({
+      success: true,
+      message: 'DigiLocker account unlinked successfully.',
+    });
   } catch (err: any) {
     return NextResponse.json(
-      { success: false, error: 'Failed to upload document: ' + (err?.message || 'Server error') },
+      { success: false, error: 'Failed to unlink DigiLocker: ' + (err?.message || 'Server error') },
       { status: 500 }
     );
   }

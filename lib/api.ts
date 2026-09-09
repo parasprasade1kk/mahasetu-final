@@ -151,10 +151,10 @@ export const authApi = {
       body: JSON.stringify({ mobile, aadhaar }),
     }),
 
-  register: (fullName: string, mobile: string, aadhaar?: string, otp: string = '123456') =>
+  register: (fullName: string, mobile: string, aadhaar?: string, otp: string = '123456', consent: boolean = true) =>
     apiRequest('/auth/register', {
       method: 'POST',
-      body: JSON.stringify({ fullName, mobile, aadhaar, otp }),
+      body: JSON.stringify({ fullName, mobile, aadhaar, otp, consent }),
     }),
 
   login: (mobile: string, aadhaar?: string, otp: string = '123456') =>

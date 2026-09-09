@@ -80,7 +80,7 @@ interface AppContextType {
 
   // Auth Actions
   loginWithMobile: (mobile: string, aadhaar?: string) => Promise<{ success: boolean; user?: CitizenAccount; error?: string }>;
-  registerUser: (name: string, mobile: string, aadhaar?: string) => Promise<{ success: boolean; user?: CitizenAccount; error?: string }>;
+  registerUser: (name: string, mobile: string, aadhaar?: string, consent?: boolean) => Promise<{ success: boolean; user?: CitizenAccount; error?: string }>;
   saveUserProfile: (profile: CitizenProfile) => void;
   login: () => void; // Legacy fallback
   logout: () => void;
@@ -431,7 +431,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const registerUser = async (
     name: string,
     mobile: string,
-    aadhaar?: string
+    aadhaar?: string,
+    consent: boolean = true
   ): Promise<{ success: boolean; user?: CitizenAccount; error?: string }> => {
     if (!name || name.trim().length < 2) {
       return { success: false, error: 'Please enter your full name (at least 2 characters).' };
@@ -443,7 +444,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     try {
       // 1. Persist new citizen in MongoDB Atlas via /api/auth/register
-      const res = await authApi.register(name.trim(), clean, aadhaar, '123456');
+      const res = await authApi.register(name.trim(), clean, aadhaar, '123456', consent);
 
       if (res.success && res.user) {
         const citizenAccount: CitizenAccount = {

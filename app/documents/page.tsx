@@ -69,7 +69,7 @@ const fallbackDocumentsList: DocItem[] = [
 ];
 
 export default function DocumentsPage() {
-  const { language, user } = useApp();
+  const { language, user, currentUser, userProfile } = useApp();
   const [docs, setDocs] = useState<DocItem[]>([]);
   const [activePreviewDoc, setActivePreviewDoc] = useState<DocItem | null>(null);
   const [syncing, setSyncing] = useState(false);
@@ -189,9 +189,14 @@ export default function DocumentsPage() {
                     <span className="material-symbols-outlined text-[24px]">description</span>
                   </div>
                   <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                      {doc.type}
-                    </span>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                        {doc.type}
+                      </span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
+                        Source: {doc.source || 'DigiLocker'}
+                      </span>
+                    </div>
                     <h3 className="text-sm sm:text-base font-bold text-[#003b5a]">
                       {language === 'mr' ? doc.nameMr : doc.nameEn}
                     </h3>
@@ -273,10 +278,11 @@ export default function DocumentsPage() {
               <p className="text-xs text-slate-500 font-mono">Certificate No: {activePreviewDoc.certNo}</p>
 
               <div className="bg-[#f8f9ff] border border-slate-200 rounded-xl p-4 text-left text-xs space-y-2">
-                <p><strong>Citizen Name:</strong> {user.name}</p>
-                <p><strong>Aadhaar Masked:</strong> {user.aadhaarMasked}</p>
-                <p><strong>District:</strong> {user.district}</p>
+                <p><strong>Citizen Name:</strong> {currentUser?.name || user?.name}</p>
+                <p><strong>Aadhaar Masked:</strong> {currentUser?.aadhaarMasked || userProfile?.aadhaarMasked || user?.aadhaarMasked || 'XXXX XXXX 0000'}</p>
+                <p><strong>District:</strong> {userProfile?.district || user?.district || 'Maharashtra'}</p>
                 <p><strong>Issuing Officer:</strong> {activePreviewDoc.authorityEn}</p>
+                <p><strong>Document Source:</strong> <span className="text-blue-700 font-semibold">{activePreviewDoc.source || 'DigiLocker'}</span></p>
                 <p><strong>Date of Issue:</strong> {activePreviewDoc.issueDate}</p>
                 <p><strong>Validity:</strong> Statutory 3 Years (Valid till 2029)</p>
               </div>

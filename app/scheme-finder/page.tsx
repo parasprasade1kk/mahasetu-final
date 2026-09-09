@@ -6,7 +6,7 @@ import { useApp } from '@/context/AppContext';
 import { findMatchingSchemes, ScoredScheme } from '@/lib/schemeMatcher';
 import { Scheme, SchemeDocument, ALL_SCHEMES } from '@/lib/schemeDatabase';
 import { evaluateAllSchemes, UserProfile } from '@/lib/eligibilityEngine';
-import { schemeApi } from '@/lib/api';
+import { schemeApi, documentApi } from '@/lib/api';
 
 // ─── Translations ─────────────────────────────────────────────────────────────
 const t: Record<string, Record<string, string>> = {
@@ -434,12 +434,13 @@ export default function SchemeFinderPage() {
   const [uploadedDocsMap, setUploadedDocsMap] = useState<Record<string, { fileName: string; fileSize: string; uploadedAt: string }>>({});
   const [fileUploadError, setFileUploadError] = useState<string>('');
 
-  const handleFetchFromDigiLocker = (docId: string) => {
+  const handleFetchFromDigiLocker = async (docId: string) => {
     setFetchingDigiDocId(docId);
-    setTimeout(() => {
-      setDigiLockerRetrievedDocs(prev => ({ ...prev, [docId]: true }));
-      setFetchingDigiDocId(null);
-    }, 350);
+    try {
+      await documentApi.syncDigiLocker();
+    } catch {}
+    setDigiLockerRetrievedDocs(prev => ({ ...prev, [docId]: true }));
+    setFetchingDigiDocId(null);
   };
 
   const handleOpenGovtConsent = (doc: SchemeDocument) => {

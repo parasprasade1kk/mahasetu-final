@@ -56,7 +56,7 @@ router.post('/send-otp', async (req, res) => {
 // ─── POST /api/auth/register ──────────────────────────────────────────────────
 router.post('/register', async (req, res) => {
   try {
-    const { fullName, mobile, aadhaar, otp } = req.body;
+    const { fullName, mobile, aadhaar, consent, otp } = req.body;
 
     if (!fullName || fullName.trim().length < 2) {
       return res.status(400).json({
@@ -73,6 +73,30 @@ router.post('/register', async (req, res) => {
       });
     }
 
+    // ── Aadhaar Validation ──────────────────────────────────────────────────
+    if (!aadhaar || String(aadhaar).trim() === '') {
+      return res.status(400).json({
+        success: false,
+        error: 'Aadhaar Number is required.',
+      });
+    }
+
+    const cleanAadhaar = String(aadhaar).replace(/\s+/g, '');
+    if (!/^\d{12}$/.test(cleanAadhaar)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Please enter a valid 12-digit Aadhaar Number.',
+      });
+    }
+
+    // ── Aadhaar Consent Validation ──────────────────────────────────────────
+    if (consent !== true && consent !== 'true') {
+      return res.status(400).json({
+        success: false,
+        error: 'Please provide Aadhaar consent to continue.',
+      });
+    }
+
     // Strictly validate demo OTP
     if (!otp || String(otp).trim() !== DEMO_OTP) {
       return res.status(400).json({
@@ -81,24 +105,25 @@ router.post('/register', async (req, res) => {
       });
     }
 
+    const crypto = require('crypto');
+    const aadhaarHash = crypto.createHash('sha256').update(cleanAadhaar).digest('hex');
+    const masked = `XXXX XXXX ${cleanAadhaar.slice(-4)}`;
+
+    // Check duplicate Aadhaar
+    const existingAadhaarUser = await User.findOne({ aadhaarHash });
+    if (existingAadhaarUser) {
+      return res.status(409).json({
+        success: false,
+        error: 'This Aadhaar number is already associated with an existing account. Please log in using your existing account.',
+      });
+    }
+
     // Check if citizen already exists
     let existingUser = await User.findOne({ mobile: cleanMobile });
     if (existingUser) {
-      // Generate token for existing user
-      const token = jwt.sign(
-        { userId: existingUser.userId, mobile: existingUser.mobile, role: 'citizen' },
-        JWT_SECRET,
-        { expiresIn: '7d' }
-      );
-
-      const profile = await Profile.findOne({ userId: existingUser.userId });
-
-      return res.json({
-        success: true,
-        message: 'Existing citizen account verified.',
-        token,
-        user: existingUser,
-        profile,
+      return res.status(409).json({
+        success: false,
+        error: 'This mobile number is already associated with an existing account. Please log in using your existing account.',
       });
     }
 
@@ -106,13 +131,15 @@ router.post('/register', async (req, res) => {
     const ts = Date.now().toString(36).toUpperCase();
     const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
     const userId = `MH-CIT-${ts}-${rand}`;
-    const masked = aadhaar ? maskAadhaar(aadhaar) : `XXXX XXXX ${cleanMobile.slice(-4)}`;
 
     const newUser = await User.create({
       userId,
       fullName: fullName.trim(),
       mobile: cleanMobile,
+      aadhaarHash,
       aadhaarMasked: masked,
+      aadhaarConsentGiven: true,
+      aadhaarConsentAt: new Date(),
       email: `citizen.${cleanMobile}@mahasetu.gov.in`,
       role: 'citizen',
       isVerified: true,

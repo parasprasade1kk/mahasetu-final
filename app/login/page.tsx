@@ -193,9 +193,22 @@ export default function LoginPage() {
       setRegError('Please enter your full name (at least 2 characters).'); return;
     }
 
+    if (!regAadhaar || regAadhaar.trim() === '') {
+      setRegError('Aadhaar Number is required.'); return;
+    }
+
+    const cleanAadhaar = regAadhaar.replace(/\s+/g, '');
+    if (!/^\d{12}$/.test(cleanAadhaar)) {
+      setRegError('Please enter a valid 12-digit Aadhaar Number.'); return;
+    }
+
+    if (!regConsent) {
+      setRegError('Please provide Aadhaar consent to continue.'); return;
+    }
+
     setRegLoading(true);
     try {
-      const result = await registerUser(regName.trim(), regMobile, regAadhaar);
+      const result = await registerUser(regName.trim(), regMobile, cleanAadhaar, true);
       setRegLoading(false);
       if (result.success) {
         router.push('/onboarding');
@@ -788,16 +801,75 @@ export default function LoginPage() {
                           </p>
                         </div>
 
-                        {/* Consent notice */}
-                        <div className="p-3 bg-amber-50/70 border border-amber-200 rounded-xl text-[11px] text-amber-900 flex items-start gap-2">
-                          <span className="material-symbols-outlined text-amber-700 text-[16px] flex-shrink-0 mt-0.5">shield</span>
-                          <span>Your profile will be used solely for personalized scheme eligibility checks under MahaSetu (DPDP Act 2023).</span>
+                        {/* Aadhaar Number */}
+                        <div>
+                          <div className="flex items-center justify-between mb-1">
+                            <label className="block text-xs font-bold text-slate-700" htmlFor="reg-aadhaar">
+                              Aadhaar Number<span className="text-red-500 ml-1">*</span>
+                            </label>
+                            <span className="text-[10px] text-red-600 font-bold uppercase tracking-wide">
+                              Required
+                            </span>
+                          </div>
+                          <div className="relative">
+                            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                              <span className="material-symbols-outlined text-[18px]">badge</span>
+                            </span>
+                            <input
+                              id="reg-aadhaar"
+                              type="text"
+                              maxLength={12}
+                              value={regAadhaar}
+                              onChange={(e) => {
+                                setRegAadhaar(e.target.value.replace(/\D/g, ''));
+                                setRegError('');
+                              }}
+                              placeholder="Enter 12-digit Aadhaar Number"
+                              className="w-full h-11 pl-10 pr-4 bg-white border border-slate-300 rounded-lg text-xs font-semibold text-slate-800 tracking-widest focus:outline-none focus:border-[#003b5a] focus:ring-1 focus:ring-[#003b5a]"
+                              required
+                            />
+                          </div>
+                          <p className="mt-1 text-[11px] text-slate-500">
+                            12-digit unique identity number. Used as your canonical citizen identity across MahaSetu.
+                          </p>
+                        </div>
+
+                        {/* Explicit Aadhaar / eKYC Consent Checkbox */}
+                        <div className="space-y-1.5 p-3.5 bg-amber-50/80 border border-amber-300 rounded-xl">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-[10px] font-bold text-amber-900 uppercase tracking-wider flex items-center gap-1">
+                              <span className="material-symbols-outlined text-[14px] text-amber-700">shield</span>
+                              Aadhaar Consent
+                            </span>
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-800 border border-blue-200">
+                              Demo eKYC verification
+                            </span>
+                          </div>
+                          <label className="flex items-start gap-2.5 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={regConsent}
+                              onChange={(e) => {
+                                setRegConsent(e.target.checked);
+                                setRegError('');
+                              }}
+                              className="mt-0.5 w-4 h-4 text-[#003b5a] rounded border-slate-300 focus:ring-[#003b5a]"
+                            />
+                            <span className="text-[11px] text-slate-700 leading-relaxed font-medium">
+                              I consent to the use of my Aadhaar number and biometric data for eKYC purposes. I understand that my data will be used solely for identity verification, handled securely, and may be shared with authorised entities involved in this process. I acknowledge that this consent is voluntary and can be withdrawn at any time.
+                            </span>
+                          </label>
                         </div>
 
                         {/* Submit */}
                         <button
                           type="submit"
-                          disabled={regLoading || !regName.trim()}
+                          disabled={
+                            regLoading ||
+                            !regName.trim() ||
+                            regAadhaar.replace(/\D/g, '').length !== 12 ||
+                            !regConsent
+                          }
                           className="w-full h-11 bg-[#003b5a] hover:bg-[#002840] text-white rounded-lg text-xs font-bold shadow-gov transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {regLoading ? (
@@ -812,6 +884,12 @@ export default function LoginPage() {
                             </>
                           )}
                         </button>
+
+                        {!regConsent && (
+                          <p className="text-[10px] text-center text-amber-700 font-medium">
+                            Please provide Aadhaar consent above to complete registration.
+                          </p>
+                        )}
 
                         <button type="button" onClick={() => { setRegStep('mobile'); setRegError(''); }}
                           className="w-full text-xs text-slate-500 hover:text-[#003b5a] font-medium py-1">

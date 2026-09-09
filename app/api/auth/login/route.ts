@@ -79,14 +79,40 @@ export async function POST(req: NextRequest) {
 
     // Update lastLoginAt without creating a duplicate record
     user.lastLoginAt = new Date();
-    if (aadhaar && String(aadhaar).replace(/\D/g, '').length === 12) {
-      user.aadhaarMasked = maskAadhaar(aadhaar);
+
+    // Canonical Aadhaar handling:
+    // If the user does not yet have an Aadhaar hash (e.g. existing user migration)
+    if (!user.aadhaarHash && aadhaar) {
+      const cleanAadhaar = String(aadhaar).replace(/\D/g, '');
+      if (cleanAadhaar.length === 12) {
+        const crypto = await import('crypto');
+        const hash = crypto.createHash('sha256').update(cleanAadhaar).digest('hex');
+
+        // Verify this Aadhaar does not belong to another account
+        const existingAadhaarOwner = await User.findOne({
+          aadhaarHash: hash,
+          userId: { $ne: user.userId },
+        });
+
+        if (!existingAadhaarOwner) {
+          user.aadhaarHash = hash;
+          user.aadhaarMasked = maskAadhaar(cleanAadhaar);
+          user.aadhaarConsentGiven = true;
+          user.aadhaarConsentAt = new Date();
+
+          await Profile.updateOne(
+            { userId: user.userId },
+            { $set: { aadhaarMasked: user.aadhaarMasked } }
+          );
+        }
+      }
     }
+
     await user.save();
 
     const profile = await Profile.findOne({ userId: user.userId });
 
-    // Audit log
+    // Audit log (never exposing raw Aadhaar)
     await AuditLog.create({
       logId: `AUD-${Date.now()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`,
       actorId: user.userId,
@@ -95,7 +121,7 @@ export async function POST(req: NextRequest) {
       targetResource: 'User',
       targetId: user.userId,
       status: 'SUCCESS',
-      metadata: { mobile: user.mobile },
+      metadata: { mobile: user.mobile, aadhaarMasked: user.aadhaarMasked },
     });
 
     const token = jwt.sign(
@@ -104,11 +130,16 @@ export async function POST(req: NextRequest) {
       { expiresIn: '7d' }
     );
 
+    // Sanitize user object for client: never expose raw aadhaar or hash
+    const userObj: any = user.toObject ? user.toObject() : { ...user };
+    delete userObj.aadhaarHash;
+    userObj.aadhaarLinked = !!(user.aadhaarHash || (user.aadhaarMasked && !user.aadhaarMasked.endsWith('0000')));
+
     return NextResponse.json({
       success: true,
       message: 'Citizen authenticated successfully.',
       token,
-      user,
+      user: userObj,
       profile,
     });
   } catch (err: any) {

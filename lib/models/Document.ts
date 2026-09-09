@@ -99,5 +99,8 @@ const DocumentSchema = new Schema<IDocumentItem>(
   }
 );
 
+DocumentSchema.index({ userId: 1, documentType: 1 });
+DocumentSchema.index({ userId: 1, source: 1 });
+
 export const Document: Model<IDocumentItem> =
   mongoose.models.Document || mongoose.model<IDocumentItem>('Document', DocumentSchema);
