@@ -1,10 +1,8 @@
 import mongoose from 'mongoose';
 
-const MONGODB_URI = process.env.MONGODB_URI;
-
 /**
- * Global is used here to maintain a cached connection across hot-reloads
- * in development and across function invocations in serverless environments like Vercel.
+ * Global cache used to preserve Mongoose connection across serverless invocations
+ * and development hot-reloads on Vercel.
  */
 interface CachedConnection {
   conn: typeof mongoose | null;
@@ -22,11 +20,95 @@ if (!global.mongooseCache) {
   global.mongooseCache = cached;
 }
 
-export async function connectToDatabase(): Promise<typeof mongoose | null> {
-  const uri = process.env.MONGODB_URI;
+/**
+ * Safely normalizes the MongoDB URI to ensure special characters in passwords
+ * are properly URL-encoded without double-encoding existing percent-encodings.
+ */
+function normalizeMongoUri(rawUri: string): string {
+  const trimmed = rawUri.trim();
+  const prefixMatch = trimmed.match(/^(mongodb(?:\+srv)?:\/\/)(.*)$/);
+  if (!prefixMatch) return trimmed;
 
-  if (!uri || uri.includes('<db_password>') || uri.includes('<username>') || uri.includes('password@cluster0.mahasetu')) {
-    // Database connection string not fully configured yet
+  const prefix = prefixMatch[1]; // "mongodb+srv://" or "mongodb://"
+  const rest = prefixMatch[2];   // "user:pass@host/db?query"
+
+  const lastAtIndex = rest.lastIndexOf('@');
+  if (lastAtIndex === -1) {
+    return trimmed;
+  }
+
+  const credentialsPart = rest.slice(0, lastAtIndex); // "user:pass"
+  const hostAndRest = rest.slice(lastAtIndex + 1);   // "host/db?query"
+
+  const firstColonIndex = credentialsPart.indexOf(':');
+  if (firstColonIndex === -1) {
+    return trimmed;
+  }
+
+  const username = credentialsPart.slice(0, firstColonIndex);
+  const password = credentialsPart.slice(firstColonIndex + 1);
+
+  try {
+    const decodedPassword = decodeURIComponent(password);
+    const encodedPassword = encodeURIComponent(decodedPassword);
+    const decodedUsername = decodeURIComponent(username);
+    const encodedUsername = encodeURIComponent(decodedUsername);
+    return `${prefix}${encodedUsername}:${encodedPassword}@${hostAndRest}`;
+  } catch {
+    return trimmed;
+  }
+}
+
+/**
+ * Validates connection URI without leaking any sensitive credentials.
+ */
+function validateMongoUri(): { uri: string | null; exists: boolean; safeReason?: string } {
+  const raw = process.env.MONGODB_URI;
+  if (!raw || !raw.trim()) {
+    return {
+      uri: null,
+      exists: false,
+      safeReason: 'MONGODB_URI is not defined in environment variables.',
+    };
+  }
+
+  const trimmed = raw.trim();
+
+  if (trimmed.includes('<db_password>')) {
+    return {
+      uri: null,
+      exists: true,
+      safeReason: 'MONGODB_URI contains unreplaced placeholder <db_password>. Please configure the actual database password in Vercel Environment Variables.',
+    };
+  }
+
+  if (trimmed.includes('<username>')) {
+    return {
+      uri: null,
+      exists: true,
+      safeReason: 'MONGODB_URI contains unreplaced placeholder <username>.',
+    };
+  }
+
+  if (trimmed.includes('password@cluster0.mahasetu')) {
+    return {
+      uri: null,
+      exists: true,
+      safeReason: 'MONGODB_URI contains placeholder password from example template.',
+    };
+  }
+
+  return { uri: normalizeMongoUri(trimmed), exists: true };
+}
+
+export async function connectToDatabase(): Promise<typeof mongoose | null> {
+  console.log('[DB] Attempting MongoDB connection');
+
+  const { uri, exists, safeReason } = validateMongoUri();
+  console.log(`[DB] MONGODB_URI exists: ${exists}`);
+
+  if (!uri) {
+    console.error(`[DB] MongoDB connection failed: ${safeReason || 'Invalid configuration'}`);
     return null;
   }
 
@@ -35,23 +117,37 @@ export async function connectToDatabase(): Promise<typeof mongoose | null> {
   }
 
   if (!cached.promise) {
-    const opts = {
+    const opts: mongoose.ConnectOptions = {
       bufferCommands: false,
-      serverSelectionTimeoutMS: 5000,
-      connectTimeoutMS: 5000,
+      serverSelectionTimeoutMS: 10000, // 10s for Atlas serverless handshake
+      connectTimeoutMS: 10000,
+      socketTimeoutMS: 45000,
+      maxPoolSize: 10,
+      minPoolSize: 1,
+      dbName: 'mahasetu', // Guarantees unified single source of truth database
     };
 
-    cached.promise = mongoose.connect(uri, opts).then((m) => {
-      return m;
-    });
+    cached.promise = mongoose
+      .connect(uri, opts)
+      .then((m) => {
+        console.log('[DB] MongoDB connection successful');
+        return m;
+      })
+      .catch((err) => {
+        const safeMessage = err?.message || 'Unknown network or driver error';
+        console.error(`[DB] MongoDB connection failed: ${safeMessage}`);
+        cached.promise = null;
+        cached.conn = null;
+        throw err;
+      });
   }
 
   try {
     cached.conn = await cached.promise;
     return cached.conn;
-  } catch (e) {
+  } catch {
     cached.promise = null;
-    console.error('Mongoose Serverless Connection Error:', (e as Error).message);
+    cached.conn = null;
     return null;
   }
 }

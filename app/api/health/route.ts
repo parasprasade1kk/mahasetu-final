@@ -7,11 +7,15 @@ export async function GET() {
   await connectToDatabase();
   const dbConnected = isDatabaseConnected();
 
-  return NextResponse.json({
-    status: dbConnected ? 'ok' : 'degraded',
-    database: dbConnected ? 'connected' : 'disconnected',
-    platform: 'MahaSetu Vercel Serverless Architecture',
-    state: 'Maharashtra',
-    timestamp: new Date().toISOString(),
-  });
+  return NextResponse.json(
+    {
+      status: dbConnected ? 'ok' : 'error',
+      database: dbConnected ? 'connected' : 'disconnected',
+      environment: process.env.NODE_ENV || 'production',
+      timestamp: new Date().toISOString(),
+    },
+    {
+      status: dbConnected ? 200 : 503,
+    }
+  );
 }
