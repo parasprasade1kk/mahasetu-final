@@ -20,11 +20,13 @@ const JWT_SECRET =
 
 export async function GET(req: NextRequest) {
   try {
+    console.log('[ADMIN ANALYTICS] Request received');
+
     // 1. Verify Admin Authentication
     const authHeader = req.headers.get('authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json(
-        { success: false, error: 'Access denied. Valid Administrator Bearer token required.' },
+        { success: false, error: 'Administrator session expired. Please log in again.' },
         { status: 401 }
       );
     }
@@ -36,29 +38,34 @@ export async function GET(req: NextRequest) {
       decoded = jwt.verify(token, JWT_SECRET);
     } catch {
       return NextResponse.json(
-        { success: false, error: 'Invalid or expired administrator session.' },
+        { success: false, error: 'Administrator session expired. Please log in again.' },
         { status: 401 }
       );
     }
 
     if (!decoded || (decoded.role !== 'admin' && decoded.role !== 'superadmin')) {
       return NextResponse.json(
-        { success: false, error: 'Access denied. Administrator privileges required.' },
+        { success: false, error: 'Administrator access required.' },
         { status: 403 }
       );
     }
 
+    console.log('[ADMIN ANALYTICS] Admin authenticated');
+
     // 2. Connect to MongoDB Atlas
     const conn = await connectToDatabase();
     if (!conn) {
+      console.warn('[ADMIN ANALYTICS] Database connection unavailable');
       return NextResponse.json(
         {
           success: false,
-          error: 'Unable to connect to MongoDB Atlas database. Please verify connection string.',
+          error: 'Database connection unavailable.',
         },
         { status: 503 }
       );
     }
+
+    console.log('[ADMIN ANALYTICS] MongoDB connected');
 
     // 3. Ensure baseline demo records exist in database without creating duplicates
     await ensureDatabaseSeeded();
@@ -106,6 +113,9 @@ export async function GET(req: NextRequest) {
       Consent.countDocuments({ status: 'Active' }),
     ]);
 
+    console.log('[ADMIN ANALYTICS] Users count:', totalCitizens);
+    console.log('[ADMIN ANALYTICS] Applications count:', totalApplications);
+
     // Breakdown aggregations
     const [departmentStats, statusStats, districtStats, recentActivity] = await Promise.all([
       Application.aggregate([
@@ -124,6 +134,8 @@ export async function GET(req: NextRequest) {
       ]),
       AuditLog.find().sort({ timestamp: -1 }).limit(10).lean(),
     ]);
+
+    console.log('[ADMIN ANALYTICS] Returning KPI response');
 
     return NextResponse.json({
       success: true,
@@ -158,11 +170,11 @@ export async function GET(req: NextRequest) {
       timestamp: new Date().toISOString(),
     });
   } catch (err: any) {
-    console.error('Vercel Admin Analytics Route Error:', err);
+    console.error('[ADMIN ANALYTICS] Serverless execution error:', err?.message);
     return NextResponse.json(
       {
         success: false,
-        error: 'Failed to aggregate admin analytics: ' + (err?.message || 'Internal error'),
+        error: 'Unable to load live dashboard data.',
       },
       { status: 500 }
     );

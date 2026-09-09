@@ -32,8 +32,24 @@ export default function AdminDashboardPage() {
     setError('');
     try {
       const res = await adminApi.getAnalytics();
-      if (res.success && res.data) {
-        setData(res.data);
+      if (res.success && (res.data || res.kpis)) {
+        const payload: AnalyticsData = res.data || {
+          totalCitizens: res.kpis?.totalRegisteredCitizens ?? 0,
+          verifiedCitizens: res.kpis?.verifiedCitizens ?? 0,
+          totalApplications: res.kpis?.totalApplications ?? 0,
+          pendingApplications: res.kpis?.pendingApplications ?? 0,
+          approvedApplications: res.kpis?.approvedApplications ?? 0,
+          rejectedApplications: res.kpis?.rejectedApplications ?? 0,
+          totalSchemes: res.kpis?.totalSchemes ?? 0,
+          documentsSubmitted: res.kpis?.documentsSubmitted ?? 0,
+          digiLockerUsers: res.kpis?.digilockerConnectedUsers ?? 0,
+          activeConsents: res.kpis?.activeConsents ?? 0,
+          departmentStats: [],
+          statusStats: [],
+          districtStats: [],
+          recentActivity: [],
+        };
+        setData(payload);
         setError('');
         const now = new Date();
         setLastUpdated(

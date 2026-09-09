@@ -66,24 +66,54 @@ export async function apiRequest<T = any>(
     if (!res.ok) {
       let friendlyError = data.error;
       if (!friendlyError) {
-        if (res.status === 404) {
-          friendlyError = cleanEndpoint.includes('/admin')
-            ? 'Administrator authentication service is temporarily unavailable. Please try again.'
-            : `Service endpoint not found (${cleanEndpoint}).`;
-        } else if (res.status === 401) {
-          friendlyError = 'Invalid Administrator ID or password.';
-        } else if (res.status === 403) {
-          friendlyError = 'Access denied. Dedicated Government Administrator privilege required.';
-        } else if (res.status === 500) {
-          friendlyError = cleanEndpoint.includes('/admin')
-            ? 'Administrator authentication service is temporarily unavailable. Please try again.'
-            : 'Internal server error. Please try again later.';
-        } else if (res.status === 502 || res.status === 503 || res.status === 504) {
-          friendlyError = cleanEndpoint.includes('/admin')
-            ? 'Administrator authentication service is temporarily unavailable. Please try again.'
-            : 'Service temporarily unavailable. Please try again shortly.';
+        if (cleanEndpoint.includes('/admin/analytics')) {
+          if (res.status === 401) {
+            friendlyError = 'Administrator session expired. Please log in again.';
+          } else if (res.status === 403) {
+            friendlyError = 'Administrator access required.';
+          } else if (res.status === 404) {
+            friendlyError = 'Dashboard analytics API is not configured correctly.';
+          } else if (res.status === 500) {
+            friendlyError = 'Unable to load live dashboard data.';
+          } else if (res.status === 502 || res.status === 503 || res.status === 504) {
+            friendlyError = 'Database connection unavailable.';
+          } else {
+            friendlyError = 'Unable to load live dashboard data. Please try again.';
+          }
+        } else if (cleanEndpoint.includes('/admin/login')) {
+          if (res.status === 401) {
+            friendlyError = 'Invalid Administrator ID or password.';
+          } else if (res.status === 403) {
+            friendlyError = 'Access denied. Administrator privileges required.';
+          } else {
+            friendlyError = 'Administrator authentication service is temporarily unavailable. Please try again.';
+          }
+        } else if (cleanEndpoint.includes('/admin')) {
+          if (res.status === 401) {
+            friendlyError = 'Your administrator session has expired. Please log in again.';
+          } else if (res.status === 403) {
+            friendlyError = 'Administrator access required.';
+          } else if (res.status === 404) {
+            friendlyError = `Administration resource not found (${cleanEndpoint}).`;
+          } else if (res.status === 502 || res.status === 503) {
+            friendlyError = 'Database connection unavailable.';
+          } else {
+            friendlyError = 'Administration service error. Please try again.';
+          }
         } else {
-          friendlyError = `Authentication error (HTTP ${res.status}).`;
+          if (res.status === 404) {
+            friendlyError = `Service endpoint not found (${cleanEndpoint}).`;
+          } else if (res.status === 401) {
+            friendlyError = 'Your session has expired. Please log in again.';
+          } else if (res.status === 403) {
+            friendlyError = 'Access denied.';
+          } else if (res.status === 500) {
+            friendlyError = 'Internal server error. Please try again later.';
+          } else if (res.status === 502 || res.status === 503) {
+            friendlyError = 'Database connection unavailable.';
+          } else {
+            friendlyError = `Service error (HTTP ${res.status}).`;
+          }
         }
       }
       return {
@@ -96,9 +126,18 @@ export async function apiRequest<T = any>(
     return data;
   } catch (err: any) {
     console.error('API Client Network/Fetch Error:', err);
+    const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    let fallbackError = 'Unable to connect to the server. Please check your connection.';
+    if (cleanEndpoint.includes('/admin/analytics')) {
+      fallbackError = 'Unable to load live dashboard data. Please try again.';
+    } else if (cleanEndpoint.includes('/admin/login')) {
+      fallbackError = 'Administrator authentication service is temporarily unavailable. Please try again.';
+    } else if (cleanEndpoint.includes('/admin')) {
+      fallbackError = 'Administration service error. Please try again.';
+    }
     return {
       success: false,
-      error: 'Administrator authentication service is temporarily unavailable. Please try again.',
+      error: fallbackError,
     };
   }
 }
