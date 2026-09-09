@@ -1226,12 +1226,21 @@ export function getServiceConfig(id: string): ServiceConfig {
   if (found) return found;
 
   // 2. Direct match in ALL_SCHEMES (Government Schemes)
-  const dbScheme = ALL_SCHEMES.find(
-    s => s.id.toLowerCase() === cleanId ||
-         s.name.toLowerCase() === cleanId ||
-         cleanId.includes(s.id.toLowerCase()) ||
-         s.id.toLowerCase().includes(cleanId)
-  );
+  const normalizedClean = cleanId.replace(/[^a-z0-9]+/g, '-');
+  const dbScheme = ALL_SCHEMES.find(s => {
+    const sId = s.id.toLowerCase();
+    const sName = s.name.toLowerCase();
+    const sSlug = sName.replace(/[^a-z0-9]+/g, '-');
+    return (
+      sId === cleanId ||
+      sName === cleanId ||
+      cleanId.includes(sId) ||
+      sId.includes(cleanId) ||
+      sSlug === normalizedClean ||
+      sSlug.includes(normalizedClean) ||
+      normalizedClean.includes(sSlug)
+    );
+  });
   if (dbScheme) {
     const deptId: ServiceConfig['deptId'] =
       dbScheme.departmentKey === 'education' ? 'education' :

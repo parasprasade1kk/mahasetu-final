@@ -689,7 +689,7 @@ export default function EligibilityCheckerPage() {
                           href={item.actionUrl}
                           className="bg-[#f47920] hover:bg-[#d86815] text-white px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-sm"
                         >
-                          <span>{language === 'mr' ? 'अर्ज सुरू करा' : 'Apply with DigiLocker'}</span>
+                          <span>{language === 'mr' ? 'या योजनेसाठी अर्ज करा' : 'Apply for this Scheme'}</span>
                           <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
                         </Link>
                       ) : (

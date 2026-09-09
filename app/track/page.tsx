@@ -29,6 +29,134 @@ function getReceiptStatusTitle(norm: string, lang: 'en' | 'mr') {
   }
 }
 
+function ReceiptDocument({
+  selectedApp,
+  normStatus,
+  language,
+  timelineSteps,
+  user,
+}: {
+  selectedApp: ApplicationRecord;
+  normStatus: string;
+  language: 'en' | 'mr';
+  timelineSteps: any[];
+  user: any;
+}) {
+  return (
+    <div
+      id="official-status-receipt"
+      className="bg-white p-8 border border-slate-300 rounded-2xl shadow-sm max-w-3xl mx-auto space-y-6 text-slate-900"
+    >
+      {/* Official Government Header */}
+      <div className="text-center border-b-2 border-slate-800 pb-4 space-y-1">
+        <div className="text-sm font-bold uppercase tracking-widest text-[#003b5a]">
+          MAHASETU
+        </div>
+        <div className="text-xs font-semibold uppercase text-slate-700">
+          Government of Maharashtra • महाराष्ट्र शासन
+        </div>
+        <div className="text-xs text-slate-500">
+          Unified Citizen Services Portal • एकात्मिक नागरिक सेवा पोर्टल
+        </div>
+        <div className="pt-3">
+          <h1 className="text-lg font-extrabold uppercase tracking-wide text-slate-900 border-y border-dashed border-slate-300 py-1.5">
+            APPLICATION STATUS RECEIPT / अर्ज स्थिती पावती
+          </h1>
+        </div>
+      </div>
+
+      {/* Dynamic Status Callout Banner */}
+      <div
+        className={`p-3.5 rounded-xl border text-center font-bold text-sm uppercase tracking-wide ${
+          normStatus === 'Approved'
+            ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
+            : normStatus === 'Rejected'
+            ? 'bg-red-50 border-red-300 text-red-800'
+            : normStatus === 'Under Review' || normStatus === 'Document Verification'
+            ? 'bg-amber-50 border-amber-300 text-amber-800'
+            : 'bg-blue-50 border-blue-300 text-blue-800'
+        }`}
+      >
+        {getReceiptStatusTitle(normStatus, language)}
+      </div>
+
+      {/* Application Primary Metadata Table */}
+      <div className="grid grid-cols-2 gap-4 text-xs border border-slate-200 rounded-xl p-4 bg-slate-50/50">
+        <div>
+          <span className="text-slate-500 block font-medium">Application ID / अर्ज क्रमांक:</span>
+          <span className="font-mono font-extrabold text-sm text-slate-900">{selectedApp.id}</span>
+        </div>
+        <div>
+          <span className="text-slate-500 block font-medium">Citizen Name / अर्जदाराचे नाव:</span>
+          <span className="font-bold text-slate-900">{selectedApp.applicantName || user.name}</span>
+        </div>
+        <div>
+          <span className="text-slate-500 block font-medium">Department / संबंधित विभाग:</span>
+          <span className="font-semibold text-slate-900">{selectedApp.department}</span>
+        </div>
+        <div>
+          <span className="text-slate-500 block font-medium">Scheme / Service / योजना किंवा सेवा:</span>
+          <span className="font-bold text-slate-900">{selectedApp.serviceName}</span>
+        </div>
+        <div>
+          <span className="text-slate-500 block font-medium">Application Type / अर्ज प्रकार:</span>
+          <span className="font-semibold text-slate-900">
+            {selectedApp.applicationType === 'service' ? 'Government Service' : 'Government Welfare Scheme'}
+          </span>
+        </div>
+        <div>
+          <span className="text-slate-500 block font-medium">Date Submitted / अर्ज तारीख:</span>
+          <span className="font-semibold text-slate-900">{selectedApp.appliedDate}</span>
+        </div>
+        <div>
+          <span className="text-slate-500 block font-medium">Current Status / सद्यस्थिती:</span>
+          <span className="font-bold text-slate-900 uppercase">{selectedApp.status}</span>
+        </div>
+        <div>
+          <span className="text-slate-500 block font-medium">Last Updated / अंतिम अद्यतन:</span>
+          <span className="font-mono text-slate-900">{selectedApp.updatedAt || selectedApp.appliedDate}</span>
+        </div>
+      </div>
+
+      {/* Status Timeline in Receipt */}
+      <div className="space-y-3">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 border-b border-slate-200 pb-1">
+          STATUS TIMELINE & AUDIT RECORD
+        </h3>
+        <div className="space-y-2 text-xs">
+          {timelineSteps.map((step, i) => (
+            <div key={i} className="flex items-start justify-between p-2 rounded bg-slate-50 border border-slate-200">
+              <div className="space-y-0.5">
+                <span className="font-bold text-slate-900 flex items-center gap-1.5">
+                  <span>{step.state === 'completed' ? '✓' : step.state === 'rejected' ? '✗' : '●'}</span>
+                  <span>{step.titleEn}</span>
+                </span>
+                <span className="text-[11px] text-slate-600 block">{step.descEn}</span>
+                <span className="text-[10px] text-slate-400 block font-mono">Auth: {step.officer}</span>
+              </div>
+              <span className="font-mono text-[11px] text-slate-500 font-semibold">{step.date}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Verification Footnote & Seal */}
+      <div className="pt-4 border-t border-slate-200 flex items-center justify-between text-[11px] text-slate-500">
+        <div className="space-y-1">
+          <p className="font-semibold text-slate-700">
+            Official Digital Certificate / Status Receipt • MahaSetu Portal
+          </p>
+          <p>Generated by MahaSetu Citizen Services Engine under IT Act, Section 9A.</p>
+          <p className="font-mono text-[10px]">Secure Reference: SHA-256 Verified • Timestamp: {new Date().toISOString()}</p>
+        </div>
+        <div className="w-16 h-16 border border-dashed border-slate-400 rounded flex items-center justify-center text-center font-mono text-[8px] p-1 bg-slate-50">
+          [2D SECURE QR CODE]
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function TrackStatusContent() {
   const { language, applications, user, refreshApplications } = useApp();
   const searchParams = useSearchParams();
@@ -41,6 +169,7 @@ function TrackStatusContent() {
 
   const [searchId, setSearchId] = useState<string>(paramId || '');
   const [selectedAppId, setSelectedAppId] = useState<string>(paramId || '');
+  const [showReceiptModal, setShowReceiptModal] = useState<boolean>(false);
 
   // Keep searchId and selectedAppId in sync with param or first application
   useEffect(() => {
@@ -161,7 +290,10 @@ function TrackStatusContent() {
   }, [selectedApp, normStatus]);
 
   const handlePrintReceipt = () => {
-    window.print();
+    setShowReceiptModal(true);
+    setTimeout(() => {
+      window.print();
+    }, 150);
   };
 
   return (
@@ -177,7 +309,7 @@ function TrackStatusContent() {
             visibility: visible !important;
           }
           #official-status-receipt {
-            position: absolute !important;
+            position: fixed !important;
             left: 0 !important;
             top: 0 !important;
             width: 100% !important;
@@ -188,6 +320,7 @@ function TrackStatusContent() {
             border: none !important;
             box-shadow: none !important;
             display: block !important;
+            z-index: 999999 !important;
           }
           nav, header, footer, button, .no-print {
             display: none !important;
@@ -349,7 +482,7 @@ function TrackStatusContent() {
 
                   {normStatus === 'Approved' && (
                     <button
-                      onClick={handlePrintReceipt}
+                      onClick={() => setShowReceiptModal(true)}
                       className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2.5 px-5 rounded-lg text-xs transition shadow-sm flex items-center gap-2 self-start sm:self-center"
                     >
                       <span className="material-symbols-outlined text-[16px]">verified</span>
@@ -427,13 +560,22 @@ function TrackStatusContent() {
 
                 {/* Action Buttons */}
                 <div className="pt-6 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs">
-                  <button
-                    onClick={handlePrintReceipt}
-                    className="bg-[#003b5a] hover:bg-[#002840] text-white px-4 py-2 rounded-lg font-bold flex items-center gap-1.5 shadow-sm transition"
-                  >
-                    <span className="material-symbols-outlined text-[16px]">print</span>
-                    <span>Print Application Status Receipt</span>
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setShowReceiptModal(true)}
+                      className="bg-[#003b5a] hover:bg-[#002840] text-white px-4 py-2 rounded-lg font-bold flex items-center gap-1.5 shadow-sm transition"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">visibility</span>
+                      <span>View Status Receipt</span>
+                    </button>
+                    <button
+                      onClick={handlePrintReceipt}
+                      className="bg-slate-100 hover:bg-slate-200 text-slate-800 px-4 py-2 rounded-lg font-bold flex items-center gap-1.5 shadow-sm transition border border-slate-300"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">print</span>
+                      <span>Print Application Receipt</span>
+                    </button>
+                  </div>
 
                   <button
                     onClick={() => alert(`Grievance redressal ticket created for application ${selectedApp.id}. Department officer will review within 48 statutory hours.`)}
@@ -456,117 +598,60 @@ function TrackStatusContent() {
       {/* ═══════════════════════════════════════════════════════════════════════
           OFFICIAL PRINT RECEIPT COMPONENT (Visible on screen and during Print)
          ═══════════════════════════════════════════════════════════════════════ */}
-      {selectedApp && (
-        <div
-          id="official-status-receipt"
-          className="hidden print:block bg-white p-8 border border-slate-300 rounded-2xl shadow-sm max-w-3xl mx-auto space-y-6 text-slate-900"
-        >
-          {/* Official Government Header */}
-          <div className="text-center border-b-2 border-slate-800 pb-4 space-y-1">
-            <div className="text-sm font-bold uppercase tracking-widest text-[#003b5a]">
-              MAHASETU
+      {/* Receipt Modal Preview */}
+      {showReceiptModal && selectedApp && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto no-print">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[92vh] flex flex-col border border-slate-300">
+            {/* Modal Control Bar */}
+            <div className="sticky top-0 bg-slate-900 text-white px-6 py-4 rounded-t-2xl flex items-center justify-between z-10 flex-shrink-0">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-amber-400 text-[20px]">verified_user</span>
+                <span className="text-sm font-bold">
+                  {language === 'mr' ? 'अधिकृत अर्ज स्थिती पावती पूर्वावलोकन' : 'Official Application Status Receipt Preview'}
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => window.print()}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2 rounded-lg flex items-center gap-1.5 transition shadow-sm"
+                >
+                  <span className="material-symbols-outlined text-[16px]">print</span>
+                  <span>{language === 'mr' ? 'पावती मुद्रित करा' : 'Print / Save PDF'}</span>
+                </button>
+                <button
+                  onClick={() => setShowReceiptModal(false)}
+                  className="bg-white/10 hover:bg-white/20 text-white text-xs font-bold px-3 py-2 rounded-lg flex items-center gap-1 transition"
+                >
+                  <span className="material-symbols-outlined text-[16px]">close</span>
+                  <span>{language === 'mr' ? 'बंद करा' : 'Close'}</span>
+                </button>
+              </div>
             </div>
-            <div className="text-xs font-semibold uppercase text-slate-700">
-              Government of Maharashtra • महाराष्ट्र शासन
-            </div>
-            <div className="text-xs text-slate-500">
-              Unified Citizen Services Portal • एकात्मिक नागरिक सेवा पोर्टल
-            </div>
-            <div className="pt-3">
-              <h1 className="text-lg font-extrabold uppercase tracking-wide text-slate-900 border-y border-dashed border-slate-300 py-1.5">
-                APPLICATION STATUS RECEIPT / अर्ज स्थिती पावती
-              </h1>
-            </div>
-          </div>
 
-          {/* Dynamic Status Callout Banner */}
-          <div
-            className={`p-3.5 rounded-xl border text-center font-bold text-sm uppercase tracking-wide ${
-              normStatus === 'Approved'
-                ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
-                : normStatus === 'Rejected'
-                ? 'bg-red-50 border-red-300 text-red-800'
-                : normStatus === 'Under Review' || normStatus === 'Document Verification'
-                ? 'bg-amber-50 border-amber-300 text-amber-800'
-                : 'bg-blue-50 border-blue-300 text-blue-800'
-            }`}
-          >
-            {getReceiptStatusTitle(normStatus, language)}
+            {/* Modal Body: Receipt Document */}
+            <div className="p-6 sm:p-8 overflow-y-auto">
+              <ReceiptDocument
+                selectedApp={selectedApp}
+                normStatus={normStatus}
+                language={language}
+                timelineSteps={timelineSteps}
+                user={user}
+              />
+            </div>
           </div>
+        </div>
+      )}
 
-          {/* Application Primary Metadata Table */}
-          <div className="grid grid-cols-2 gap-4 text-xs border border-slate-200 rounded-xl p-4 bg-slate-50/50">
-            <div>
-              <span className="text-slate-500 block font-medium">Application ID / अर्ज क्रमांक:</span>
-              <span className="font-mono font-extrabold text-sm text-slate-900">{selectedApp.id}</span>
-            </div>
-            <div>
-              <span className="text-slate-500 block font-medium">Citizen Name / अर्जदाराचे नाव:</span>
-              <span className="font-bold text-slate-900">{selectedApp.applicantName || user.name}</span>
-            </div>
-            <div>
-              <span className="text-slate-500 block font-medium">Department / संबंधित विभाग:</span>
-              <span className="font-semibold text-slate-900">{selectedApp.department}</span>
-            </div>
-            <div>
-              <span className="text-slate-500 block font-medium">Scheme / Service / योजना किंवा सेवा:</span>
-              <span className="font-bold text-slate-900">{selectedApp.serviceName}</span>
-            </div>
-            <div>
-              <span className="text-slate-500 block font-medium">Application Type / अर्ज प्रकार:</span>
-              <span className="font-semibold text-slate-900">
-                {selectedApp.applicationType === 'service' ? 'Government Service' : 'Government Welfare Scheme'}
-              </span>
-            </div>
-            <div>
-              <span className="text-slate-500 block font-medium">Date Submitted / अर्ज तारीख:</span>
-              <span className="font-semibold text-slate-900">{selectedApp.appliedDate}</span>
-            </div>
-            <div>
-              <span className="text-slate-500 block font-medium">Current Status / सद्यस्थिती:</span>
-              <span className="font-bold text-slate-900 uppercase">{selectedApp.status}</span>
-            </div>
-            <div>
-              <span className="text-slate-500 block font-medium">Last Updated / अंतिम अद्यतन:</span>
-              <span className="font-mono text-slate-900">{selectedApp.updatedAt || selectedApp.appliedDate}</span>
-            </div>
-          </div>
-
-          {/* Status Timeline in Receipt */}
-          <div className="space-y-3">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 border-b border-slate-200 pb-1">
-              STATUS TIMELINE & AUDIT RECORD
-            </h3>
-            <div className="space-y-2 text-xs">
-              {timelineSteps.map((step, i) => (
-                <div key={i} className="flex items-start justify-between p-2 rounded bg-slate-50 border border-slate-200">
-                  <div className="space-y-0.5">
-                    <span className="font-bold text-slate-900 flex items-center gap-1.5">
-                      <span>{step.state === 'completed' ? '✓' : step.state === 'rejected' ? '✗' : '●'}</span>
-                      <span>{step.titleEn}</span>
-                    </span>
-                    <span className="text-[11px] text-slate-600 block">{step.descEn}</span>
-                    <span className="text-[10px] text-slate-400 block font-mono">Auth: {step.officer}</span>
-                  </div>
-                  <span className="font-mono text-[11px] text-slate-500 font-semibold">{step.date}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Verification Footnote & Seal */}
-          <div className="pt-4 border-t border-slate-200 flex items-center justify-between text-[11px] text-slate-500">
-            <div className="space-y-1">
-              <p className="font-semibold text-slate-700">
-                Official Digital Certificate / Status Receipt • MahaSetu Portal
-              </p>
-              <p>Generated by MahaSetu Citizen Services Engine under IT Act, Section 9A.</p>
-              <p className="font-mono text-[10px]">Secure Reference: SHA-256 Verified • Timestamp: {new Date().toISOString()}</p>
-            </div>
-            <div className="w-16 h-16 border border-dashed border-slate-400 rounded flex items-center justify-center text-center font-mono text-[8px] p-1 bg-slate-50">
-              [2D SECURE QR CODE]
-            </div>
-          </div>
+      {/* Hidden Fallback for direct browser print without modal */}
+      {!showReceiptModal && selectedApp && (
+        <div className="hidden print:block">
+          <ReceiptDocument
+            selectedApp={selectedApp}
+            normStatus={normStatus}
+            language={language}
+            timelineSteps={timelineSteps}
+            user={user}
+          />
         </div>
       )}
     </div>

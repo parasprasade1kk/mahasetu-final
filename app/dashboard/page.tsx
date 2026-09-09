@@ -53,6 +53,20 @@ export default function DashboardPage() {
     return userProfile ? '0' : '0';
   }, [evaluatedSchemes, userProfile]);
 
+  const [userDocs, setUserDocs] = React.useState<any[]>([]);
+
+  React.useEffect(() => {
+    import('@/lib/api').then(({ documentApi }) => {
+      documentApi.getMy().then((res) => {
+        if (res.success && Array.isArray(res.documents)) {
+          setUserDocs(res.documents);
+        } else {
+          setUserDocs([]);
+        }
+      }).catch(() => setUserDocs([]));
+    });
+  }, []);
+
   const activeApplicationsCount = useMemo(() => {
     return applications.filter(a => {
       const st = (a.status || '').toLowerCase();
@@ -60,12 +74,25 @@ export default function DashboardPage() {
     }).length.toString();
   }, [applications]);
 
-  const issuedCertificatesCount = useMemo(() => {
+  const pendingApplicationsCount = useMemo(() => {
+    return applications.filter(a => {
+      const st = (a.status || '').toLowerCase();
+      return st === 'submitted' || st.includes('scrutiny') || st.includes('verification') || st.includes('review') || st.includes('action');
+    }).length.toString();
+  }, [applications]);
+
+  const approvedApplicationsCount = useMemo(() => {
     return applications.filter(a => {
       const st = (a.status || '').toLowerCase();
       return st.includes('approved') || st.includes('issued') || st === 'completed';
     }).length.toString();
   }, [applications]);
+
+  const rejectedApplicationsCount = useMemo(() => {
+    return applications.filter(a => (a.status || '').toLowerCase().includes('reject')).length.toString();
+  }, [applications]);
+
+  const issuedCertificatesCount = approvedApplicationsCount;
 
   const stats = [
     {
@@ -77,28 +104,44 @@ export default function DashboardPage() {
       bg: 'bg-amber-50 border-amber-200'
     },
     {
-      labelEn: 'Issued Certificates',
-      labelMr: 'वितरित दाखले',
-      count: issuedCertificatesCount,
-      icon: 'verified',
-      color: 'text-emerald-700',
-      bg: 'bg-emerald-50 border-emerald-200'
-    },
-    {
-      labelEn: 'Pending Consent',
-      labelMr: 'प्रलंबित संमती',
-      count: pendingConsent ? '1' : '0',
-      icon: 'lock_person',
+      labelEn: 'Pending Applications',
+      labelMr: 'प्रलंबित अर्ज',
+      count: pendingApplicationsCount,
+      icon: 'hourglass_top',
       color: 'text-blue-700',
       bg: 'bg-blue-50 border-blue-200'
     },
     {
-      labelEn: 'Eligible Schemes',
-      labelMr: 'पात्र योजना',
-      count: eligibleCount,
-      icon: 'military_tech',
-      color: 'text-[#f47920]',
-      bg: 'bg-orange-50 border-orange-200'
+      labelEn: 'Approved Applications',
+      labelMr: 'मंजूर अर्ज',
+      count: approvedApplicationsCount,
+      icon: 'task_alt',
+      color: 'text-emerald-700',
+      bg: 'bg-emerald-50 border-emerald-200'
+    },
+    {
+      labelEn: 'Rejected Applications',
+      labelMr: 'नाकारलेले अर्ज',
+      count: rejectedApplicationsCount,
+      icon: 'cancel',
+      color: 'text-red-700',
+      bg: 'bg-red-50 border-red-200'
+    },
+    {
+      labelEn: 'Issued Certificates',
+      labelMr: 'वितरित दाखले',
+      count: issuedCertificatesCount,
+      icon: 'verified',
+      color: 'text-emerald-800',
+      bg: 'bg-emerald-50 border-emerald-200'
+    },
+    {
+      labelEn: 'Submitted Documents',
+      labelMr: 'सादर कागदपत्रे',
+      count: userDocs.length.toString(),
+      icon: 'folder_open',
+      color: 'text-[#003b5a]',
+      bg: 'bg-indigo-50 border-indigo-200'
     }
   ];
 
@@ -127,8 +170,11 @@ export default function DashboardPage() {
               <span>•</span>
               <span className="font-mono text-slate-600">Mobile: {currentUser ? currentUser.mobile : user.mobile}</span>
               <span>•</span>
-              <span className="text-blue-600 font-semibold flex items-center gap-1">
-                <span className="material-symbols-outlined text-[14px]">cloud_done</span> DigiLocker Active
+              <span className={`font-semibold flex items-center gap-1 ${user.digiLockerLinked ? 'text-blue-600' : 'text-slate-500'}`}>
+                <span className="material-symbols-outlined text-[14px]">
+                  {user.digiLockerLinked ? 'cloud_done' : 'cloud_off'}
+                </span>
+                {user.digiLockerLinked ? 'DigiLocker Linked' : 'DigiLocker Not Linked'}
               </span>
             </p>
           </div>
@@ -214,7 +260,7 @@ export default function DashboardPage() {
       )}
 
       {/* Metrics Row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
         {stats.map((stat, i) => (
           <div key={i} className={`rounded-xl p-5 border shadow-gov bg-white ${stat.bg} flex items-center justify-between`}>
             <div>
@@ -357,33 +403,25 @@ export default function DashboardPage() {
                 <span className="material-symbols-outlined text-blue-600 text-[22px]">cloud_sync</span>
                 <h3 className="text-sm font-bold text-slate-800">DigiLocker Vault</h3>
               </div>
-              <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">Synced</span>
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${user.digiLockerLinked ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'}`}>
+                {user.digiLockerLinked ? 'Synced' : 'Not Linked'}
+              </span>
             </div>
             <p className="text-xs text-slate-600 mb-4">
               Your official certificates issued by Maharashtra state authorities are pre-fetched and verified.
             </p>
-            {user.digiLockerLinked && userProfile ? (
+            {userDocs.length > 0 ? (
               <div className="space-y-2.5 mb-5 text-xs">
-                <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg border border-slate-100">
-                  <span className="font-medium text-slate-700">Income Certificate (2025-26)</span>
-                  <span className="material-symbols-outlined text-emerald-600 text-[18px]">verified</span>
-                </div>
-                <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg border border-slate-100">
-                  <span className="font-medium text-slate-700">
-                    Caste Certificate ({userProfile.category || 'General'})
-                  </span>
-                  <span className="material-symbols-outlined text-emerald-600 text-[18px]">verified</span>
-                </div>
-                <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg border border-slate-100">
-                  <span className="font-medium text-slate-700">
-                    Domicile Certificate ({userProfile.district || 'Maharashtra'})
-                  </span>
-                  <span className="material-symbols-outlined text-emerald-600 text-[18px]">verified</span>
-                </div>
+                {userDocs.slice(0, 4).map((doc, idx) => (
+                  <div key={idx} className="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg border border-slate-100">
+                    <span className="font-medium text-slate-700">{doc.documentName || doc.nameEn}</span>
+                    <span className="material-symbols-outlined text-emerald-600 text-[18px]">verified</span>
+                  </div>
+                ))}
               </div>
             ) : (
               <div className="p-4 bg-slate-50 border border-slate-100 rounded-lg text-center text-xs text-slate-500 mb-4">
-                0 certificates linked. Connect DigiLocker to auto-fetch official documents.
+                0 certificates / documents linked. Connect DigiLocker to auto-fetch official documents.
               </div>
             )}
             <Link

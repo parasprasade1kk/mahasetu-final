@@ -17,6 +17,7 @@ export default function ServiceApplicationForm({ forcedId }: { forcedId?: string
     searchParams?.get('schemeId') ||
     searchParams?.get('service') ||
     searchParams?.get('serviceId') ||
+    searchParams?.get('id') ||
     'income-certificate';
   const service: ServiceConfig = useMemo(() => getServiceConfig(serviceId), [serviceId]);
 
@@ -51,6 +52,8 @@ export default function ServiceApplicationForm({ forcedId }: { forcedId?: string
   };
 
   const isScheme =
+    searchParams?.get('type') === 'scheme' ||
+    Boolean(params?.schemeId) ||
     service.category?.toLowerCase().includes('scheme') ||
     service.category?.toLowerCase().includes('welfare') ||
     service.id.startsWith('EDU') ||

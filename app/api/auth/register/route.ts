@@ -119,35 +119,7 @@ export async function POST(req: NextRequest) {
       confirmedAccurate: false,
     });
 
-    // Seed baseline DPDP consents for the new citizen
-    await Consent.insertMany([
-      {
-        consentId: `CNS-${Date.now().toString().slice(-4)}-001`,
-        userId,
-        requestingDept: 'Higher & Technical Education Department',
-        requestingDeptMr: 'उच्च व तंत्रशिक्षण विभाग',
-        sourceDept: 'Revenue Department (e-Mahabhumi / DigiLocker)',
-        sourceDeptMr: 'महसूल विभाग (ई-महाभूमी / डिजिलॉकर)',
-        purpose: 'Automatic income tier verification for MahaDBT scholarship disbursal',
-        purposeMr: 'महाडीबीटी शिष्यवृत्ती वितरणासाठी स्वयंचलित उत्पन्न पडताळणी',
-        dataFields: ['Income Certificate 2025-26', 'Aadhaar Masked Ref', 'Caste Certificate Ref'],
-        status: 'Active',
-        validUntil: '31 Mar 2027',
-      },
-      {
-        consentId: `CNS-${Date.now().toString().slice(-4)}-002`,
-        userId,
-        requestingDept: 'Agriculture Department (e-Pik Pahani)',
-        requestingDeptMr: 'कृषी विभाग (ई-पीक पाहणी)',
-        sourceDept: 'Revenue Department (7/12 Land Registry)',
-        sourceDeptMr: 'महसूल विभाग (७/१२ जमीन नोंदणी)',
-        purpose: 'Verification of land ownership for PM Kisan & Namo Shetkari Mahasanman Yojana',
-        purposeMr: 'पीएम किसान आणि नमो शेतकरी महासन्मान योजनेसाठी जमिनीच्या मालकीची पडताळणी',
-        dataFields: ['7/12 Extract (Record of Rights)', 'Gat Number', 'Crop Survey 2026'],
-        status: 'Active',
-        validUntil: '31 Dec 2026',
-      },
-    ]);
+    // Brand-new citizen starts with zero consents, applications, or documents in MongoDB.
 
     // Create audit log
     await AuditLog.create({
