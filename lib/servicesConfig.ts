@@ -1,6 +1,8 @@
 // ─── Central Government Services Registry & Dynamic Configuration ─────────
 // Powers dynamic application forms for all citizen services across Maharashtra.
 
+import { ALL_SCHEMES } from '@/lib/schemeDatabase';
+
 export interface ServiceFormField {
   id: string;
   labelEn: string;
@@ -1219,11 +1221,80 @@ function toTitleCase(str: string): string {
 export function getServiceConfig(id: string): ServiceConfig {
   const cleanId = (id || '').toLowerCase().trim();
   
-  // 1. Direct match in ALL_SERVICES
+  // 1. Direct match in ALL_SERVICES (Government Services)
   const found = ALL_SERVICES.find(s => s.id.toLowerCase() === cleanId);
   if (found) return found;
 
-  // 2. Fuzzy match within ALL_SERVICES
+  // 2. Direct match in ALL_SCHEMES (Government Schemes)
+  const dbScheme = ALL_SCHEMES.find(
+    s => s.id.toLowerCase() === cleanId ||
+         s.name.toLowerCase() === cleanId ||
+         cleanId.includes(s.id.toLowerCase()) ||
+         s.id.toLowerCase().includes(cleanId)
+  );
+  if (dbScheme) {
+    const deptId: ServiceConfig['deptId'] =
+      dbScheme.departmentKey === 'education' ? 'education' :
+      dbScheme.departmentKey === 'revenue' ? 'revenue' : 'social';
+
+    return {
+      id: dbScheme.id,
+      deptId,
+      deptNameEn: dbScheme.department,
+      deptNameMr: dbScheme.departmentMr,
+      titleEn: dbScheme.name,
+      titleMr: dbScheme.nameMr,
+      descEn: dbScheme.description,
+      descMr: dbScheme.descriptionMr,
+      sla: '15 Days',
+      fees: 'Free (Government Welfare Scheme)',
+      feesMr: 'विनामूल्य (शासकीय कल्याणकारी योजना)',
+      category: dbScheme.category,
+      categoryMr: dbScheme.categoryMr,
+      documentsEn: dbScheme.requiredDocuments.map(d => d.name),
+      documentsMr: dbScheme.requiredDocuments.map(d => d.nameMr || d.name),
+      eligibilityEn: dbScheme.eligibility,
+      eligibilityMr: dbScheme.eligibilityMr,
+      applicationRoute: `/apply/scheme/${encodeURIComponent(dbScheme.id)}`,
+      customFields: [
+        {
+          id: 'applicantCategory',
+          labelEn: 'Social Category',
+          labelMr: 'सामाजिक प्रवर्ग',
+          type: 'select',
+          options: [
+            { value: 'open', labelEn: 'Open / General', labelMr: 'खुला प्रवर्ग' },
+            { value: 'obc', labelEn: 'OBC', labelMr: 'इतर मागास प्रवर्ग (OBC)' },
+            { value: 'sc', labelEn: 'SC (Scheduled Caste)', labelMr: 'अनुसूचित जाती (SC)' },
+            { value: 'st', labelEn: 'ST (Scheduled Tribe)', labelMr: 'अनुसूचित जमाती (ST)' },
+            { value: 'ews', labelEn: 'EWS', labelMr: 'आर्थिकदृष्ट्या दुर्बल घटक (EWS)' }
+          ],
+          defaultValue: 'obc',
+          required: true
+        },
+        {
+          id: 'annualIncome',
+          labelEn: 'Annual Family Income (₹)',
+          labelMr: 'कौटुंबिक वार्षिक उत्पन्न (₹)',
+          type: 'number',
+          placeholderEn: 'e.g. 150000',
+          defaultValue: 150000,
+          required: true
+        },
+        {
+          id: 'bankAccount',
+          labelEn: 'Aadhaar-Linked Bank Account (for DBT)',
+          labelMr: 'आधार संलग्न बँक खाते क्रमांक (DBT साठी)',
+          type: 'text',
+          placeholderEn: 'Account number',
+          defaultValue: '',
+          required: true
+        }
+      ]
+    };
+  }
+
+  // 3. Fuzzy match within ALL_SERVICES
   const fuzzy = ALL_SERVICES.find(s =>
     cleanId.includes(s.id.toLowerCase()) ||
     s.id.toLowerCase().includes(cleanId) ||

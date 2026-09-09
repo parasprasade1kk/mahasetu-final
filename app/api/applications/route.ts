@@ -11,8 +11,8 @@ const JWT_SECRET =
 export async function POST(req: NextRequest) {
   try {
     const authHeader = req.headers.get('authorization');
-    let userId = 'MH-CIT-001';
-    let applicantName = 'Paras Prasade';
+    let userId = '';
+    let applicantName = '';
 
     if (authHeader && authHeader.startsWith('Bearer ')) {
       try {
@@ -22,6 +22,13 @@ export async function POST(req: NextRequest) {
           userId = decoded.userId;
         }
       } catch {}
+    }
+
+    if (!userId) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized: Citizen authentication required.' },
+        { status: 401 }
+      );
     }
 
     const conn = await connectToDatabase();
@@ -68,7 +75,7 @@ export async function POST(req: NextRequest) {
       : department.includes('Agriculture')
       ? 'AGR'
       : 'GEN';
-    const applicationId = `MH-${deptCode}-2026-${ts}${rand}`;
+    const applicationId = body.applicationId || `MH-${deptCode}-2026-${ts}${rand}`;
 
     const newApp = await Application.create({
       applicationId,

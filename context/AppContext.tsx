@@ -30,11 +30,15 @@ export interface ApplicationRecord {
   department: string;
   departmentMr: string;
   appliedDate: string;
-  status: 'Submitted' | 'Under Scrutiny' | 'Field Verification' | 'Approved / Issued' | 'Action Required';
+  status: 'Submitted' | 'Under Scrutiny' | 'Field Verification' | 'Approved / Issued' | 'Action Required' | 'Approved' | 'Under Review' | 'Document Verification' | 'Rejected' | 'Completed' | string;
   statusColor: string;
   downloadUrl?: string;
   applicantName: string;
   district: string;
+  serviceId?: string;
+  schemeId?: string;
+  applicationType?: 'scheme' | 'service';
+  updatedAt?: string;
 }
 
 export interface ConsentItem {
@@ -86,7 +90,8 @@ interface AppContextType {
 
   // Applications & Consents
   applications: ApplicationRecord[];
-  addApplication: (app: ApplicationRecord) => void;
+  addApplication: (app: Partial<ApplicationRecord> & { serviceName: string; department: string }) => Promise<ApplicationRecord>;
+  refreshApplications: () => Promise<void>;
   consents: ConsentItem[];
   toggleConsent: (id: string) => void;
 }
@@ -187,8 +192,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<CitizenAccount | null>(null);
   const [userProfile, setUserProfile] = useState<CitizenProfile | null>(null);
 
-  const [applications, setApplications] = useState<ApplicationRecord[]>(initialApplications);
-  const [consents, setConsents] = useState<ConsentItem[]>(initialConsents);
+  const [applications, setApplications] = useState<ApplicationRecord[]>([]);
+  const [consents, setConsents] = useState<ConsentItem[]>([]);
 
   // ─── Hydrate session on mount (from MongoDB API / localStorage) ───────────
   useEffect(() => {
@@ -223,7 +228,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               consentApi.getMy(),
             ]);
 
-            if (appsRes.success && Array.isArray(appsRes.applications) && appsRes.applications.length > 0) {
+            if (appsRes.success && Array.isArray(appsRes.applications)) {
               setApplications(
                 appsRes.applications.map((a: any) => ({
                   id: a.applicationId,
@@ -237,11 +242,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                   downloadUrl: a.downloadUrl,
                   applicantName: a.applicantName,
                   district: a.district,
+                  serviceId: a.serviceId,
+                  schemeId: a.schemeId,
+                  applicationType: a.applicationType,
+                  updatedAt: a.updatedAt || a.lastUpdated,
                 }))
               );
+            } else {
+              setApplications([]);
             }
 
-            if (consentsRes.success && Array.isArray(consentsRes.consents) && consentsRes.consents.length > 0) {
+            if (consentsRes.success && Array.isArray(consentsRes.consents)) {
               setConsents(
                 consentsRes.consents.map((c: any) => ({
                   id: c.consentId,
@@ -256,6 +267,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                   validUntil: c.validUntil,
                 }))
               );
+            } else {
+              setConsents([]);
             }
             setIsAuthLoaded(true);
             return;
@@ -336,7 +349,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             applicationApi.getMy(),
             consentApi.getMy(),
           ]);
-          if (appsRes.success && Array.isArray(appsRes.applications) && appsRes.applications.length > 0) {
+          if (appsRes.success && Array.isArray(appsRes.applications)) {
             setApplications(
               appsRes.applications.map((a: any) => ({
                 id: a.applicationId,
@@ -350,10 +363,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                 downloadUrl: a.downloadUrl,
                 applicantName: a.applicantName,
                 district: a.district,
+                serviceId: a.serviceId,
+                schemeId: a.schemeId,
+                applicationType: a.applicationType,
+                updatedAt: a.updatedAt || a.lastUpdated,
               }))
             );
+          } else {
+            setApplications([]);
           }
-          if (consentsRes.success && Array.isArray(consentsRes.consents) && consentsRes.consents.length > 0) {
+          if (consentsRes.success && Array.isArray(consentsRes.consents)) {
             setConsents(
               consentsRes.consents.map((c: any) => ({
                 id: c.consentId,
@@ -368,6 +387,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                 validUntil: c.validUntil,
               }))
             );
+          } else {
+            setConsents([]);
           }
         } catch {}
 
@@ -440,6 +461,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setCurrentUser(citizenAccount);
         setIsLoggedIn(true);
         setUserProfile(res.profile || null);
+        setApplications([]);
+        setConsents([]);
 
         try {
           localStorage.setItem(STORAGE_KEY_AUTH_USER, JSON.stringify(citizenAccount));
@@ -494,6 +517,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setIsLoggedIn(false);
     setCurrentUser(null);
     setUserProfile(null);
+    setApplications([]);
+    setConsents([]);
     removeCitizenToken();
     try {
       localStorage.removeItem(STORAGE_KEY_AUTH_USER);
@@ -502,18 +527,90 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const addApplication = (app: ApplicationRecord) => {
-    setApplications(prev => [app, ...prev]);
-    // Persist to MongoDB
-    applicationApi.submit({
+  const refreshApplications = async () => {
+    try {
+      const res = await applicationApi.getMy();
+      if (res.success && Array.isArray(res.applications)) {
+        setApplications(
+          res.applications.map((a: any) => ({
+            id: a.applicationId,
+            serviceName: a.serviceName,
+            serviceNameMr: a.serviceNameMr || a.serviceName,
+            department: a.department,
+            departmentMr: a.departmentMr || a.department,
+            appliedDate: a.appliedDate,
+            status: a.status,
+            statusColor: a.statusColor,
+            downloadUrl: a.downloadUrl,
+            applicantName: a.applicantName,
+            district: a.district,
+            serviceId: a.serviceId,
+            schemeId: a.schemeId,
+            applicationType: a.applicationType,
+            updatedAt: a.updatedAt || a.lastUpdated,
+          }))
+        );
+      }
+    } catch {}
+  };
+
+  const addApplication = async (app: Partial<ApplicationRecord> & { serviceName: string; department: string }): Promise<ApplicationRecord> => {
+    const fallbackRecord: ApplicationRecord = {
+      id: app.id || `MH-GEN-2026-${Math.floor(10000 + Math.random() * 90000)}`,
       serviceName: app.serviceName,
-      serviceNameMr: app.serviceNameMr,
+      serviceNameMr: app.serviceNameMr || app.serviceName,
       department: app.department,
-      departmentMr: app.departmentMr,
-      district: app.district,
-      appliedDate: app.appliedDate,
-      status: app.status,
-    }).catch(() => {});
+      departmentMr: app.departmentMr || app.department,
+      appliedDate: app.appliedDate || new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+      status: app.status || 'Submitted',
+      statusColor: app.statusColor || 'bg-blue-100 text-blue-800 border-blue-300',
+      applicantName: app.applicantName || user.name,
+      district: app.district || 'Maharashtra',
+      serviceId: app.serviceId,
+      schemeId: app.schemeId,
+      applicationType: app.applicationType || (app.schemeId ? 'scheme' : 'service'),
+      updatedAt: new Date().toISOString(),
+    };
+
+    try {
+      const res = await applicationApi.submit({
+        applicationId: app.id,
+        serviceId: app.serviceId || app.schemeId,
+        schemeId: app.schemeId,
+        serviceName: app.serviceName,
+        serviceNameMr: app.serviceNameMr,
+        department: app.department,
+        departmentMr: app.departmentMr,
+        district: app.district,
+        appliedDate: app.appliedDate,
+        status: app.status || 'Submitted',
+        applicationType: app.applicationType || (app.schemeId ? 'scheme' : 'service'),
+      });
+
+      if (res.success && res.application) {
+        const dbApp: ApplicationRecord = {
+          id: res.application.applicationId,
+          serviceName: res.application.serviceName,
+          serviceNameMr: res.application.serviceNameMr || res.application.serviceName,
+          department: res.application.department,
+          departmentMr: res.application.departmentMr || res.application.department,
+          appliedDate: res.application.appliedDate,
+          status: res.application.status,
+          statusColor: res.application.statusColor || 'bg-blue-100 text-blue-800 border-blue-300',
+          applicantName: res.application.applicantName,
+          district: res.application.district,
+          serviceId: res.application.serviceId,
+          schemeId: res.application.schemeId,
+          applicationType: res.application.applicationType,
+          updatedAt: res.application.updatedAt || res.application.lastUpdated,
+        };
+        setApplications(prev => [dbApp, ...prev.filter(a => a.id !== dbApp.id)]);
+        return dbApp;
+      }
+    } catch {}
+
+    setApplications(prev => [fallbackRecord, ...prev.filter(a => a.id !== fallbackRecord.id)]);
+    return fallbackRecord;
   };
 
   const toggleConsent = (id: string) => {
@@ -567,6 +664,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         user,
         applications,
         addApplication,
+        refreshApplications,
         consents,
         toggleConsent
       }}

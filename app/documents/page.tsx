@@ -70,7 +70,7 @@ const fallbackDocumentsList: DocItem[] = [
 
 export default function DocumentsPage() {
   const { language, user } = useApp();
-  const [docs, setDocs] = useState<DocItem[]>(fallbackDocumentsList);
+  const [docs, setDocs] = useState<DocItem[]>([]);
   const [activePreviewDoc, setActivePreviewDoc] = useState<DocItem | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [syncToast, setSyncToast] = useState('');
@@ -78,7 +78,7 @@ export default function DocumentsPage() {
   const loadDocumentsFromDb = async () => {
     try {
       const res = await documentApi.getMy();
-      if (res.success && Array.isArray(res.documents) && res.documents.length > 0) {
+      if (res.success && Array.isArray(res.documents)) {
         setDocs(
           res.documents.map((d: any) => ({
             id: d.documentId,
@@ -93,9 +93,11 @@ export default function DocumentsPage() {
             source: d.source || 'DigiLocker',
           }))
         );
+      } else {
+        setDocs([]);
       }
     } catch {
-      // Keep baseline docs on network fallback
+      setDocs([]);
     }
   };
 
@@ -159,8 +161,23 @@ export default function DocumentsPage() {
       </div>
 
       {/* Document Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {docs.map((doc) => (
+      {docs.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center shadow-gov space-y-3">
+          <div className="w-16 h-16 rounded-full bg-[#003b5a]/10 text-[#003b5a] flex items-center justify-center mx-auto">
+            <span className="material-symbols-outlined text-3xl">folder_off</span>
+          </div>
+          <h3 className="text-base font-bold text-slate-800">
+            {language === 'mr' ? 'कोणतीही डिजिटल कागदपत्रे आढळली नाहीत' : 'No Digital Documents Found'}
+          </h3>
+          <p className="text-xs text-slate-500 max-w-md mx-auto">
+            {language === 'mr'
+              ? 'तुमच्या डिजिलॉकर खात्यातून कागदपत्रे जोडण्यासाठी वरील "डिजिलॉकर सिंक करा" बटणावर क्लिक करा.'
+              : 'Click "Pull from DigiLocker" above to sync your verified certificates from the government repository.'}
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {docs.map((doc) => (
           <div
             key={doc.id}
             className="bg-white rounded-2xl border border-slate-200 p-6 shadow-gov hover:shadow-gov-lg transition flex flex-col justify-between"
@@ -224,7 +241,8 @@ export default function DocumentsPage() {
             </div>
           </div>
         ))}
-      </div>
+        </div>
+      )}
 
       {/* Certificate Preview Modal */}
       {activePreviewDoc && (

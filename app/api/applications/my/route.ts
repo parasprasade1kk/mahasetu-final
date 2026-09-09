@@ -11,7 +11,7 @@ const JWT_SECRET =
 export async function GET(req: NextRequest) {
   try {
     const authHeader = req.headers.get('authorization');
-    let userId = 'MH-CIT-001';
+    let userId = '';
 
     if (authHeader && authHeader.startsWith('Bearer ')) {
       try {
@@ -21,6 +21,13 @@ export async function GET(req: NextRequest) {
           userId = decoded.userId;
         }
       } catch {}
+    }
+
+    if (!userId) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized: Citizen authentication required.' },
+        { status: 401 }
+      );
     }
 
     const conn = await connectToDatabase();

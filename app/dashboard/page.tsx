@@ -50,14 +50,28 @@ export default function DashboardPage() {
     if (evaluatedSchemes.length > 0) {
       return evaluatedSchemes.filter(s => s.status === 'eligible' || s.status === 'possible').length.toString();
     }
-    return '6';
-  }, [evaluatedSchemes]);
+    return userProfile ? '0' : '0';
+  }, [evaluatedSchemes, userProfile]);
+
+  const activeApplicationsCount = useMemo(() => {
+    return applications.filter(a => {
+      const st = (a.status || '').toLowerCase();
+      return st === 'submitted' || st.includes('scrutiny') || st.includes('verification') || st.includes('review');
+    }).length.toString();
+  }, [applications]);
+
+  const issuedCertificatesCount = useMemo(() => {
+    return applications.filter(a => {
+      const st = (a.status || '').toLowerCase();
+      return st.includes('approved') || st.includes('issued') || st === 'completed';
+    }).length.toString();
+  }, [applications]);
 
   const stats = [
     {
       labelEn: 'Active Applications',
       labelMr: 'सक्रिय अर्ज',
-      count: '2',
+      count: activeApplicationsCount,
       icon: 'pending_actions',
       color: 'text-amber-600',
       bg: 'bg-amber-50 border-amber-200'
@@ -65,7 +79,7 @@ export default function DashboardPage() {
     {
       labelEn: 'Issued Certificates',
       labelMr: 'वितरित दाखले',
-      count: '5',
+      count: issuedCertificatesCount,
       icon: 'verified',
       color: 'text-emerald-700',
       bg: 'bg-emerald-50 border-emerald-200'
@@ -262,50 +276,75 @@ export default function DashboardPage() {
           </div>
 
           <div className="space-y-4">
-            {applications.map((app) => (
-              <div
-                key={app.id}
-                className="border border-slate-200 rounded-xl p-4.5 hover:border-[#003b5a]/40 transition bg-[#f8f9ff]/60"
-              >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs font-bold text-[#003b5a] bg-slate-100 px-2 py-0.5 rounded">
-                        {app.id}
-                      </span>
-                      <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${app.statusColor}`}>
-                        {app.status}
-                      </span>
+            {applications.length === 0 ? (
+              <div className="p-8 text-center bg-slate-50 border border-dashed border-slate-200 rounded-xl space-y-3">
+                <div className="w-12 h-12 rounded-full bg-[#003b5a]/10 text-[#003b5a] flex items-center justify-center mx-auto">
+                  <span className="material-symbols-outlined text-2xl">inbox</span>
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-slate-800">
+                    {language === 'mr' ? 'कोणतेही सक्रिय अर्ज नाहीत' : 'No Active Applications'}
+                  </h4>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    {language === 'mr'
+                      ? 'तुम्ही अद्याप कोणत्याही योजनेसाठी अर्ज सादर केलेला नाही.'
+                      : 'You have not submitted any applications yet.'}
+                  </p>
+                </div>
+                <Link
+                  href="/schemes"
+                  className="inline-flex items-center gap-1.5 bg-[#003b5a] text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-[#002840] transition"
+                >
+                  <span>{language === 'mr' ? 'योजना पहा व अर्ज करा' : 'Explore Schemes & Apply'}</span>
+                  <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+                </Link>
+              </div>
+            ) : (
+              applications.map((app) => (
+                <div
+                  key={app.id}
+                  className="border border-slate-200 rounded-xl p-4.5 hover:border-[#003b5a]/40 transition bg-[#f8f9ff]/60"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-xs font-bold text-[#003b5a] bg-slate-100 px-2 py-0.5 rounded">
+                          {app.id}
+                        </span>
+                        <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${app.statusColor}`}>
+                          {app.status}
+                        </span>
+                      </div>
+                      <h4 className="text-sm font-bold text-slate-800 mt-2">
+                        {language === 'mr' ? app.serviceNameMr : app.serviceName}
+                      </h4>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        {language === 'mr' ? app.departmentMr : app.department} • Applied on {app.appliedDate}
+                      </p>
                     </div>
-                    <h4 className="text-sm font-bold text-slate-800 mt-2">
-                      {language === 'mr' ? app.serviceNameMr : app.serviceName}
-                    </h4>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      {language === 'mr' ? app.departmentMr : app.department} • Applied on {app.appliedDate}
-                    </p>
-                  </div>
 
-                  <div className="flex items-center gap-2 self-end sm:self-center">
-                    <Link
-                      href={`/track?id=${app.id}`}
-                      className="text-xs font-bold text-[#003b5a] hover:bg-[#003b5a] hover:text-white border border-[#003b5a] px-3.5 py-1.5 rounded-lg transition"
-                    >
-                      {language === 'mr' ? 'तपशील ट्रॅक करा' : 'Track Details'}
-                    </Link>
-                    {app.status === 'Approved / Issued' && (
-                      <button
-                        onClick={() => alert(`Downloading official certificate for ${app.id}...`)}
-                        className="bg-emerald-700 text-white hover:bg-emerald-800 text-xs font-bold px-3.5 py-1.5 rounded-lg transition flex items-center gap-1"
-                        title="Download Certificate"
+                    <div className="flex items-center gap-2 self-end sm:self-center">
+                      <Link
+                        href={`/track?id=${app.id}`}
+                        className="text-xs font-bold text-[#003b5a] hover:bg-[#003b5a] hover:text-white border border-[#003b5a] px-3.5 py-1.5 rounded-lg transition"
                       >
-                        <span className="material-symbols-outlined text-[14px]">download</span>
-                        <span>Download</span>
-                      </button>
-                    )}
+                        {language === 'mr' ? 'तपशील ट्रॅक करा' : 'Track Details'}
+                      </Link>
+                      {(app.status === 'Approved / Issued' || app.status === 'Approved') && (
+                        <Link
+                          href={`/track?id=${app.id}`}
+                          className="bg-emerald-700 text-white hover:bg-emerald-800 text-xs font-bold px-3.5 py-1.5 rounded-lg transition flex items-center gap-1"
+                          title="View Official Certificate"
+                        >
+                          <span className="material-symbols-outlined text-[14px]">download</span>
+                          <span>Certificate</span>
+                        </Link>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
 
@@ -323,24 +362,30 @@ export default function DashboardPage() {
             <p className="text-xs text-slate-600 mb-4">
               Your official certificates issued by Maharashtra state authorities are pre-fetched and verified.
             </p>
-            <div className="space-y-2.5 mb-5 text-xs">
-              <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg border border-slate-100">
-                <span className="font-medium text-slate-700">Income Certificate (2025-26)</span>
-                <span className="material-symbols-outlined text-emerald-600 text-[18px]">verified</span>
+            {user.digiLockerLinked && userProfile ? (
+              <div className="space-y-2.5 mb-5 text-xs">
+                <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg border border-slate-100">
+                  <span className="font-medium text-slate-700">Income Certificate (2025-26)</span>
+                  <span className="material-symbols-outlined text-emerald-600 text-[18px]">verified</span>
+                </div>
+                <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg border border-slate-100">
+                  <span className="font-medium text-slate-700">
+                    Caste Certificate ({userProfile.category || 'General'})
+                  </span>
+                  <span className="material-symbols-outlined text-emerald-600 text-[18px]">verified</span>
+                </div>
+                <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg border border-slate-100">
+                  <span className="font-medium text-slate-700">
+                    Domicile Certificate ({userProfile.district || 'Maharashtra'})
+                  </span>
+                  <span className="material-symbols-outlined text-emerald-600 text-[18px]">verified</span>
+                </div>
               </div>
-              <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg border border-slate-100">
-                <span className="font-medium text-slate-700">
-                  Caste Certificate ({userProfile ? userProfile.category : 'OBC'})
-                </span>
-                <span className="material-symbols-outlined text-emerald-600 text-[18px]">verified</span>
+            ) : (
+              <div className="p-4 bg-slate-50 border border-slate-100 rounded-lg text-center text-xs text-slate-500 mb-4">
+                0 certificates linked. Connect DigiLocker to auto-fetch official documents.
               </div>
-              <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg border border-slate-100">
-                <span className="font-medium text-slate-700">
-                  Domicile Certificate ({userProfile ? userProfile.district : 'Maharashtra'})
-                </span>
-                <span className="material-symbols-outlined text-emerald-600 text-[18px]">verified</span>
-              </div>
-            </div>
+            )}
             <Link
               href="/documents"
               className="w-full block text-center bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-2 rounded-lg text-xs transition"

@@ -612,8 +612,7 @@ export default function SchemeFinderPage() {
     };
   };
 
-  // ─── Submit handler — uses selectedScheme dynamically ─────────────────────
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const schemeName = selectedScheme
       ? (lang === 'mr' ? selectedScheme.nameMr : selectedScheme.name)
       : 'Smart Scheme Finder';
@@ -621,10 +620,12 @@ export default function SchemeFinderPage() {
       ? (lang === 'mr' ? selectedScheme.departmentMr : selectedScheme.department)
       : 'Government of Maharashtra';
 
-    addApplication({
+    await addApplication({
       id: appRefId,
-      serviceName: `${selectedScheme?.name ?? 'Scheme'} (Smart Scheme Finder)`,
-      serviceNameMr: `${selectedScheme?.nameMr ?? 'योजना'} (स्मार्ट योजना शोधक)`,
+      serviceId: selectedScheme?.id || 'scheme',
+      schemeId: selectedScheme?.id || 'scheme',
+      serviceName: selectedScheme?.name || schemeName,
+      serviceNameMr: selectedScheme?.nameMr || selectedScheme?.name || 'योजना अर्ज',
       department: deptName,
       departmentMr: selectedScheme?.departmentMr ?? 'महाराष्ट्र शासन',
       appliedDate: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
@@ -632,6 +633,7 @@ export default function SchemeFinderPage() {
       statusColor: 'bg-blue-100 text-blue-800 border-blue-300',
       applicantName: user.name,
       district: district,
+      applicationType: 'scheme',
     });
     goTo(12);
   };
@@ -1807,7 +1809,7 @@ export default function SchemeFinderPage() {
               {tx(lang, 'btn_back_dashboard')}
             </Link>
             <Link
-              href="/track"
+              href={`/track?id=${appRefId}`}
               className="block w-full bg-slate-100 border border-slate-300 py-3 rounded-xl text-sm font-bold text-[#003b5a] text-center hover:bg-slate-200 transition"
             >
               {tx(lang, 'btn_track_app')}

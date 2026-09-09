@@ -50,14 +50,24 @@ export default function ServiceApplicationForm({ forcedId }: { forcedId?: string
     food: 'FCS'
   };
 
-  const handleSubmit = () => {
+  const isScheme =
+    service.category?.toLowerCase().includes('scheme') ||
+    service.category?.toLowerCase().includes('welfare') ||
+    service.id.startsWith('EDU') ||
+    service.id.startsWith('SW') ||
+    service.id.startsWith('REV-') ||
+    service.id.includes('scholarship');
+
+  const handleSubmit = async () => {
     setIsSubmitting(true);
     const deptCode = deptPrefixMap[service.deptId] || 'GOV';
     const newId = `MH-${deptCode}-2026-${Math.floor(10000 + Math.random() * 90000)}`;
 
-    setTimeout(() => {
-      addApplication({
+    try {
+      const res = await addApplication({
         id: newId,
+        serviceId: service.id,
+        schemeId: isScheme ? service.id : undefined,
         serviceName: service.titleEn,
         serviceNameMr: service.titleMr,
         department: service.deptNameEn,
@@ -66,11 +76,15 @@ export default function ServiceApplicationForm({ forcedId }: { forcedId?: string
         status: 'Submitted',
         statusColor: 'bg-blue-100 text-blue-800 border-blue-300',
         applicantName: user.name,
-        district: userProfile?.district || 'Pune'
+        district: userProfile?.district || 'Pune',
+        applicationType: isScheme ? 'scheme' : 'service',
       });
       setIsSubmitting(false);
+      setSubmittedAppId(res?.id || newId);
+    } catch {
+      setIsSubmitting(false);
       setSubmittedAppId(newId);
-    }, 900);
+    }
   };
 
   return (

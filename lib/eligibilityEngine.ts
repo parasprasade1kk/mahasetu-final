@@ -910,12 +910,8 @@ export function evaluateSchemeEligibility(profile: UserProfile, scheme: Scheme):
     }
   }
 
-  // Route URL
-  const actionUrl = scheme.id.startsWith('EDU')
-    ? '/scholarship-application'
-    : scheme.id.startsWith('REV')
-    ? '/documents'
-    : '/scheme-finder';
+  // Route URL - dynamically maps to specific scheme application
+  const actionUrl = `/apply/scheme/${encodeURIComponent(scheme.id)}`;
 
   return {
     scheme,

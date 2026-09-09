@@ -667,7 +667,7 @@ export default function EligibilityCheckerPage() {
                               </span>
                             </div>
                             <Link
-                              href="/documents"
+                              href={`/apply/${srv.serviceId || 'income-certificate'}`}
                               className="text-[10px] font-bold text-[#003b5a] bg-white border border-[#003b5a]/30 px-2 py-1 rounded hover:bg-[#003b5a] hover:text-white transition"
                             >
                               {language === 'mr' ? 'अर्ज करा' : 'Apply Service'}
