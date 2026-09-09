@@ -119,9 +119,10 @@ export async function connectToDatabase(): Promise<typeof mongoose | null> {
   if (!cached.promise) {
     const opts: mongoose.ConnectOptions = {
       bufferCommands: false,
-      serverSelectionTimeoutMS: 10000, // 10s for Atlas serverless handshake
-      connectTimeoutMS: 10000,
+      serverSelectionTimeoutMS: 15000, // 15s for Atlas serverless handshake across regions
+      connectTimeoutMS: 15000,
       socketTimeoutMS: 45000,
+      family: 4, // Force IPv4 to prevent serverless dual-stack IPv6 DNS delays
       maxPoolSize: 10,
       minPoolSize: 1,
       dbName: 'mahasetu', // Guarantees unified single source of truth database
