@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
-import { connectToDatabase } from '@/lib/mongodb';
-import { Application, User, AuditLog } from '@/lib/models';
+import { submitApplication, findCitizenByUserId } from '@/lib/supabaseService';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,7 +11,6 @@ export async function POST(req: NextRequest) {
   try {
     const authHeader = req.headers.get('authorization');
     let userId = '';
-    let applicantName = '';
 
     if (authHeader && authHeader.startsWith('Bearer ')) {
       try {
@@ -31,19 +29,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const conn = await connectToDatabase();
-    if (!conn) {
-      return NextResponse.json(
-        { success: false, error: 'Database connection unavailable.' },
-        { status: 503 }
-      );
-    }
-
-    // Try to get citizen name from DB
-    const userDoc = await User.findOne({ userId });
-    if (userDoc) {
-      applicantName = userDoc.fullName;
-    }
+    const citizen = await findCitizenByUserId(userId);
 
     const body = await req.json();
     const {
@@ -66,56 +52,45 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const ts = Date.now().toString().slice(-5);
-    const rand = Math.floor(1000 + Math.random() * 9000);
-    const deptCode = department.includes('Revenue')
-      ? 'REV'
-      : department.includes('Education')
-      ? 'EDU'
-      : department.includes('Agriculture')
-      ? 'AGR'
-      : 'GEN';
-    const applicationId = body.applicationId || `MH-${deptCode}-2026-${ts}${rand}`;
-
-    const newApp = await Application.create({
-      applicationId,
+    const createdApp = await submitApplication({
       userId,
-      applicantName: body.applicantName || applicantName,
-      serviceId: serviceId || schemeId || '',
-      schemeId: schemeId || '',
+      applicantName: body.applicantName || citizen?.full_name || 'Citizen',
+      applicantMobile: citizen?.mobile_number,
+      applicantAadhaarMasked: citizen?.aadhaar_masked,
+      serviceId,
+      schemeId,
       serviceName,
-      serviceNameMr: serviceNameMr || serviceName,
+      serviceNameMr,
       department,
-      departmentMr: departmentMr || department,
-      status: 'Submitted',
-      statusColor: 'bg-blue-100 text-blue-800 border-blue-300',
-      district: district || 'Maharashtra',
-      formData: formData || {},
-      smartDocumentPack: smartDocumentPack || [],
-      applicationType: applicationType || 'scheme',
-      appliedDate: new Date().toLocaleDateString('en-GB', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-      }),
+      departmentMr,
+      district: district || citizen?.district || 'Maharashtra',
+      applicationType,
+      data: { formData, smartDocumentPack },
     });
 
-    await AuditLog.create({
-      logId: `AUD-${Date.now()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`,
-      actorId: userId,
-      actorRole: 'citizen',
-      action: 'SUBMIT_APPLICATION',
-      targetResource: 'Application',
-      targetId: applicationId,
-      status: 'SUCCESS',
-      metadata: { serviceName, department },
-    });
+    const mapped = {
+      ...createdApp,
+      applicationId: createdApp.application_id,
+      serviceName: createdApp.service_name,
+      serviceNameMr: createdApp.service_name_mr,
+      department: createdApp.department,
+      departmentMr: createdApp.department_mr,
+      appliedDate: createdApp.applied_date,
+      status: createdApp.status,
+      statusColor: createdApp.status_color,
+      applicantName: createdApp.applicant_name,
+      district: createdApp.district,
+      serviceId: createdApp.service_id,
+      schemeId: createdApp.scheme_id,
+      applicationType: createdApp.type,
+      updatedAt: createdApp.last_updated,
+    };
 
     return NextResponse.json(
       {
         success: true,
-        message: 'Application submitted successfully to MongoDB Atlas.',
-        application: newApp,
+        message: 'Application submitted successfully to Supabase.',
+        application: mapped,
       },
       { status: 201 }
     );

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
-import { connectToDatabase } from '@/lib/mongodb';
-import { Document } from '@/lib/models';
+import { getDocumentsByCitizen } from '@/lib/supabaseService';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,19 +29,29 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const conn = await connectToDatabase();
-    if (!conn) {
-      return NextResponse.json(
-        { success: false, error: 'Database connection unavailable.' },
-        { status: 503 }
-      );
-    }
+    const documents = await getDocumentsByCitizen(userId);
 
-    const documents = await Document.find({ userId }).sort({ createdAt: -1 }).lean();
+    const mapped = (documents || []).map((d: any) => ({
+      ...d,
+      id: d.document_id,
+      documentId: d.document_id,
+      documentType: d.document_type,
+      documentName: d.document_name,
+      documentNameMr: d.document_name_mr || d.document_name,
+      authorityEn: d.authority_en || 'Government Authority',
+      authorityMr: d.authority_mr || d.authority_en,
+      issueDate: d.issued_date,
+      certNo: d.cert_no,
+      source: d.source,
+      verificationStatus: d.verification_status,
+      verified: d.verification_status === 'Verified',
+      fileUrl: d.file_url,
+      uploadedAt: d.created_at,
+    }));
 
     return NextResponse.json({
       success: true,
-      documents,
+      documents: mapped,
     });
   } catch (err: any) {
     return NextResponse.json(

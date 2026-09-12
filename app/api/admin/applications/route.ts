@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
-import { connectToDatabase } from '@/lib/mongodb';
-import { Application } from '@/lib/models';
-import { ensureDatabaseSeeded } from '@/lib/dbSeed';
+import { supabase } from '@/lib/supabaseClient';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,43 +35,59 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const conn = await connectToDatabase();
-    if (!conn) {
-      return NextResponse.json(
-        { success: false, error: 'Database connection unavailable.' },
-        { status: 503 }
-      );
-    }
-
-    await ensureDatabaseSeeded();
-
     const { searchParams } = new URL(req.url);
     const status = searchParams.get('status');
     const type = searchParams.get('type');
     const search = searchParams.get('search');
 
-    const filter: any = {};
+    let query = supabase.from('applications').select('*');
+
     if (status && status !== 'All') {
-      filter.status = status;
+      query = query.eq('status', status);
     }
     if (type && type !== 'All') {
-      filter.applicationType = type.toLowerCase();
+      query = query.eq('type', type.toLowerCase());
     }
     if (search) {
-      filter.$or = [
-        { applicationId: new RegExp(search, 'i') },
-        { applicantName: new RegExp(search, 'i') },
-        { serviceName: new RegExp(search, 'i') },
-        { department: new RegExp(search, 'i') },
-      ];
+      query = query.or(
+        `application_id.ilike.%${search}%,applicant_name.ilike.%${search}%,service_name.ilike.%${search}%,department.ilike.%${search}%`
+      );
     }
 
-    const applications = await Application.find(filter).sort({ createdAt: -1 }).lean();
+    const { data: apps, error } = await query.order('submitted_at', { ascending: false });
+
+    if (error) {
+      console.error('Fetch admin applications error:', error.message);
+      return NextResponse.json(
+        { success: false, error: 'Failed to retrieve applications: ' + error.message },
+        { status: 500 }
+      );
+    }
+
+    const mapped = (apps || []).map((a: any) => ({
+      ...a,
+      id: a.application_id,
+      applicationId: a.application_id,
+      applicantName: a.applicant_name,
+      serviceName: a.service_name,
+      serviceNameMr: a.service_name_mr,
+      department: a.department,
+      departmentMr: a.department_mr,
+      status: a.status,
+      statusColor: a.status_color,
+      appliedDate: a.applied_date,
+      district: a.district,
+      serviceId: a.service_id,
+      schemeId: a.scheme_id,
+      applicationType: a.type,
+      remarks: a.remarks,
+      lastUpdated: a.last_updated,
+    }));
 
     return NextResponse.json({
       success: true,
-      applications,
-      total: applications.length,
+      applications: mapped,
+      total: mapped.length,
     });
   } catch (err: any) {
     return NextResponse.json(

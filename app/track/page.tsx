@@ -162,7 +162,7 @@ function TrackStatusContent() {
   const searchParams = useSearchParams();
   const paramId = searchParams.get('id');
 
-  // Load fresh application data from MongoDB Atlas on mount
+  // Load fresh application data from Supabase on mount
   useEffect(() => {
     refreshApplications?.();
   }, [refreshApplications]);
@@ -203,7 +203,7 @@ function TrackStatusContent() {
     return selectedApp ? normalizeStatus(selectedApp.status) : 'Submitted';
   }, [selectedApp]);
 
-  // Dynamic timeline steps constructed from real MongoDB application record
+  // Dynamic timeline steps constructed from real Supabase application record
   const timelineSteps = useMemo(() => {
     if (!selectedApp) return [];
 

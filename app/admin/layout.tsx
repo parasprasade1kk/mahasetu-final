@@ -206,7 +206,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
           {/* Sidebar Footer */}
           <div className="p-4 border-t border-slate-100 bg-slate-50/70 text-[11px] text-slate-500">
-            <div className="font-semibold text-slate-700">MongoDB Atlas Connected</div>
+            <div className="font-semibold text-slate-700">Supabase PostgreSQL Connected</div>
             <div className="text-[10px] text-emerald-700 font-bold flex items-center gap-1 mt-0.5">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
               Live Database Active

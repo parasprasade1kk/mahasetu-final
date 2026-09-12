@@ -1,17 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
-import { connectToDatabase } from '@/lib/mongodb';
-import {
-  User,
-  Profile,
-  Application,
-  Scheme,
-  Document,
-  Consent,
-  DigiLockerConnection,
-  AuditLog,
-} from '@/lib/models';
-import { ensureDatabaseSeeded } from '@/lib/dbSeed';
+import { getLiveAnalytics } from '@/lib/supabaseService';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,9 +9,6 @@ const JWT_SECRET =
 
 export async function GET(req: NextRequest) {
   try {
-    console.log('[ADMIN ANALYTICS] Request received');
-
-    // 1. Verify Admin Authentication
     const authHeader = req.headers.get('authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json(
@@ -50,122 +36,23 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    console.log('[ADMIN ANALYTICS] Admin authenticated');
-
-    // 2. Connect to MongoDB Atlas
-    const conn = await connectToDatabase();
-    if (!conn) {
-      console.warn('[ADMIN ANALYTICS] Database connection unavailable');
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Database connection unavailable.',
-        },
-        { status: 503 }
-      );
-    }
-
-    console.log('[ADMIN ANALYTICS] MongoDB connected');
-
-    // 3. Ensure baseline demo records exist in database without creating duplicates
-    await ensureDatabaseSeeded();
-
-    // 4. Calculate real KPI metrics directly from MongoDB collections
-    const [
-      totalCitizens,
-      verifiedCitizens,
-      totalApplications,
-      pendingApplications,
-      approvedApplications,
-      rejectedApplications,
-      totalSchemes,
-      documentsSubmitted,
-      digiLockerUsers,
-      activeConsents,
-    ] = await Promise.all([
-      User.countDocuments({ role: 'citizen' }),
-      User.countDocuments({ role: 'citizen', isVerified: true }),
-      Application.countDocuments(),
-      Application.countDocuments({
-        status: {
-          $in: [
-            'Draft',
-            'Submitted',
-            'Under Review',
-            'Under Scrutiny',
-            'Field Verification',
-            'Documents Required',
-            'Action Required',
-            'Pending',
-            'pending',
-          ],
-        },
-      }),
-      Application.countDocuments({
-        status: { $in: ['Approved', 'Completed', 'Approved / Issued', 'approved'] },
-      }),
-      Application.countDocuments({
-        status: { $in: ['Rejected', 'rejected'] },
-      }),
-      Scheme.countDocuments({ $or: [{ active: true }, { applicationType: 'scheme' }] }),
-      Document.countDocuments(),
-      DigiLockerConnection.countDocuments({ isConnected: true }),
-      Consent.countDocuments({ status: 'Active' }),
-    ]);
-
-    console.log('[ADMIN ANALYTICS] Users count:', totalCitizens);
-    console.log('[ADMIN ANALYTICS] Applications count:', totalApplications);
-
-    // Breakdown aggregations
-    const [departmentStats, statusStats, districtStats, recentActivity] = await Promise.all([
-      Application.aggregate([
-        { $group: { _id: '$department', count: { $sum: 1 } } },
-        { $sort: { count: -1 } },
-      ]),
-      Application.aggregate([
-        { $group: { _id: '$status', count: { $sum: 1 } } },
-        { $sort: { count: -1 } },
-      ]),
-      Profile.aggregate([
-        { $match: { district: { $ne: '' } } },
-        { $group: { _id: '$district', count: { $sum: 1 } } },
-        { $sort: { count: -1 } },
-        { $limit: 8 },
-      ]),
-      AuditLog.find().sort({ timestamp: -1 }).limit(10).lean(),
-    ]);
-
-    console.log('[ADMIN ANALYTICS] Returning KPI response');
+    const analyticsData = await getLiveAnalytics();
 
     return NextResponse.json({
       success: true,
-      data: {
-        totalCitizens,
-        verifiedCitizens,
-        totalApplications,
-        pendingApplications,
-        approvedApplications,
-        rejectedApplications,
-        totalSchemes,
-        documentsSubmitted,
-        digiLockerUsers,
-        activeConsents,
-        departmentStats,
-        statusStats,
-        districtStats,
-        recentActivity,
-      },
+      data: analyticsData,
       kpis: {
-        totalRegisteredCitizens: totalCitizens,
-        verifiedCitizens,
-        totalApplications,
-        pendingApplications,
-        approvedApplications,
-        rejectedApplications,
-        totalSchemes,
-        documentsSubmitted,
-        digilockerConnectedUsers: digiLockerUsers,
-        activeConsents,
+        totalRegisteredCitizens: analyticsData.totalCitizens,
+        verifiedCitizens: analyticsData.verifiedCitizens,
+        totalApplications: analyticsData.totalApplications,
+        pendingApplications: analyticsData.pendingApplications,
+        approvedApplications: analyticsData.approvedApplications,
+        rejectedApplications: analyticsData.rejectedApplications,
+        totalSchemes: analyticsData.totalSchemes,
+        totalServices: analyticsData.totalServices,
+        documentsSubmitted: analyticsData.documentsSubmitted,
+        digilockerConnectedUsers: analyticsData.digiLockerUsers,
+        activeConsents: analyticsData.activeConsents,
       },
       timestamp: new Date().toISOString(),
     });
@@ -174,7 +61,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: 'Unable to load live dashboard data.',
+        error: 'Unable to load live dashboard data: ' + (err?.message || 'Server error'),
       },
       { status: 500 }
     );

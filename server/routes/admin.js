@@ -1,23 +1,16 @@
 const express = require('express');
 const router = express.Router();
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-
-const User = require('../models/User');
-const Profile = require('../models/Profile');
-const AdminUser = require('../models/AdminUser');
-const Scheme = require('../models/Scheme');
-const Application = require('../models/Application');
-const Document = require('../models/Document');
-const Consent = require('../models/Consent');
-const AuditLog = require('../models/AuditLog');
-const Notification = require('../models/Notification');
-const DigiLockerConnection = require('../models/DigiLockerConnection');
 const { verifyToken, requireAdmin, JWT_SECRET } = require('../middleware/auth');
-const { createAuditLog } = require('../utils/auditLogger');
+const { supabase } = require('../config/supabase');
+const {
+  authenticateAdmin,
+  createAuditLog,
+  getLiveAnalytics,
+  updateApplicationStatus,
+} = require('../services/supabaseService');
 
-// ─── POST /api/admin/login (PUBLIC: Unauthenticated) ─────────────────────────
+// ─── POST /api/admin/login (PUBLIC) ──────────────────────────────────────────
 router.post('/login', async (req, res) => {
   try {
     const { adminId, password } = req.body || {};
@@ -29,222 +22,80 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    const trimmedId = String(adminId).trim();
-    const ADMIN_ID = process.env.ADMIN_ID || '1120610';
-    const ADMIN_PASSWORD_HASH =
-      process.env.ADMIN_PASSWORD_HASH ||
-      '$2a$10$ZB4s9wtLu841OUnZwDw/G.bU6Woe.BTNeyarNiH9jj3b25Qdnj11O';
-
-    let admin = null;
-    let isPasswordValid = false;
-
-    // Check database connection
-    const isDbConnected = mongoose.connection.readyState === 1;
-
-    if (isDbConnected) {
-      admin = await AdminUser.findOne({ adminId: trimmedId });
-      if (admin && admin.passwordHash) {
-        isPasswordValid = bcrypt.compareSync(password, admin.passwordHash);
-      } else if (trimmedId === ADMIN_ID) {
-        // Fallback check against env hash and bootstrap DB record
-        isPasswordValid = bcrypt.compareSync(password, ADMIN_PASSWORD_HASH);
-        if (isPasswordValid) {
-          admin = await AdminUser.findOneAndUpdate(
-            { adminId: ADMIN_ID },
-            {
-              adminId: ADMIN_ID,
-              name: 'Shri. S. K. Deshmukh',
-              department: 'General Administration Department (GAD), Mantralaya, Mumbai',
-              role: 'admin',
-              passwordHash: ADMIN_PASSWORD_HASH,
-              isActive: true,
-              lastLogin: new Date(),
-            },
-            { upsert: true, new: true }
-          );
-        }
-      }
-    } else {
-      // Database not connected or reconnecting: verify against env credentials
-      if (trimmedId === ADMIN_ID) {
-        isPasswordValid = bcrypt.compareSync(password, ADMIN_PASSWORD_HASH);
-      }
-    }
-
-    if (!isPasswordValid) {
-      if (isDbConnected) {
-        await createAuditLog({
-          actorId: trimmedId,
-          actorRole: 'admin',
-          action: 'ADMIN_LOGIN_FAILED',
-          targetResource: 'AdminPortal',
-          status: 'FAILURE',
-          metadata: { attemptedId: trimmedId },
-        });
-      }
-
-      return res.status(401).json({
-        success: false,
-        error: 'Invalid Administrator ID or password.',
-      });
-    }
-
-    if (admin && isDbConnected) {
-      admin.lastLogin = new Date();
-      await admin.save();
-    }
-
-    if (isDbConnected) {
-      await createAuditLog({
-        actorId: trimmedId,
-        actorRole: 'admin',
-        action: 'ADMIN_LOGIN_SUCCESS',
-        targetResource: 'AdminPortal',
-        targetId: trimmedId,
-      });
-    }
+    const admin = await authenticateAdmin({ adminId, password });
 
     const token = jwt.sign(
-      {
-        adminId: trimmedId,
-        role: 'admin',
-        name: admin ? admin.name : 'Shri. S. K. Deshmukh',
-      },
+      { adminId: admin.admin_id, role: admin.role, name: admin.name },
       JWT_SECRET,
-      { expiresIn: '12h' }
+      { expiresIn: '24h' }
     );
 
-    return res.json({
+    res.json({
       success: true,
-      message: 'Government Administrator session authorized.',
+      message: 'Government Administrator authenticated successfully.',
       token,
       admin: {
-        adminId: trimmedId,
-        name: admin ? admin.name : 'Shri. S. K. Deshmukh',
-        role: 'admin',
-        department: admin
-          ? admin.department
-          : 'General Administration Department (GAD), Mantralaya, Mumbai',
-      },
-    });
-  } catch (err) {
-    console.error('Admin login error:', err);
-    return res.status(500).json({
-      success: false,
-      error: 'Administration service is temporarily unavailable.',
-    });
-  }
-});
-
-// ─── GET /api/admin/me (PROTECTED) ───────────────────────────────────────────
-router.get('/me', verifyToken, requireAdmin, async (req, res) => {
-  try {
-    const isDbConnected = mongoose.connection.readyState === 1;
-    let admin = null;
-    if (isDbConnected) {
-      admin = await AdminUser.findOne({ adminId: req.user.adminId }).select('-passwordHash');
-    }
-
-    return res.json({
-      success: true,
-      admin: admin || {
-        adminId: req.user.adminId,
-        name: req.user.name || 'Shri. S. K. Deshmukh',
-        role: 'admin',
+        adminId: admin.admin_id,
+        name: admin.name,
+        role: admin.role,
         department: 'General Administration Department (GAD), Mantralaya, Mumbai',
+        lastLogin: admin.last_login,
       },
     });
   } catch (err) {
-    return res.status(500).json({ success: false, error: err.message });
+    console.error('Admin login error:', err.message);
+    res.status(err.status || 500).json({ success: false, error: err.message });
   }
 });
 
-// ─── GET /api/admin/health (PUBLIC) ──────────────────────────────────────────
-router.get('/health', (req, res) => {
-  const isDbConnected = mongoose.connection.readyState === 1;
+// ─── GET /api/admin/health (PUBLIC) ───────────────────────────────────────────
+router.get('/health', async (req, res) => {
+  const { error } = await supabase.from('admin_users').select('admin_id').limit(1);
+  const isDbConnected = !error;
   res.json({
-    service: 'MahaSetu Administrator Management Subsystem',
     status: isDbConnected ? 'ok' : 'degraded',
+    service: 'MahaSetu Administration API',
     database: isDbConnected ? 'connected' : 'disconnected',
-    adminAccountConfigured: true,
     timestamp: new Date().toISOString(),
   });
 });
 
-// All subsequent routes in this router require valid Admin authentication
+// All subsequent routes require valid Admin authentication
 router.use(verifyToken, requireAdmin);
+
+// ─── GET /api/admin/me (PROTECTED) ────────────────────────────────────────────
+router.get('/me', async (req, res) => {
+  try {
+    const { data: admin, error } = await supabase
+      .from('admin_users')
+      .select('admin_id, name, role, last_login')
+      .eq('admin_id', req.user.adminId)
+      .maybeSingle();
+
+    if (error || !admin) {
+      return res.status(404).json({ success: false, error: 'Administrator profile not found.' });
+    }
+
+    res.json({
+      success: true,
+      admin: {
+        adminId: admin.admin_id,
+        name: admin.name,
+        role: admin.role,
+        department: 'General Administration Department (GAD), Mantralaya, Mumbai',
+        lastLogin: admin.last_login,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
 
 // ─── GET /api/admin/analytics ─────────────────────────────────────────────────
 router.get('/analytics', async (req, res) => {
   try {
-    const [
-      totalCitizens,
-      verifiedCitizens,
-      totalApplications,
-      pendingApplications,
-      approvedApplications,
-      rejectedApplications,
-      totalSchemes,
-      documentsSubmitted,
-      digiLockerUsers,
-      activeConsents,
-    ] = await Promise.all([
-      User.countDocuments({ role: 'citizen' }),
-      User.countDocuments({ role: 'citizen', isVerified: true }),
-      Application.countDocuments(),
-      Application.countDocuments({
-        status: { $in: ['Draft', 'Submitted', 'Under Review', 'Documents Required'] },
-      }),
-      Application.countDocuments({ status: { $in: ['Approved', 'Completed', 'Approved / Issued'] } }),
-      Application.countDocuments({ status: 'Rejected' }),
-      Scheme.countDocuments({ applicationType: 'scheme' }),
-      Document.countDocuments(),
-      DigiLockerConnection.countDocuments({ isConnected: true }),
-      Consent.countDocuments({ status: 'Active' }),
-    ]);
-
-    // Department breakdown
-    const departmentStats = await Application.aggregate([
-      { $group: { _id: '$department', count: { $sum: 1 } } },
-      { $sort: { count: -1 } },
-    ]);
-
-    // Status breakdown
-    const statusStats = await Application.aggregate([
-      { $group: { _id: '$status', count: { $sum: 1 } } },
-      { $sort: { count: -1 } },
-    ]);
-
-    // District breakdown from Profiles
-    const districtStats = await Profile.aggregate([
-      { $match: { district: { $ne: '' } } },
-      { $group: { _id: '$district', count: { $sum: 1 } } },
-      { $sort: { count: -1 } },
-      { $limit: 8 },
-    ]);
-
-    // Recent audit activity
-    const recentActivity = await AuditLog.find().sort({ timestamp: -1 }).limit(10);
-
-    res.json({
-      success: true,
-      data: {
-        totalCitizens,
-        verifiedCitizens,
-        totalApplications,
-        pendingApplications,
-        approvedApplications,
-        rejectedApplications,
-        totalSchemes,
-        documentsSubmitted,
-        digiLockerUsers,
-        activeConsents,
-        departmentStats,
-        statusStats,
-        districtStats,
-        recentActivity,
-      },
-    });
+    const data = await getLiveAnalytics();
+    res.json({ success: true, data });
   } catch (err) {
     console.error('Analytics aggregation error:', err);
     res.status(500).json({ success: false, error: 'Failed to aggregate admin analytics: ' + err.message });
@@ -254,65 +105,45 @@ router.get('/analytics', async (req, res) => {
 // ─── GET /api/admin/users ─────────────────────────────────────────────────────
 router.get('/users', async (req, res) => {
   try {
-    const { search, district, category, page = 1, limit = 50 } = req.query;
+    const { search, district, category } = req.query;
+    let query = supabase.from('profiles').select('*');
 
-    const userFilter = { role: 'citizen' };
     if (search) {
-      userFilter.$or = [
-        { fullName: new RegExp(search, 'i') },
-        { mobile: new RegExp(search, 'i') },
-        { userId: new RegExp(search, 'i') },
-      ];
+      query = query.or(`full_name.ilike.%${search}%,mobile_number.ilike.%${search}%,user_id.ilike.%${search}%`);
     }
-
-    const users = await User.find(userFilter)
-      .sort({ createdAt: -1 })
-      .skip((Number(page) - 1) * Number(limit))
-      .limit(Number(limit));
-
-    const userIds = users.map((u) => u.userId);
-    const profiles = await Profile.find({ userId: { $in: userIds } });
-    const profileMap = Object.fromEntries(profiles.map((p) => [p.userId, p]));
-
-    // Join users with their profile data
-    let combined = users.map((u) => {
-      const p = profileMap[u.userId] || {};
-      return {
-        userId: u.userId,
-        fullName: u.fullName,
-        mobile: u.mobile,
-        aadhaarMasked: u.aadhaarMasked,
-        email: u.email,
-        isVerified: u.isVerified,
-        createdAt: u.createdAt,
-        district: p.district || 'Maharashtra',
-        category: p.category || 'General/Open',
-        occupation: p.occupation || 'Not Specified',
-        annualIncomeAmount: p.annualIncomeAmount || 0,
-        educationLevel: p.educationLevel || '',
-        isStudent: Boolean(p.isStudent),
-        hasDisability: Boolean(p.hasDisability),
-        digiLockerLinked: Boolean(p.digiLockerLinked),
-        confirmedAccurate: Boolean(p.confirmedAccurate),
-      };
-    });
-
     if (district) {
-      combined = combined.filter((u) =>
-        u.district.toLowerCase().includes(district.toLowerCase())
-      );
+      query = query.ilike('district', `%${district}%`);
     }
     if (category) {
-      combined = combined.filter((u) =>
-        u.category.toLowerCase().includes(category.toLowerCase())
-      );
+      query = query.ilike('category', `%${category}%`);
     }
 
-    res.json({
-      success: true,
-      count: combined.length,
-      users: combined,
-    });
+    const { data: profiles, error } = await query.order('created_at', { ascending: false });
+
+    if (error) {
+      return res.status(500).json({ success: false, error: error.message });
+    }
+
+    const users = (profiles || []).map((p) => ({
+      userId: p.user_id,
+      fullName: p.full_name,
+      mobile: p.mobile_number,
+      aadhaarMasked: p.aadhaar_masked,
+      email: p.email,
+      isVerified: Boolean(p.aadhaar_hash),
+      createdAt: p.created_at,
+      district: p.district || 'Maharashtra',
+      category: p.category || 'General/Open',
+      occupation: p.occupation || 'Not Specified',
+      annualIncomeAmount: p.annual_family_income ? Number(p.annual_family_income) : 0,
+      educationLevel: p.education_level || '',
+      isStudent: Boolean(p.student_status),
+      hasDisability: Boolean(p.disability_status),
+      digiLockerLinked: Boolean(p.digilocker_linked),
+      confirmedAccurate: Boolean(p.confirmed_accurate),
+    }));
+
+    res.json({ success: true, count: users.length, users });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
@@ -321,28 +152,41 @@ router.get('/users', async (req, res) => {
 // ─── GET /api/admin/users/:userId ─────────────────────────────────────────────
 router.get('/users/:userId', async (req, res) => {
   try {
-    const { userId } = req.params;
-    const user = await User.findOne({ userId });
-    if (!user) {
-      return res.status(404).json({ success: false, error: 'Citizen account not found.' });
+    const userId = req.params.userId;
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (!profile) {
+      return res.status(404).json({ success: false, error: 'Citizen not found.' });
     }
 
-    const [profile, documents, applications, consents, activity] = await Promise.all([
-      Profile.findOne({ userId }),
-      Document.find({ userId }).sort({ createdAt: -1 }),
-      Application.find({ userId }).sort({ createdAt: -1 }),
-      Consent.find({ userId }).sort({ createdAt: -1 }),
-      AuditLog.find({ actorId: userId }).sort({ timestamp: -1 }).limit(20),
+    const [{ data: applications }, { data: documents }, { data: consents }] = await Promise.all([
+      supabase.from('applications').select('*').eq('user_id', userId),
+      supabase.from('documents').select('*').eq('user_id', userId),
+      supabase.from('consents').select('*').eq('user_id', userId),
     ]);
 
     res.json({
       success: true,
-      user,
+      user: {
+        userId: profile.user_id,
+        fullName: profile.full_name,
+        mobile: profile.mobile_number,
+        aadhaarMasked: profile.aadhaar_masked,
+        email: profile.email,
+        isVerified: Boolean(profile.aadhaar_hash),
+        createdAt: profile.created_at,
+        district: profile.district,
+        category: profile.category,
+        occupation: profile.occupation,
+      },
       profile,
-      documents,
-      applications,
-      consents,
-      activity,
+      applications: applications || [],
+      documents: documents || [],
+      consents: consents || [],
     });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -352,28 +196,42 @@ router.get('/users/:userId', async (req, res) => {
 // ─── GET /api/admin/applications ──────────────────────────────────────────────
 router.get('/applications', async (req, res) => {
   try {
-    const { status, department, type, search } = req.query;
-    const filter = {};
+    const { status, department, search, type } = req.query;
+    let query = supabase.from('applications').select('*');
 
-    if (status && status !== 'All') {
-      filter.status = status;
+    if (status) {
+      query = query.ilike('status', `%${status}%`);
     }
-    if (department && department !== 'All') {
-      filter.department = new RegExp(department, 'i');
+    if (department) {
+      query = query.ilike('department', `%${department}%`);
     }
-    if (type && type !== 'All') {
-      filter.applicationType = type;
+    if (type) {
+      query = query.eq('type', type);
     }
     if (search) {
-      filter.$or = [
-        { applicationId: new RegExp(search, 'i') },
-        { applicantName: new RegExp(search, 'i') },
-        { serviceName: new RegExp(search, 'i') },
-      ];
+      query = query.or(`applicant_name.ilike.%${search}%,service_name.ilike.%${search}%,application_id.ilike.%${search}%`);
     }
 
-    const applications = await Application.find(filter).sort({ createdAt: -1 });
-    res.json({ success: true, count: applications.length, applications });
+    const { data: applications, error } = await query.order('submitted_at', { ascending: false });
+
+    if (error) {
+      return res.status(500).json({ success: false, error: error.message });
+    }
+
+    const formatted = (applications || []).map((a) => ({
+      ...a,
+      id: a.application_id,
+      applicationId: a.application_id,
+      serviceName: a.service_name,
+      serviceNameMr: a.service_name_mr || a.service_name,
+      applicantName: a.applicant_name,
+      appliedDate: a.applied_date,
+      statusColor: a.status_color,
+      submittedAt: a.submitted_at,
+      lastUpdated: a.last_updated,
+    }));
+
+    res.json({ success: true, count: formatted.length, applications: formatted });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
@@ -383,82 +241,38 @@ router.get('/applications', async (req, res) => {
 router.put('/applications/:id/status', async (req, res) => {
   try {
     const { status, remarks } = req.body;
-    const validStatuses = [
-      'Draft',
-      'Submitted',
-      'Under Review',
-      'Documents Required',
-      'Approved',
-      'Rejected',
-      'Completed',
-    ];
+    const applicationId = req.params.id;
 
-    if (!validStatuses.includes(status)) {
-      return res.status(400).json({
-        success: false,
-        error: `Invalid status. Must be one of: ${validStatuses.join(', ')}`,
-      });
-    }
-
-    const statusColorMap = {
-      Draft: 'bg-slate-100 text-slate-800 border-slate-300',
-      Submitted: 'bg-blue-100 text-blue-800 border-blue-300',
-      'Under Review': 'bg-amber-100 text-amber-800 border-amber-300',
-      'Documents Required': 'bg-purple-100 text-purple-800 border-purple-300',
-      Approved: 'bg-emerald-100 text-emerald-800 border-emerald-300',
-      Rejected: 'bg-red-100 text-red-800 border-red-300',
-      Completed: 'bg-teal-100 text-teal-800 border-teal-300',
-    };
-
-    const application = await Application.findOne({
-      $or: [{ applicationId: req.params.id }, { _id: req.params.id.match(/^[0-9a-fA-F]{24}$/) ? req.params.id : null }],
+    const application = await updateApplicationStatus({
+      applicationId,
+      status,
+      remarks,
+      changedBy: req.user.name || 'Government Administrator',
     });
 
-    if (!application) {
-      return res.status(404).json({ success: false, error: 'Application record not found.' });
-    }
-
-    const previousStatus = application.status;
-    application.status = status;
-    application.statusColor = statusColorMap[status] || 'bg-blue-100 text-blue-800 border-blue-300';
-    if (remarks) application.remarks = remarks;
-    application.lastUpdated = new Date();
-    await application.save();
-
-    // Create Notification for the citizen
-    await Notification.create({
-      notificationId: `NOTIF-${Date.now()}`,
-      userId: application.userId,
-      title: `Application ${application.applicationId} Updated`,
-      titleMr: `अर्ज ${application.applicationId} अद्ययावत झाला`,
+    // Send notification
+    await supabase.from('notifications').insert({
+      user_id: application.user_id,
+      title: `Application ${application.application_id} Updated`,
+      title_mr: `अर्ज ${application.application_id} अद्ययावत झाला`,
       message: `Status updated to: ${status}${remarks ? '. Remarks: ' + remarks : ''}`,
-      messageMr: `अर्जाची स्थिती: ${status}`,
+      message_mr: `अर्जाची स्थिती: ${status}`,
       type: status === 'Approved' ? 'success' : status === 'Rejected' ? 'warning' : 'info',
-    });
-
-    // Write AuditLog
-    await createAuditLog({
-      actorId: req.user.adminId,
-      actorRole: 'admin',
-      action: 'APPLICATION_STATUS_UPDATE',
-      targetResource: 'Application',
-      targetId: application.applicationId,
-      metadata: {
-        previousStatus,
-        newStatus: status,
-        remarks: remarks || '',
-        applicantName: application.applicantName,
-      },
     });
 
     res.json({
       success: true,
       message: `Application status updated to ${status}.`,
-      application,
+      application: {
+        ...application,
+        id: application.application_id,
+        applicationId: application.application_id,
+        serviceName: application.service_name,
+      },
     });
   } catch (err) {
     console.error('Status update error:', err);
-    res.status(500).json({ success: false, error: err.message });
+    res.status(500).json({ success: false, error: 'Failed to update application status: ' + err.message });
   }
 });
 
@@ -466,22 +280,24 @@ router.put('/applications/:id/status', async (req, res) => {
 router.get('/schemes', async (req, res) => {
   try {
     const { department, active, search } = req.query;
-    const filter = {};
-    if (department && department !== 'All') {
-      filter.department = new RegExp(department, 'i');
+    let query = supabase.from('schemes').select('*');
+
+    if (active !== undefined) {
+      query = query.eq('active', active === 'true');
     }
-    if (active !== undefined && active !== 'All') {
-      filter.active = active === 'true';
+    if (department) {
+      query = query.ilike('department_id', `%${department}%`);
     }
     if (search) {
-      filter.$or = [
-        { name: new RegExp(search, 'i') },
-        { schemeId: new RegExp(search, 'i') },
-        { description: new RegExp(search, 'i') },
-      ];
+      query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`);
     }
 
-    const schemes = await Scheme.find(filter).sort({ createdAt: -1 });
+    const { data: schemes, error } = await query.order('created_at', { ascending: false });
+
+    if (error) {
+      return res.status(500).json({ success: false, error: error.message });
+    }
+
     res.json({ success: true, count: schemes.length, schemes });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -491,41 +307,45 @@ router.get('/schemes', async (req, res) => {
 // ─── POST /api/admin/schemes ──────────────────────────────────────────────────
 router.post('/schemes', async (req, res) => {
   try {
-    const schemeData = req.body;
-    if (!schemeData.name || !schemeData.department || !schemeData.applicationRoute) {
-      return res.status(400).json({
-        success: false,
-        error: 'Scheme name, department, and applicationRoute are required.',
-      });
+    const body = req.body;
+    const schemeId = body.schemeId || `SCH-${Date.now().toString(36).toUpperCase()}`;
+
+    const newScheme = {
+      scheme_id: schemeId,
+      name: body.name,
+      name_mr: body.nameMr || body.name,
+      department_id: body.departmentId || 'general',
+      department_name: body.department || body.departmentName || 'General Administration',
+      department_name_mr: body.departmentMr || body.departmentNameMr || '',
+      category: body.category || 'Welfare',
+      description: body.description || '',
+      benefits: body.benefits || '',
+      income_limit: body.incomeLimit ? Number(body.incomeLimit) : null,
+      min_age: body.minAge ? Number(body.minAge) : null,
+      max_age: body.maxAge ? Number(body.maxAge) : null,
+      allowed_categories: body.allowedCategories || [],
+      keywords: body.keywords || [],
+      problem_types: body.problemTypes || [],
+      application_route: body.applicationRoute || `/apply/scheme/${schemeId}`,
+      active: body.active !== false,
+    };
+
+    const { data, error } = await supabase.from('schemes').insert(newScheme).select().single();
+
+    if (error) {
+      return res.status(500).json({ success: false, error: error.message });
     }
-
-    const schemeId =
-      schemeData.schemeId ||
-      schemeData.name
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)/g, '');
-
-    const scheme = await Scheme.create({
-      ...schemeData,
-      schemeId,
-      active: schemeData.active !== false,
-    });
 
     await createAuditLog({
       actorId: req.user.adminId,
       actorRole: 'admin',
       action: 'SCHEME_CREATED',
       targetResource: 'Scheme',
-      targetId: scheme.schemeId,
-      metadata: { name: scheme.name, department: scheme.department },
+      targetId: schemeId,
+      metadata: { name: newScheme.name },
     });
 
-    res.status(201).json({
-      success: true,
-      message: 'New scheme added to state repository.',
-      scheme,
-    });
+    res.status(201).json({ success: true, message: 'Scheme created successfully.', scheme: data });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
@@ -534,26 +354,35 @@ router.post('/schemes', async (req, res) => {
 // ─── PUT /api/admin/schemes/:id ───────────────────────────────────────────────
 router.put('/schemes/:id', async (req, res) => {
   try {
-    const scheme = await Scheme.findOneAndUpdate(
-      { $or: [{ schemeId: req.params.id }, { _id: req.params.id.match(/^[0-9a-fA-F]{24}$/) ? req.params.id : null }] },
-      req.body,
-      { new: true }
-    );
+    const id = req.params.id;
+    const body = req.body;
 
-    if (!scheme) {
-      return res.status(404).json({ success: false, error: 'Scheme not found.' });
+    const updates = {
+      name: body.name,
+      name_mr: body.nameMr,
+      description: body.description,
+      benefits: body.benefits,
+      income_limit: body.incomeLimit !== undefined ? Number(body.incomeLimit) : undefined,
+      min_age: body.minAge !== undefined ? Number(body.minAge) : undefined,
+      max_age: body.maxAge !== undefined ? Number(body.maxAge) : undefined,
+      active: body.active !== undefined ? Boolean(body.active) : undefined,
+      updated_at: new Date().toISOString(),
+    };
+
+    Object.keys(updates).forEach((k) => updates[k] === undefined && delete updates[k]);
+
+    const { data, error } = await supabase
+      .from('schemes')
+      .update(updates)
+      .or(`scheme_id.eq.${id},id.eq.${id.match(/^[0-9a-fA-F-]{36}$/) ? id : '00000000-0000-0000-0000-000000000000'}`)
+      .select()
+      .single();
+
+    if (error) {
+      return res.status(500).json({ success: false, error: error.message });
     }
 
-    await createAuditLog({
-      actorId: req.user.adminId,
-      actorRole: 'admin',
-      action: 'SCHEME_UPDATED',
-      targetResource: 'Scheme',
-      targetId: scheme.schemeId,
-      metadata: { name: scheme.name },
-    });
-
-    res.json({ success: true, message: 'Scheme updated successfully.', scheme });
+    res.json({ success: true, message: 'Scheme updated.', scheme: data });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
@@ -562,24 +391,17 @@ router.put('/schemes/:id', async (req, res) => {
 // ─── DELETE /api/admin/schemes/:id ────────────────────────────────────────────
 router.delete('/schemes/:id', async (req, res) => {
   try {
-    const scheme = await Scheme.findOneAndDelete({
-      $or: [{ schemeId: req.params.id }, { _id: req.params.id.match(/^[0-9a-fA-F]{24}$/) ? req.params.id : null }],
-    });
+    const id = req.params.id;
+    const { error } = await supabase
+      .from('schemes')
+      .update({ active: false })
+      .or(`scheme_id.eq.${id},id.eq.${id.match(/^[0-9a-fA-F-]{36}$/) ? id : '00000000-0000-0000-0000-000000000000'}`);
 
-    if (!scheme) {
-      return res.status(404).json({ success: false, error: 'Scheme not found.' });
+    if (error) {
+      return res.status(500).json({ success: false, error: error.message });
     }
 
-    await createAuditLog({
-      actorId: req.user.adminId,
-      actorRole: 'admin',
-      action: 'SCHEME_DELETED',
-      targetResource: 'Scheme',
-      targetId: scheme.schemeId,
-      metadata: { name: scheme.name },
-    });
-
-    res.json({ success: true, message: 'Scheme removed from database.' });
+    res.json({ success: true, message: 'Scheme marked as inactive.' });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
@@ -589,13 +411,15 @@ router.delete('/schemes/:id', async (req, res) => {
 router.get('/documents', async (req, res) => {
   try {
     const { source, verificationStatus } = req.query;
-    const filter = {};
-    if (source && source !== 'All') filter.source = source;
-    if (verificationStatus && verificationStatus !== 'All') {
-      filter.verificationStatus = verificationStatus;
-    }
+    let query = supabase.from('documents').select('*');
 
-    const documents = await Document.find(filter).sort({ createdAt: -1 });
+    if (source) query = query.ilike('source', `%${source}%`);
+    if (verificationStatus) query = query.ilike('verification_status', `%${verificationStatus}%`);
+
+    const { data: documents, error } = await query.order('created_at', { ascending: false });
+
+    if (error) return res.status(500).json({ success: false, error: error.message });
+
     res.json({ success: true, count: documents.length, documents });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -606,10 +430,14 @@ router.get('/documents', async (req, res) => {
 router.get('/consents', async (req, res) => {
   try {
     const { status } = req.query;
-    const filter = {};
-    if (status && status !== 'All') filter.status = status;
+    let query = supabase.from('consents').select('*');
 
-    const consents = await Consent.find(filter).sort({ createdAt: -1 });
+    if (status) query = query.eq('status', status);
+
+    const { data: consents, error } = await query.order('created_at', { ascending: false });
+
+    if (error) return res.status(500).json({ success: false, error: error.message });
+
     res.json({ success: true, count: consents.length, consents });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -619,12 +447,18 @@ router.get('/consents', async (req, res) => {
 // ─── GET /api/admin/audit-logs ────────────────────────────────────────────────
 router.get('/audit-logs', async (req, res) => {
   try {
-    const { action, actorRole, limit = 100 } = req.query;
-    const filter = {};
-    if (action && action !== 'All') filter.action = action;
-    if (actorRole && actorRole !== 'All') filter.actorRole = actorRole;
+    const { action, actorRole, limit = 50 } = req.query;
+    let query = supabase.from('audit_logs').select('*');
 
-    const logs = await AuditLog.find(filter).sort({ timestamp: -1 }).limit(Number(limit));
+    if (action) query = query.ilike('action', `%${action}%`);
+    if (actorRole) query = query.eq('actor_role', actorRole);
+
+    const { data: logs, error } = await query
+      .order('created_at', { ascending: false })
+      .limit(Number(limit));
+
+    if (error) return res.status(500).json({ success: false, error: error.message });
+
     res.json({ success: true, count: logs.length, logs });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -640,38 +474,29 @@ router.post('/notifications/broadcast', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Title and message are required.' });
     }
 
-    let targetUsers = [];
-    if (targetUserId) {
-      targetUsers = [{ userId: targetUserId }];
-    } else {
-      targetUsers = await User.find({ role: 'citizen' }).select('userId');
-    }
-
-    const notificationsToInsert = targetUsers.map((u) => ({
-      notificationId: `NOTIF-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-      userId: u.userId,
+    const newNotif = {
+      user_id: targetUserId || 'ALL',
       title,
-      titleMr: titleMr || title,
+      title_mr: titleMr || title,
       message,
-      messageMr: messageMr || message,
+      message_mr: messageMr || message,
       type,
-    }));
+      read: false,
+    };
 
-    await Notification.insertMany(notificationsToInsert);
+    const { data, error } = await supabase.from('notifications').insert(newNotif).select().single();
+
+    if (error) return res.status(500).json({ success: false, error: error.message });
 
     await createAuditLog({
       actorId: req.user.adminId,
       actorRole: 'admin',
-      action: 'ADMIN_BROADCAST_NOTIFICATION',
+      action: 'NOTIFICATION_BROADCAST',
       targetResource: 'Notification',
-      metadata: { recipientCount: notificationsToInsert.length, title },
+      metadata: { title, target: targetUserId || 'ALL' },
     });
 
-    res.json({
-      success: true,
-      message: `Notification broadcasted to ${notificationsToInsert.length} citizen(s).`,
-      count: notificationsToInsert.length,
-    });
+    res.json({ success: true, message: 'Notification broadcasted successfully.', notification: data });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }

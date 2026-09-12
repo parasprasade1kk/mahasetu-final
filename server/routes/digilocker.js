@@ -1,20 +1,24 @@
 const express = require('express');
 const router = express.Router();
-const DigiLockerConnection = require('../models/DigiLockerConnection');
-const Profile = require('../models/Profile');
 const { verifyToken, requireCitizen } = require('../middleware/auth');
-const { createAuditLog } = require('../utils/auditLogger');
+const { supabase } = require('../config/supabase');
+const { createAuditLog } = require('../services/supabaseService');
 
 // ─── GET /api/digilocker/status ───────────────────────────────────────────────
 router.get('/status', verifyToken, requireCitizen, async (req, res) => {
   try {
     const userId = req.user.userId;
-    const connection = await DigiLockerConnection.findOne({ userId });
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('digilocker_linked, digilocker_id, digilocker_linked_at')
+      .eq('user_id', userId)
+      .maybeSingle();
+
     res.json({
       success: true,
-      isConnected: connection ? connection.isConnected : false,
-      digiLockerId: connection ? connection.digiLockerId : null,
-      linkedAt: connection ? connection.linkedAt : null,
+      isConnected: Boolean(profile?.digilocker_linked),
+      digiLockerId: profile?.digilocker_id || null,
+      linkedAt: profile?.digilocker_linked_at || null,
       isDemo: true,
       providerNote: 'Demo Integration — Production deployment connects to MeitY DigiLocker API Gateway',
     });
@@ -37,29 +41,16 @@ router.post('/link', verifyToken, requireCitizen, async (req, res) => {
     }
 
     const digiLockerId = `DL-MH-${userId.slice(-4)}-${Math.floor(1000 + Math.random() * 9000)}`;
-    const now = new Date();
+    const now = new Date().toISOString();
 
-    const connection = await DigiLockerConnection.findOneAndUpdate(
-      { userId },
-      {
-        userId,
-        isConnected: true,
-        linkedAt: now,
-        digiLockerId,
-        consentGiven: true,
-      },
-      { upsert: true, new: true }
-    );
-
-    // Update profile
-    await Profile.findOneAndUpdate(
-      { userId },
-      {
-        digiLockerLinked: true,
-        digiLockerId,
-        digiLockerLinkedAt: now,
-      }
-    );
+    await supabase
+      .from('profiles')
+      .update({
+        digilocker_linked: true,
+        digilocker_id: digiLockerId,
+        digilocker_linked_at: now,
+      })
+      .eq('user_id', userId);
 
     await createAuditLog({
       actorId: userId,
@@ -87,15 +78,14 @@ router.post('/unlink', verifyToken, requireCitizen, async (req, res) => {
   try {
     const userId = req.user.userId;
 
-    await DigiLockerConnection.findOneAndUpdate(
-      { userId },
-      { isConnected: false, digiLockerId: '', linkedAt: null }
-    );
-
-    await Profile.findOneAndUpdate(
-      { userId },
-      { digiLockerLinked: false, digiLockerId: '', digiLockerLinkedAt: null }
-    );
+    await supabase
+      .from('profiles')
+      .update({
+        digilocker_linked: false,
+        digilocker_id: null,
+        digilocker_linked_at: null,
+      })
+      .eq('user_id', userId);
 
     await createAuditLog({
       actorId: userId,

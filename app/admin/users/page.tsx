@@ -88,7 +88,7 @@ export default function AdminUsersPage() {
             <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-blue-100 text-blue-800 border border-blue-200">
               Citizen Identity Vault
             </span>
-            <span className="text-xs text-slate-500 font-mono">MongoDB Users Collection</span>
+            <span className="text-xs text-slate-500 font-mono">Supabase Profiles Table</span>
           </div>
           <h1 className="text-2xl font-black text-[#002840] mt-1 tracking-tight">
             Citizen Registry & Profiles
@@ -180,7 +180,7 @@ export default function AdminUsersPage() {
               {loading ? (
                 <tr>
                   <td colSpan={9} className="py-8 text-center text-slate-400">
-                    Loading citizens from MongoDB Atlas...
+                    Loading citizens from Supabase...
                   </td>
                 </tr>
               ) : users.length === 0 ? (
@@ -314,7 +314,7 @@ export default function AdminUsersPage() {
             {/* Modal Body */}
             <div className="p-6 overflow-y-auto flex-1 text-xs space-y-4">
               {modalLoading ? (
-                <p className="text-center text-slate-400 py-8">Fetching records from MongoDB...</p>
+                <p className="text-center text-slate-400 py-8">Fetching records from Supabase...</p>
               ) : modalTab === 'profile' ? (
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">

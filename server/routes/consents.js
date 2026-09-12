@@ -1,13 +1,33 @@
 const express = require('express');
 const router = express.Router();
-const Consent = require('../models/Consent');
 const { verifyToken, requireCitizen } = require('../middleware/auth');
-const { createAuditLog } = require('../utils/auditLogger');
+const { getConsentsByCitizen, toggleConsent } = require('../services/supabaseService');
+
+function formatConsent(c) {
+  if (!c) return null;
+  return {
+    ...c,
+    id: c.consent_id,
+    consentId: c.consent_id,
+    userId: c.user_id,
+    requestingDept: c.requesting_dept,
+    requestingDeptMr: c.requesting_dept_mr || c.requesting_dept,
+    sourceDept: c.source_dept,
+    sourceDeptMr: c.source_dept_mr || c.source_dept,
+    purpose: c.purpose,
+    purposeMr: c.purpose_mr || c.purpose,
+    dataFields: c.data_fields || [],
+    status: c.status,
+    validUntil: c.valid_until || '31 Dec 2026',
+    granted: c.granted,
+  };
+}
 
 // ─── GET /api/consents/my ─────────────────────────────────────────────────────
 router.get('/my', verifyToken, requireCitizen, async (req, res) => {
   try {
-    const consents = await Consent.find({ userId: req.user.userId }).sort({ createdAt: 1 });
+    const raw = await getConsentsByCitizen(req.user.userId);
+    const consents = raw.map(formatConsent);
     res.json({ success: true, count: consents.length, consents });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -17,40 +37,12 @@ router.get('/my', verifyToken, requireCitizen, async (req, res) => {
 // ─── POST /api/consents/toggle/:id ────────────────────────────────────────────
 router.post('/toggle/:id', verifyToken, requireCitizen, async (req, res) => {
   try {
-    const userId = req.user.userId;
-    const consent = await Consent.findOne({ userId, consentId: req.params.id });
-
-    if (!consent) {
-      return res.status(404).json({ success: false, error: 'Consent record not found.' });
-    }
-
-    const nextStatus = consent.status === 'Active' ? 'Revoked' : 'Active';
-    consent.status = nextStatus;
-    if (nextStatus === 'Revoked') {
-      consent.revokedAt = new Date();
-    } else {
-      consent.grantedAt = new Date();
-      consent.revokedAt = null;
-    }
-    await consent.save();
-
-    await createAuditLog({
-      actorId: userId,
-      actorRole: 'citizen',
-      action: nextStatus === 'Active' ? 'CONSENT_GRANTED' : 'CONSENT_REVOKED',
-      targetResource: 'Consent',
-      targetId: consent.consentId,
-      metadata: {
-        requestingDept: consent.requestingDept,
-        sourceDept: consent.sourceDept,
-        status: nextStatus,
-      },
-    });
-
+    const consent = await toggleConsent(req.params.id, req.user.userId);
+    const formatted = formatConsent(consent);
     res.json({
       success: true,
-      message: `Consent successfully ${nextStatus === 'Active' ? 're-activated' : 'revoked'}.`,
-      consent,
+      message: `Consent successfully ${formatted.status === 'Active' ? 're-activated' : 'revoked'}.`,
+      consent: formatted,
     });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });

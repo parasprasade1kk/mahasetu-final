@@ -1,4 +1,4 @@
-const AuditLog = require('../models/AuditLog');
+const { supabase } = require('../config/supabase');
 
 async function createAuditLog({
   actorId,
@@ -12,7 +12,6 @@ async function createAuditLog({
 }) {
   try {
     const sanitizedMetadata = { ...metadata };
-    // Strictly strip any sensitive credentials if passed
     delete sanitizedMetadata.password;
     delete sanitizedMetadata.passwordHash;
     delete sanitizedMetadata.otp;
@@ -24,21 +23,19 @@ async function createAuditLog({
       .slice(2, 6)
       .toUpperCase()}`;
 
-    await AuditLog.create({
-      logId,
-      actorId: actorId || 'ANONYMOUS',
-      actorRole,
+    await supabase.from('audit_logs').insert({
+      log_id: logId,
+      actor_id: actorId || 'ANONYMOUS',
+      actor_role: actorRole,
       action,
-      targetResource,
-      targetId,
+      target_resource: targetResource,
+      target_id: targetId,
       metadata: sanitizedMetadata,
-      ipAddress,
+      ip_address: ipAddress,
       status,
-      timestamp: new Date(),
     });
   } catch (err) {
-    // Non-blocking error logging
-    console.error('Failed to persist audit log:', err.message);
+    console.error('Failed to persist audit log to Supabase:', err.message);
   }
 }
 

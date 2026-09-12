@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
-import { connectToDatabase } from '@/lib/mongodb';
-import { Application } from '@/lib/models';
+import { getApplicationsByCitizen } from '@/lib/supabaseService';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,19 +29,31 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const conn = await connectToDatabase();
-    if (!conn) {
-      return NextResponse.json(
-        { success: false, error: 'Database connection unavailable.' },
-        { status: 503 }
-      );
-    }
+    const applications = await getApplicationsByCitizen(userId);
 
-    const applications = await Application.find({ userId }).sort({ createdAt: -1 }).lean();
+    const mapped = (applications || []).map((a: any) => ({
+      ...a,
+      id: a.application_id,
+      applicationId: a.application_id,
+      serviceName: a.service_name,
+      serviceNameMr: a.service_name_mr || a.service_name,
+      department: a.department,
+      departmentMr: a.department_mr || a.department,
+      appliedDate: a.applied_date,
+      status: a.status,
+      statusColor: a.status_color,
+      downloadUrl: a.download_url,
+      applicantName: a.applicant_name,
+      district: a.district,
+      serviceId: a.service_id,
+      schemeId: a.scheme_id,
+      applicationType: a.type,
+      updatedAt: a.last_updated,
+    }));
 
     return NextResponse.json({
       success: true,
-      applications,
+      applications: mapped,
     });
   } catch (err: any) {
     return NextResponse.json(

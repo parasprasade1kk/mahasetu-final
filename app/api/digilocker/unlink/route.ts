@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
-import { connectToDatabase } from '@/lib/mongodb';
-import { DigiLockerConnection, Profile, AuditLog } from '@/lib/models';
+import { supabase } from '@/lib/supabaseClient';
+import { createAuditLog } from '@/lib/supabaseService';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,31 +39,22 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const conn = await connectToDatabase();
-    if (!conn) {
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        digilocker_linked: false,
+        digilocker_linked_at: null,
+      })
+      .eq('user_id', userId);
+
+    if (error) {
       return NextResponse.json(
-        { success: false, error: 'Database connection unavailable.' },
-        { status: 503 }
+        { success: false, error: 'Failed to unlink DigiLocker: ' + error.message },
+        { status: 500 }
       );
     }
 
-    await DigiLockerConnection.findOneAndUpdate(
-      { userId },
-      {
-        isConnected: false,
-        linkedAt: null,
-      }
-    );
-
-    await Profile.findOneAndUpdate(
-      { userId },
-      {
-        digiLockerLinked: false,
-      }
-    );
-
-    await AuditLog.create({
-      logId: `AUD-${Date.now()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`,
+    await createAuditLog({
       actorId: userId,
       actorRole: 'citizen',
       action: 'DIGILOCKER_UNLINKED',

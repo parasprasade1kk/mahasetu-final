@@ -57,7 +57,7 @@ export default function AdminDocumentsPage() {
             <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-cyan-100 text-cyan-800 border border-cyan-200">
               State Certificate Repository
             </span>
-            <span className="text-xs text-slate-500 font-mono">MongoDB Documents Collection</span>
+            <span className="text-xs text-slate-500 font-mono">Supabase Documents Table</span>
           </div>
           <h1 className="text-2xl font-black text-[#002840] mt-1 tracking-tight">
             Document Vault & Certificate Verification
@@ -121,7 +121,7 @@ export default function AdminDocumentsPage() {
               {loading ? (
                 <tr>
                   <td colSpan={8} className="py-8 text-center text-slate-400">
-                    Loading documents from MongoDB...
+                    Loading documents from Supabase...
                   </td>
                 </tr>
               ) : documents.length === 0 ? (

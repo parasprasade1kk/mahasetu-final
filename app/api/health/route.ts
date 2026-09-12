@@ -1,28 +1,22 @@
 import { NextResponse } from 'next/server';
-import { connectToDatabase, isDatabaseConnected, getDbDiagnostics } from '@/lib/mongodb';
+import { supabase } from '@/lib/supabaseClient';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  await connectToDatabase();
-  const dbConnected = isDatabaseConnected();
-  const diagnostics = getDbDiagnostics();
+  const { error } = await supabase.from('departments').select('count', { count: 'exact', head: true });
+  const isConnected = !error;
 
   return NextResponse.json(
     {
-      status: dbConnected ? 'ok' : 'error',
-      database: dbConnected ? 'connected' : 'disconnected',
+      status: isConnected ? 'ok' : 'degraded',
+      database: isConnected ? 'connected' : 'disconnected',
+      provider: 'Supabase PostgreSQL',
       environment: process.env.NODE_ENV || 'production',
-      diagnostics: {
-        uriConfigured: diagnostics.uriConfigured,
-        placeholderDetected: diagnostics.placeholderDetected,
-        placeholderType: diagnostics.placeholderType,
-        error: diagnostics.lastError,
-      },
       timestamp: new Date().toISOString(),
     },
     {
-      status: dbConnected ? 200 : 503,
+      status: isConnected ? 200 : 503,
     }
   );
 }

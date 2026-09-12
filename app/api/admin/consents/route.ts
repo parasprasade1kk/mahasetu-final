@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
-import { connectToDatabase } from '@/lib/mongodb';
-import { Consent } from '@/lib/models';
-import { ensureDatabaseSeeded } from '@/lib/dbSeed';
+import { supabase } from '@/lib/supabaseClient';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,28 +35,45 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const conn = await connectToDatabase();
-    if (!conn) {
-      return NextResponse.json(
-        { success: false, error: 'Database connection unavailable.' },
-        { status: 503 }
-      );
-    }
-
-    await ensureDatabaseSeeded();
-
     const { searchParams } = new URL(req.url);
     const status = searchParams.get('status');
 
-    const filter: any = {};
-    if (status && status !== 'All') filter.status = status;
+    let query = supabase.from('consents').select('*');
 
-    const consents = await Consent.find(filter).sort({ createdAt: -1 }).lean();
+    if (status && status !== 'All') {
+      query = query.eq('status', status);
+    }
+
+    const { data: consents, error } = await query.order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Fetch admin consents error:', error.message);
+      return NextResponse.json(
+        { success: false, error: 'Failed to retrieve consents: ' + error.message },
+        { status: 500 }
+      );
+    }
+
+    const mapped = (consents || []).map((c: any) => ({
+      ...c,
+      id: c.consent_id,
+      consentId: c.consent_id,
+      requestingDept: c.requesting_dept,
+      requestingDeptMr: c.requesting_dept_mr,
+      sourceDept: c.source_dept,
+      sourceDeptMr: c.source_dept_mr,
+      purpose: c.purpose,
+      purposeMr: c.purpose_mr,
+      dataFields: c.data_fields || [],
+      status: c.status,
+      validUntil: c.valid_until,
+      createdAt: c.created_at,
+    }));
 
     return NextResponse.json({
       success: true,
-      consents,
-      total: consents.length,
+      consents: mapped,
+      total: mapped.length,
     });
   } catch (err: any) {
     return NextResponse.json(

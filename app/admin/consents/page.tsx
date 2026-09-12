@@ -52,7 +52,7 @@ export default function AdminConsentsPage() {
             <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200">
               DPDP Act 2023 Statutory Compliance
             </span>
-            <span className="text-xs text-slate-500 font-mono">MongoDB Consents Collection</span>
+            <span className="text-xs text-slate-500 font-mono">Supabase Consents Table</span>
           </div>
           <h1 className="text-2xl font-black text-[#002840] mt-1 tracking-tight">
             Inter-Departmental Data Consent Registry
@@ -113,7 +113,7 @@ export default function AdminConsentsPage() {
               {loading ? (
                 <tr>
                   <td colSpan={8} className="py-8 text-center text-slate-400">
-                    Loading consent records from MongoDB...
+                    Loading consent records from Supabase...
                   </td>
                 </tr>
               ) : consents.length === 0 ? (

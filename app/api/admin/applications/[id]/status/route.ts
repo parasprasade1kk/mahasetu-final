@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
-import { connectToDatabase } from '@/lib/mongodb';
-import { Application, AuditLog } from '@/lib/models';
+import { updateApplicationStatus } from '@/lib/supabaseService';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,7 +9,7 @@ const JWT_SECRET =
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
     const authHeader = req.headers.get('authorization');
@@ -40,16 +38,18 @@ export async function PUT(
       );
     }
 
-    const conn = await connectToDatabase();
-    if (!conn) {
+    const resolvedParams = await Promise.resolve(context.params);
+    const id = resolvedParams?.id;
+
+    if (!id) {
       return NextResponse.json(
-        { success: false, error: 'Database connection unavailable.' },
-        { status: 503 }
+        { success: false, error: 'Application ID is required.' },
+        { status: 400 }
       );
     }
 
-    const { id } = params;
-    const { status, remarks } = await req.json();
+    const body = await req.json();
+    const { status, remarks } = body || {};
 
     if (!status) {
       return NextResponse.json(
@@ -58,53 +58,29 @@ export async function PUT(
       );
     }
 
-    let statusColor = 'bg-blue-100 text-blue-800 border-blue-300';
-    if (status === 'Approved' || status === 'Completed') {
-      statusColor = 'bg-teal-100 text-teal-800 border-teal-300';
-    } else if (status === 'Rejected') {
-      statusColor = 'bg-red-100 text-red-800 border-red-300';
-    } else if (status === 'Under Review' || status === 'Under Scrutiny') {
-      statusColor = 'bg-amber-100 text-amber-800 border-amber-300';
-    }
-
-    const query = mongoose.Types.ObjectId.isValid(id)
-      ? { $or: [{ applicationId: id }, { _id: id }] }
-      : { applicationId: id };
-
-    const application = await Application.findOneAndUpdate(
-      query,
-      {
-        status,
-        statusColor,
-        remarks: remarks || '',
-        lastUpdated: new Date(),
-      },
-      { returnDocument: 'after' }
-    );
-
-    if (!application) {
-      return NextResponse.json(
-        { success: false, error: `Application ${id} not found.` },
-        { status: 404 }
-      );
-    }
-
-    // Audit log
-    await AuditLog.create({
-      logId: `AUD-${Date.now()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`,
-      actorId: decoded.adminId || '1120610',
-      actorRole: 'admin',
-      action: 'UPDATE_APPLICATION_STATUS',
-      targetResource: 'Application',
-      targetId: application.applicationId,
-      status: 'SUCCESS',
-      metadata: { newStatus: status, remarks },
+    const updated = await updateApplicationStatus({
+      applicationId: id,
+      status,
+      remarks,
+      changedBy: decoded.name || 'Government Administrator',
     });
+
+    const mapped = {
+      ...updated,
+      id: updated.application_id,
+      applicationId: updated.application_id,
+      applicantName: updated.applicant_name,
+      serviceName: updated.service_name,
+      status: updated.status,
+      statusColor: updated.status_color,
+      remarks: updated.remarks,
+      lastUpdated: updated.last_updated,
+    };
 
     return NextResponse.json({
       success: true,
-      message: `Application ${application.applicationId} status updated to ${status}.`,
-      application,
+      message: `Application ${mapped.applicationId} status updated to ${status}.`,
+      application: mapped,
     });
   } catch (err: any) {
     return NextResponse.json(

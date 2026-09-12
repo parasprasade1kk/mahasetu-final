@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
-import { connectToDatabase } from '@/lib/mongodb';
-import { User, Profile } from '@/lib/models';
-import { ensureDatabaseSeeded } from '@/lib/dbSeed';
+import { supabase } from '@/lib/supabaseClient';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,16 +35,6 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const conn = await connectToDatabase();
-    if (!conn) {
-      return NextResponse.json(
-        { success: false, error: 'Database connection unavailable.' },
-        { status: 503 }
-      );
-    }
-
-    await ensureDatabaseSeeded();
-
     const { searchParams } = new URL(req.url);
     const search = searchParams.get('search');
     const district = searchParams.get('district');
@@ -54,58 +42,58 @@ export async function GET(req: NextRequest) {
     const page = Number(searchParams.get('page')) || 1;
     const limit = Number(searchParams.get('limit')) || 50;
 
-    const userFilter: any = { role: 'citizen' };
+    let query = supabase.from('profiles').select('*', { count: 'exact' });
+
     if (search) {
-      userFilter.$or = [
-        { fullName: new RegExp(search, 'i') },
-        { mobile: new RegExp(search, 'i') },
-        { userId: new RegExp(search, 'i') },
-      ];
+      query = query.or(
+        `full_name.ilike.%${search}%,mobile_number.ilike.%${search}%,user_id.ilike.%${search}%`
+      );
     }
-
-    const users = await User.find(userFilter)
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .lean();
-
-    const userIds = users.map((u) => u.userId);
-    const profiles = await Profile.find({ userId: { $in: userIds } }).lean();
-    const profileMap = Object.fromEntries(profiles.map((p) => [p.userId, p]));
-
-    let combined = users.map((u) => {
-      const p = profileMap[u.userId] || {};
-      return {
-        userId: u.userId,
-        fullName: u.fullName,
-        mobile: u.mobile,
-        aadhaarMasked: u.aadhaarMasked,
-        email: u.email || '',
-        isVerified: u.isVerified,
-        createdAt: u.createdAt,
-        district: p.district || 'Maharashtra',
-        category: p.category || 'General/Open',
-        occupation: p.occupation || 'Not Specified',
-        annualIncomeAmount: p.annualIncomeAmount || 0,
-        educationLevel: p.educationLevel || '',
-        isStudent: Boolean(p.isStudent),
-        hasDisability: Boolean(p.hasDisability),
-        digiLockerLinked: Boolean(p.digiLockerLinked),
-        confirmedAccurate: Boolean(p.confirmedAccurate),
-      };
-    });
-
     if (district && district !== 'All') {
-      combined = combined.filter((u) => u.district.toLowerCase() === district.toLowerCase());
+      query = query.ilike('district', district);
     }
     if (category && category !== 'All') {
-      combined = combined.filter((u) => u.category.toLowerCase() === category.toLowerCase());
+      query = query.ilike('caste_category', category);
     }
+
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+
+    const { data: profiles, count, error } = await query
+      .order('created_at', { ascending: false })
+      .range(from, to);
+
+    if (error) {
+      console.error('Fetch admin users error:', error.message);
+      return NextResponse.json(
+        { success: false, error: 'Failed to retrieve users: ' + error.message },
+        { status: 500 }
+      );
+    }
+
+    const combined = (profiles || []).map((p: any) => ({
+      userId: p.user_id,
+      fullName: p.full_name,
+      mobile: p.mobile_number,
+      aadhaarMasked: p.aadhaar_masked,
+      email: p.email || '',
+      isVerified: Boolean(p.aadhaar_hash),
+      createdAt: p.created_at,
+      district: p.district || 'Maharashtra',
+      category: p.caste_category || 'General/Open',
+      occupation: p.occupation || 'Not Specified',
+      annualIncomeAmount: p.annual_income_amount || 0,
+      educationLevel: p.current_education_level || '',
+      isStudent: Boolean(p.student_status),
+      hasDisability: Boolean(p.disability_status),
+      digiLockerLinked: Boolean(p.digilocker_linked),
+      confirmedAccurate: Boolean(p.confirmed_accurate),
+    }));
 
     return NextResponse.json({
       success: true,
       users: combined,
-      total: combined.length,
+      total: count || combined.length,
     });
   } catch (err: any) {
     return NextResponse.json(

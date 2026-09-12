@@ -1,5 +1,5 @@
 // ─── MahaSetu Centralized API Client ─────────────────────────────────────────
-// Handles communication between Next.js frontend and Express/MongoDB backend.
+// Handles communication between Next.js frontend and Express/Supabase backend.
 // Supports both relative /api calls (via Next rewrites) and absolute NEXT_PUBLIC_API_URL.
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';

@@ -220,7 +220,7 @@ export default function AdminDashboardPage() {
               Mantralaya Executive View
             </span>
             <span className="text-xs text-slate-500 font-mono">
-              Live Database: MongoDB Atlas
+              Live Database: Supabase PostgreSQL
             </span>
             {lastUpdated && (
               <span className="text-xs text-slate-500 font-mono">

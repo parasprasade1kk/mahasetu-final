@@ -74,7 +74,7 @@ export default function AdminAuditLogsPage() {
             <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-200">
               Immutable System Audit Trail
             </span>
-            <span className="text-xs text-slate-500 font-mono">MongoDB AuditLogs Collection</span>
+            <span className="text-xs text-slate-500 font-mono">Supabase AuditLogs Table</span>
           </div>
           <h1 className="text-2xl font-black text-[#002840] mt-1 tracking-tight">
             System Activity & Security Audit Trail
@@ -142,7 +142,7 @@ export default function AdminAuditLogsPage() {
               {loading ? (
                 <tr>
                   <td colSpan={7} className="py-8 text-center text-slate-400 font-sans">
-                    Loading audit trail from MongoDB...
+                    Loading audit trail from Supabase...
                   </td>
                 </tr>
               ) : logs.length === 0 ? (

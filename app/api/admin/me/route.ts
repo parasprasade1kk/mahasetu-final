@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
-import { connectToDatabase } from '@/lib/mongodb';
-import { AdminUser } from '@/lib/models/AdminUser';
+import { supabase } from '@/lib/supabaseClient';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,24 +37,34 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Attempt to enrich with fresh database profile
-    let adminRecord = null;
-    const conn = await connectToDatabase();
-    if (conn && decoded.adminId) {
-      adminRecord = await AdminUser.findOne({ adminId: decoded.adminId }).select('-passwordHash');
+    let adminRecord: any = null;
+    if (decoded.adminId) {
+      const { data } = await supabase
+        .from('admin_users')
+        .select('admin_id, name, department, role, is_active, last_login')
+        .eq('admin_id', decoded.adminId)
+        .maybeSingle();
+      adminRecord = data;
     }
 
     return NextResponse.json({
       success: true,
-      admin: adminRecord || {
-        adminId: decoded.adminId || '1120610',
-        name: decoded.name || 'Shri. S. K. Deshmukh',
-        role: 'admin',
-        department: 'General Administration Department (GAD), Mantralaya, Mumbai',
-      },
+      admin: adminRecord
+        ? {
+            adminId: adminRecord.admin_id,
+            name: adminRecord.name,
+            role: adminRecord.role,
+            department: adminRecord.department,
+          }
+        : {
+            adminId: decoded.adminId || '1120610',
+            name: decoded.name || 'Shri. S. K. Deshmukh',
+            role: 'admin',
+            department: 'General Administration Department (GAD), Mantralaya, Mumbai',
+          },
     });
   } catch (err: any) {
-    console.error('Vercel Admin Me Serverless Error:', err);
+    console.error('Admin Me Error:', err);
     return NextResponse.json(
       { success: false, error: 'Administration service is temporarily unavailable.' },
       { status: 500 }

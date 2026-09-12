@@ -102,7 +102,7 @@ export default function AdminApplicationsPage() {
             <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-indigo-100 text-indigo-800 border border-indigo-200">
               Department Workflow Registry
             </span>
-            <span className="text-xs text-slate-500 font-mono">MongoDB Applications Collection</span>
+            <span className="text-xs text-slate-500 font-mono">Supabase Applications Table</span>
           </div>
           <h1 className="text-2xl font-black text-[#002840] mt-1 tracking-tight">
             Application Processing & Adjudication
@@ -191,7 +191,7 @@ export default function AdminApplicationsPage() {
               {loading ? (
                 <tr>
                   <td colSpan={8} className="py-8 text-center text-slate-400">
-                    Loading applications from MongoDB...
+                    Loading applications from Supabase...
                   </td>
                 </tr>
               ) : applications.length === 0 ? (

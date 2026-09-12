@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
-import { connectToDatabase } from '@/lib/mongodb';
-import { Consent } from '@/lib/models';
+import { getConsentsByCitizen } from '@/lib/supabaseService';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,19 +29,27 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const conn = await connectToDatabase();
-    if (!conn) {
-      return NextResponse.json(
-        { success: false, error: 'Database connection unavailable.' },
-        { status: 503 }
-      );
-    }
+    const consents = await getConsentsByCitizen(userId);
 
-    const consents = await Consent.find({ userId }).sort({ createdAt: -1 }).lean();
+    const mapped = (consents || []).map((c: any) => ({
+      ...c,
+      id: c.consent_id,
+      consentId: c.consent_id,
+      requestingDept: c.requesting_dept,
+      requestingDeptMr: c.requesting_dept_mr || c.requesting_dept,
+      sourceDept: c.source_dept,
+      sourceDeptMr: c.source_dept_mr || c.source_dept,
+      purpose: c.purpose,
+      purposeMr: c.purpose_mr || c.purpose,
+      dataFields: c.data_fields || [],
+      status: c.status,
+      validUntil: c.valid_until,
+      createdAt: c.created_at,
+    }));
 
     return NextResponse.json({
       success: true,
-      consents,
+      consents: mapped,
     });
   } catch (err: any) {
     return NextResponse.json(

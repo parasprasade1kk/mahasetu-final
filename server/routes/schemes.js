@@ -1,11 +1,50 @@
 const express = require('express');
 const router = express.Router();
-const Scheme = require('../models/Scheme');
-const Profile = require('../models/Profile');
-const { optionalAuth, verifyToken } = require('../middleware/auth');
-const { createAuditLog } = require('../utils/auditLogger');
+const { optionalAuth } = require('../middleware/auth');
+const { supabase } = require('../config/supabase');
+const { createAuditLog } = require('../services/supabaseService');
 
-// ─── Scoring Engine Helper ──────────────────────────────────────────────────
+function formatScheme(s) {
+  if (!s) return null;
+  return {
+    ...s,
+    id: s.scheme_id,
+    schemeId: s.scheme_id,
+    name: s.name,
+    nameMr: s.name_mr,
+    department: s.department_name,
+    departmentMr: s.department_name_mr,
+    departmentKey: s.department_id,
+    category: s.category,
+    categoryMr: s.category_mr,
+    description: s.description,
+    descriptionMr: s.description_mr,
+    benefits: s.benefits,
+    benefitsMr: s.benefits_mr,
+    disbursementMode: s.disbursement_mode,
+    disbursementModeMr: s.disbursement_mode_mr,
+    eligibility: s.eligibility || [],
+    eligibilityMr: s.eligibility_mr || [],
+    incomeCriteria: s.income_criteria || (s.income_limit ? `Up to ₹${Number(s.income_limit).toLocaleString('en-IN')}` : 'No income limit'),
+    ageCriteria: s.age_criteria || (s.min_age ? `${s.min_age}+ years` : 'Any age'),
+    minAge: s.min_age,
+    maxAge: s.max_age,
+    incomeLimit: s.income_limit ? Number(s.income_limit) : null,
+    incomeOperator: s.income_operator || 'less_than_or_equal',
+    allowedCategories: s.allowed_categories || [],
+    educationLevels: s.education_levels || [],
+    occupations: s.occupations || [],
+    studentRequired: Boolean(s.student_required),
+    disabilityRequired: Boolean(s.disability_required),
+    residencyRequired: Boolean(s.residency_required),
+    gender: s.gender || 'any',
+    requiredDocuments: s.required_documents || [],
+    keywords: s.keywords || [],
+    problemTypes: s.problem_types || [],
+    applicationRoute: s.application_route || `/apply/scheme/${s.scheme_id}`,
+  };
+}
+
 function normalize(text) {
   return String(text || '')
     .toLowerCase()
@@ -69,19 +108,19 @@ function scoreSchemeAgainstQuery(scheme, query) {
   }
 
   // General query contextual reasons
-  if (normQ.includes('student') || normQ.includes('scholarship') || normQ.includes('college')) {
-    if (scheme.departmentKey === 'education' || scheme.category === 'Scholarship') {
+  if (normQ.includes('student') || normQ.includes('scholarship') || normQ.includes('college') || normQ.includes('education')) {
+    if (scheme.departmentKey === 'education' || scheme.category === 'Education') {
       reasons.push('Designed for students and higher education assistance');
     }
   }
   if (normQ.includes('farmer') || normQ.includes('krishi') || normQ.includes('agriculture') || normQ.includes('crop')) {
-    if (scheme.departmentKey === 'revenue' || scheme.department === 'Agriculture Department') {
+    if (scheme.departmentKey === 'agriculture' || scheme.department.includes('Agriculture')) {
       reasons.push('Provides agricultural / landholder financial support');
     }
   }
-  if (normQ.includes('income') || normQ.includes('poor') || normQ.includes('weaker') || normQ.includes('money')) {
-    if (scheme.incomeCriteria && scheme.incomeCriteria !== 'No income limit') {
-      reasons.push(`Targeted at income criteria (${scheme.incomeCriteria})`);
+  if (normQ.includes('disability') || normQ.includes('divyang') || normQ.includes('handicap')) {
+    if (scheme.disabilityRequired || scheme.category === 'Divyangjan') {
+      reasons.push('Specialized assistance for Divyangjan citizens');
     }
   }
 
@@ -92,28 +131,30 @@ function scoreSchemeAgainstQuery(scheme, query) {
 router.get('/', async (req, res) => {
   try {
     const { department, category, search, activeOnly } = req.query;
-    const filter = {};
+    let query = supabase.from('schemes').select('*');
 
     if (activeOnly !== 'false') {
-      filter.active = true;
+      query = query.eq('active', true);
     }
     if (department) {
-      filter.department = new RegExp(department, 'i');
+      query = query.or(`department_id.ilike.%${department}%,department_name.ilike.%${department}%`);
     }
     if (category) {
-      filter.category = new RegExp(category, 'i');
+      query = query.ilike('category', `%${category}%`);
     }
     if (search) {
-      filter.$or = [
-        { name: new RegExp(search, 'i') },
-        { description: new RegExp(search, 'i') },
-        { keywords: new RegExp(search, 'i') },
-        { department: new RegExp(search, 'i') },
-      ];
+      query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%,department_name.ilike.%${search}%`);
     }
 
-    const schemes = await Scheme.find(filter).sort({ createdAt: -1 });
-    res.json({ success: true, count: schemes.length, schemes });
+    const { data: schemes, error } = await query.order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Fetch schemes error:', error.message);
+      return res.status(500).json({ success: false, error: error.message });
+    }
+
+    const formatted = (schemes || []).map(formatScheme);
+    res.json({ success: true, count: formatted.length, schemes: formatted });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
@@ -122,13 +163,18 @@ router.get('/', async (req, res) => {
 // ─── GET /api/schemes/:id ─────────────────────────────────────────────────────
 router.get('/:id', async (req, res) => {
   try {
-    const scheme = await Scheme.findOne({
-      $or: [{ schemeId: req.params.id }, { _id: req.params.id.match(/^[0-9a-fA-F]{24}$/) ? req.params.id : null }],
-    });
-    if (!scheme) {
+    const id = req.params.id;
+    const { data: scheme, error } = await supabase
+      .from('schemes')
+      .select('*')
+      .or(`scheme_id.eq.${id},id.eq.${id.match(/^[0-9a-fA-F-]{36}$/) ? id : '00000000-0000-0000-0000-000000000000'}`)
+      .maybeSingle();
+
+    if (error || !scheme) {
       return res.status(404).json({ success: false, error: 'Scheme not found.' });
     }
-    res.json({ success: true, scheme });
+
+    res.json({ success: true, scheme: formatScheme(scheme) });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
@@ -144,30 +190,44 @@ router.post('/match', optionalAuth, async (req, res) => {
 
     let userProfile = null;
     if (req.user && req.user.userId) {
-      userProfile = await Profile.findOne({ userId: req.user.userId });
+      const { data } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', req.user.userId)
+        .maybeSingle();
+      userProfile = data;
     }
 
-    // Load active schemes from MongoDB
-    const allSchemes = await Scheme.find({ active: true });
+    const { data: rawSchemes, error } = await supabase
+      .from('schemes')
+      .select('*')
+      .eq('active', true);
+
+    if (error) {
+      return res.status(500).json({ success: false, error: error.message });
+    }
+
+    const allSchemes = (rawSchemes || []).map(formatScheme);
 
     const scored = allSchemes.map((s) => {
       const { score, reasons } = scoreSchemeAgainstQuery(s, query);
 
-      // Boost score if userProfile matches scheme eligibility
       let profileBonus = 0;
       if (userProfile) {
         if (s.allowedCategories && s.allowedCategories.length > 0 && userProfile.category) {
-          if (s.allowedCategories.some((c) => c.toLowerCase() === userProfile.category.toLowerCase())) {
+          if (s.allowedCategories.some((c) => c.toLowerCase() === userProfile.category.toLowerCase() || c === 'All')) {
             profileBonus += 10;
-            reasons.push(`Matches your category: ${userProfile.category}`);
+            reasons.push(`Based on your social category: ${userProfile.category}`);
           }
         }
-        if (s.studentRequired && userProfile.isStudent) {
+        if (s.studentRequired && userProfile.student_status) {
           profileBonus += 10;
+          reasons.push('Matches student education status');
         }
-        if (s.incomeLimit && s.incomeLimit > 0 && userProfile.annualIncomeAmount) {
-          if (userProfile.annualIncomeAmount <= s.incomeLimit) {
+        if (s.incomeLimit && s.incomeLimit > 0 && userProfile.annual_family_income) {
+          if (Number(userProfile.annual_family_income) <= s.incomeLimit) {
             profileBonus += 8;
+            reasons.push('Income criteria satisfied based on your profile');
           }
         }
       }
@@ -179,7 +239,7 @@ router.post('/match', optionalAuth, async (req, res) => {
         scheme: s,
         score: totalScore,
         matchPct,
-        matchReasons: reasons.length > 0 ? reasons.slice(0, 3) : ['Potentially relevant to your stated needs'],
+        matchReasons: reasons.length > 0 ? reasons.slice(0, 3) : ['Potential Match based on stated requirements'],
       };
     });
 
@@ -188,8 +248,7 @@ router.post('/match', optionalAuth, async (req, res) => {
       .sort((a, b) => b.score - a.score)
       .slice(0, 6);
 
-    // If query is broad, return top 3 default schemes
-    const finalResults = results.length > 0 ? results : scored.slice(0, 3);
+    const finalResults = results.length > 0 ? results : scored.slice(0, 4);
 
     if (req.user) {
       await createAuditLog({
@@ -219,14 +278,50 @@ router.post('/evaluate', optionalAuth, async (req, res) => {
     let profile = req.body.profile;
 
     if (!profile && req.user && req.user.userId) {
-      profile = await Profile.findOne({ userId: req.user.userId });
+      const { data } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', req.user.userId)
+        .maybeSingle();
+      if (data) {
+        profile = {
+          category: data.category,
+          annualIncomeAmount: data.annual_family_income ? Number(data.annual_family_income) : 0,
+          age: data.age,
+          occupation: data.occupation,
+          isStudent: Boolean(data.student_status),
+          hasDisability: Boolean(data.disability_status),
+        };
+      }
     }
 
     if (!profile) {
       return res.status(400).json({ success: false, error: 'Profile data is required for evaluation.' });
     }
 
-    const schemes = await Scheme.find({ active: true });
+    const { data: rawSchemes, error } = await supabase
+      .from('schemes')
+      .select('*')
+      .eq('active', true);
+
+    if (error) {
+      return res.status(500).json({ success: false, error: error.message });
+    }
+
+    const schemes = (rawSchemes || []).map(formatScheme);
+
+    // Normalize income
+    let income = 0;
+    if (typeof profile.annualIncomeAmount === 'number') {
+      income = profile.annualIncomeAmount;
+    } else if (typeof profile.annualIncomeAmount === 'string') {
+      const str = profile.annualIncomeAmount.toLowerCase().replace(/,/g, '');
+      if (str.includes('lakh')) {
+        income = parseFloat(str) * 100000;
+      } else {
+        income = parseFloat(str.replace(/[^0-9.]/g, '')) || 0;
+      }
+    }
 
     const evaluations = schemes.map((s) => {
       let status = 'eligible';
@@ -237,7 +332,7 @@ router.post('/evaluate', optionalAuth, async (req, res) => {
       if (s.allowedCategories && s.allowedCategories.length > 0) {
         const cat = profile.category || 'General/Open';
         const match = s.allowedCategories.some(
-          (c) => c.toLowerCase() === cat.toLowerCase() || c === 'ALL' || c === 'Any'
+          (c) => c.toLowerCase() === cat.toLowerCase() || c === 'All' || c === 'Any'
         );
         if (match) {
           metCriteria.push(`Category (${cat}) matches criteria`);
@@ -248,15 +343,12 @@ router.post('/evaluate', optionalAuth, async (req, res) => {
       }
 
       // Income check
-      const income = profile.annualIncomeAmount || 0;
       if (s.incomeLimit && s.incomeLimit > 0) {
-        if (s.incomeOperator === 'less_than_or_equal' || s.incomeOperator === 'none') {
-          if (income <= s.incomeLimit) {
-            metCriteria.push(`Annual income (₹${income.toLocaleString()}) within limit of ₹${s.incomeLimit.toLocaleString()}`);
-          } else {
-            status = 'not_eligible';
-            failedCriteria.push(`Exceeds maximum income ceiling of ₹${s.incomeLimit.toLocaleString()}`);
-          }
+        if (income <= s.incomeLimit) {
+          metCriteria.push(`Annual income (₹${income.toLocaleString('en-IN')}) within limit of ₹${s.incomeLimit.toLocaleString('en-IN')}`);
+        } else {
+          status = 'not_eligible';
+          failedCriteria.push(`Exceeds maximum income ceiling of ₹${s.incomeLimit.toLocaleString('en-IN')}`);
         }
       }
 
@@ -264,10 +356,10 @@ router.post('/evaluate', optionalAuth, async (req, res) => {
       const age = profile.age || 0;
       if (s.minAge && s.minAge > 0 && age < s.minAge) {
         status = 'not_eligible';
-        failedCriteria.push(`Minimum age required is ${s.minAge} years (Current age: ${age})`);
+        failedCriteria.push(`Minimum age required is ${s.minAge} years (Current: ${age})`);
       } else if (s.maxAge && s.maxAge < 100 && age > s.maxAge) {
         status = 'not_eligible';
-        failedCriteria.push(`Maximum age limit is ${s.maxAge} years (Current age: ${age})`);
+        failedCriteria.push(`Maximum age limit is ${s.maxAge} years (Current: ${age})`);
       } else if (s.minAge || s.maxAge) {
         metCriteria.push(`Age (${age} years) is within permissible range`);
       }
@@ -275,7 +367,7 @@ router.post('/evaluate', optionalAuth, async (req, res) => {
       // Student check
       if (s.studentRequired) {
         if (profile.isStudent) {
-          metCriteria.push('Currently enrolled as active student');
+          metCriteria.push('Active student enrollment verified');
         } else {
           status = 'not_eligible';
           failedCriteria.push('Active student enrollment required');
@@ -285,15 +377,14 @@ router.post('/evaluate', optionalAuth, async (req, res) => {
       // Disability check
       if (s.disabilityRequired) {
         if (profile.hasDisability) {
-          metCriteria.push('Disability verification criteria fulfilled');
+          metCriteria.push('Divyangjan criteria fulfilled');
         } else {
           status = 'not_eligible';
-          failedCriteria.push('Scheme requires disability / Divyang certification');
+          failedCriteria.push('Scheme requires certified disability');
         }
       }
 
-      // If missing some fields or borderline
-      if (status !== 'not_eligible' && (!profile.annualIncomeAmount || !profile.age)) {
+      if (status !== 'not_eligible' && (!income || !age)) {
         status = 'possible';
       }
 
@@ -304,6 +395,10 @@ router.post('/evaluate', optionalAuth, async (req, res) => {
         failedCriteria,
       };
     });
+
+    // Rank: 1. eligible, 2. possible, 3. not_eligible
+    const rankWeight = { eligible: 1, possible: 2, not_eligible: 3 };
+    evaluations.sort((a, b) => (rankWeight[a.status] || 3) - (rankWeight[b.status] || 3));
 
     if (req.user) {
       await createAuditLog({

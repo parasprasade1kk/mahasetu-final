@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
-import { connectToDatabase } from '@/lib/mongodb';
-import { Document } from '@/lib/models';
-import { ensureDatabaseSeeded } from '@/lib/dbSeed';
+import { supabase } from '@/lib/supabaseClient';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,30 +35,45 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const conn = await connectToDatabase();
-    if (!conn) {
-      return NextResponse.json(
-        { success: false, error: 'Database connection unavailable.' },
-        { status: 503 }
-      );
-    }
-
-    await ensureDatabaseSeeded();
-
     const { searchParams } = new URL(req.url);
     const source = searchParams.get('source');
     const verificationStatus = searchParams.get('verificationStatus');
 
-    const filter: any = {};
-    if (source && source !== 'All') filter.source = source;
-    if (verificationStatus && verificationStatus !== 'All') filter.verificationStatus = verificationStatus;
+    let query = supabase.from('documents').select('*');
 
-    const documents = await Document.find(filter).sort({ createdAt: -1 }).lean();
+    if (source && source !== 'All') {
+      query = query.eq('source', source);
+    }
+    if (verificationStatus && verificationStatus !== 'All') {
+      query = query.eq('verification_status', verificationStatus);
+    }
+
+    const { data: documents, error } = await query.order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Fetch admin documents error:', error.message);
+      return NextResponse.json(
+        { success: false, error: 'Failed to retrieve documents: ' + error.message },
+        { status: 500 }
+      );
+    }
+
+    const mapped = (documents || []).map((d: any) => ({
+      ...d,
+      id: d.document_id,
+      documentId: d.document_id,
+      documentType: d.document_type,
+      documentName: d.document_name,
+      documentNameMr: d.document_name_mr,
+      authorityEn: d.authority_en,
+      verificationStatus: d.verification_status,
+      uploadedAt: d.created_at,
+    }));
 
     return NextResponse.json({
       success: true,
-      documents,
-      total: documents.length,
+      documents: mapped,
+      total: mapped.length,
     });
   } catch (err: any) {
     return NextResponse.json(

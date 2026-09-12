@@ -140,7 +140,7 @@ export default function AdminSchemesPage() {
             <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-purple-100 text-purple-800 border border-purple-200">
               State Welfare Registry
             </span>
-            <span className="text-xs text-slate-500 font-mono">MongoDB Schemes Collection</span>
+            <span className="text-xs text-slate-500 font-mono">Supabase Schemes Table</span>
           </div>
           <h1 className="text-2xl font-black text-[#002840] mt-1 tracking-tight">
             Scheme & Government Service Management
@@ -249,7 +249,7 @@ export default function AdminSchemesPage() {
               {loading ? (
                 <tr>
                   <td colSpan={8} className="py-8 text-center text-slate-400">
-                    Loading schemes from MongoDB...
+                    Loading schemes from Supabase...
                   </td>
                 </tr>
               ) : schemes.length === 0 ? (
@@ -479,7 +479,7 @@ export default function AdminSchemesPage() {
                   disabled={saving}
                   className="bg-[#002840] hover:bg-[#001c30] text-amber-300 hover:text-white px-5 py-2 rounded-xl font-bold transition flex items-center gap-1.5"
                 >
-                  {saving ? 'Saving...' : 'Save Scheme to MongoDB'}
+                  {saving ? 'Saving...' : 'Save Scheme to Supabase'}
                 </button>
               </div>
             </form>

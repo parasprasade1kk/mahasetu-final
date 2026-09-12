@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
-import { connectToDatabase } from '@/lib/mongodb';
-import { DigiLockerConnection } from '@/lib/models';
+import { findCitizenByUserId } from '@/lib/supabaseService';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,20 +38,21 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const conn = await connectToDatabase();
-    if (!conn) {
-      return NextResponse.json(
-        { success: false, error: 'Database connection unavailable.' },
-        { status: 503 }
-      );
-    }
+    const citizen = await findCitizenByUserId(userId);
 
-    const connection = await DigiLockerConnection.findOne({ userId });
+    const isConnected = Boolean(citizen?.digilocker_linked);
 
     return NextResponse.json({
       success: true,
-      connected: Boolean(connection?.isConnected),
-      connection,
+      connected: isConnected,
+      connection: isConnected
+        ? {
+            userId: citizen.user_id,
+            isConnected: true,
+            digiLockerId: citizen.digilocker_id,
+            linkedAt: citizen.digilocker_linked_at,
+          }
+        : null,
     });
   } catch (err: any) {
     return NextResponse.json(

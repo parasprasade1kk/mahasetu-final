@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
-import { connectToDatabase } from '@/lib/mongodb';
-import { Document, AuditLog } from '@/lib/models';
+import { supabase } from '@/lib/supabaseClient';
+import { createAuditLog } from '@/lib/supabaseService';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,14 +39,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const conn = await connectToDatabase();
-    if (!conn) {
-      return NextResponse.json(
-        { success: false, error: 'Database connection unavailable.' },
-        { status: 503 }
-      );
-    }
-
     const body = await req.json();
     const { documentName, documentType, authorityEn, issueDate } = body || {};
 
@@ -59,21 +51,36 @@ export async function POST(req: NextRequest) {
 
     const docId = `DOC-UPL-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
 
-    const newDoc = await Document.create({
-      documentId: docId,
-      userId,
-      documentType,
-      documentName,
-      authorityEn: authorityEn || 'Government Authority',
-      issueDate: issueDate || new Date().toISOString().split('T')[0],
+    const newDoc = {
+      document_id: docId,
+      user_id: userId,
+      document_type: documentType,
+      document_name: documentName,
+      document_name_mr: body.documentNameMr || documentName,
+      authority_en: authorityEn || 'Government Authority',
+      issued_date: issueDate || new Date().toISOString().split('T')[0],
       source: 'User Upload',
-      verificationStatus: 'Citizen Uploaded',
-      verified: true,
-      uploadedAt: new Date(),
-    });
+      verification_status: 'Citizen Uploaded',
+      file_name: `${documentName.replace(/\s+/g, '_').toLowerCase()}.pdf`,
+      file_size: '256 KB',
+      mime_type: 'application/pdf',
+    };
 
-    await AuditLog.create({
-      logId: `AUD-${Date.now()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`,
+    const { data: insertedDoc, error } = await supabase
+      .from('documents')
+      .insert(newDoc)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Insert document error:', error.message);
+      return NextResponse.json(
+        { success: false, error: 'Failed to insert document: ' + error.message },
+        { status: 500 }
+      );
+    }
+
+    await createAuditLog({
       actorId: userId,
       actorRole: 'citizen',
       action: 'DOCUMENT_UPLOAD',
@@ -83,11 +90,26 @@ export async function POST(req: NextRequest) {
       metadata: { documentName, documentType },
     });
 
+    const mapped = {
+      ...insertedDoc,
+      id: insertedDoc.document_id,
+      documentId: insertedDoc.document_id,
+      documentType: insertedDoc.document_type,
+      documentName: insertedDoc.document_name,
+      documentNameMr: insertedDoc.document_name_mr,
+      authorityEn: insertedDoc.authority_en,
+      issueDate: insertedDoc.issued_date,
+      source: insertedDoc.source,
+      verificationStatus: insertedDoc.verification_status,
+      verified: true,
+      uploadedAt: insertedDoc.created_at,
+    };
+
     return NextResponse.json(
       {
         success: true,
-        message: 'Document uploaded successfully to MongoDB Atlas.',
-        document: newDoc,
+        message: 'Document uploaded successfully to Supabase.',
+        document: mapped,
       },
       { status: 201 }
     );

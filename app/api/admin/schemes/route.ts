@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
-import { connectToDatabase } from '@/lib/mongodb';
-import { Scheme } from '@/lib/models';
-import { ensureDatabaseSeeded } from '@/lib/dbSeed';
+import { supabase } from '@/lib/supabaseClient';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,42 +35,48 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const conn = await connectToDatabase();
-    if (!conn) {
-      return NextResponse.json(
-        { success: false, error: 'Database connection unavailable.' },
-        { status: 503 }
-      );
-    }
-
-    await ensureDatabaseSeeded();
-
     const { searchParams } = new URL(req.url);
     const department = searchParams.get('department');
     const active = searchParams.get('active');
     const search = searchParams.get('search');
 
-    const filter: any = {};
+    let query = supabase.from('schemes').select('*');
+
     if (department && department !== 'All') {
-      filter.department = department;
+      query = query.or(`department.eq.${department},department_mr.eq.${department}`);
     }
     if (active && active !== 'All') {
-      filter.active = active === 'true';
+      query = query.eq('active', active === 'true');
     }
     if (search) {
-      filter.$or = [
-        { name: new RegExp(search, 'i') },
-        { department: new RegExp(search, 'i') },
-        { schemeId: new RegExp(search, 'i') },
-      ];
+      query = query.or(
+        `name.ilike.%${search}%,name_mr.ilike.%${search}%,department.ilike.%${search}%,scheme_id.ilike.%${search}%`
+      );
     }
 
-    const schemes = await Scheme.find(filter).sort({ createdAt: -1 }).lean();
+    const { data: schemes, error } = await query.order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Fetch admin schemes error:', error.message);
+      return NextResponse.json(
+        { success: false, error: 'Failed to retrieve schemes: ' + error.message },
+        { status: 500 }
+      );
+    }
+
+    const mapped = (schemes || []).map((s: any) => ({
+      ...s,
+      schemeId: s.scheme_id,
+      nameMr: s.name_mr,
+      departmentMr: s.department_mr,
+      categoryMr: s.category_mr,
+      descriptionMr: s.description_mr,
+    }));
 
     return NextResponse.json({
       success: true,
-      schemes,
-      total: schemes.length,
+      schemes: mapped,
+      total: mapped.length,
     });
   } catch (err: any) {
     return NextResponse.json(

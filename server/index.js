@@ -3,8 +3,7 @@ require('dotenv').config(); // also fallback to server/.env
 
 const express = require('express');
 const cors = require('cors');
-const mongoose = require('mongoose');
-const { connectDB } = require('./config/db');
+const { supabase } = require('./config/supabase');
 
 // Import route modules
 const authRoutes = require('./routes/auth');
@@ -32,12 +31,11 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Allow requests with no origin (like mobile apps, curl, server-side)
       if (!origin) return callback(null, true);
       if (allowedOrigins.indexOf(origin) !== -1 || origin.endsWith('.vercel.app')) {
         return callback(null, true);
       }
-      return callback(null, true); // Permissive in prototype for seamless staging
+      return callback(null, true);
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
@@ -57,11 +55,13 @@ app.use((req, res, next) => {
 });
 
 // Health check: GET /api/health
-app.get('/api/health', (req, res) => {
-  const isDbConnected = mongoose.connection.readyState === 1;
+app.get('/api/health', async (req, res) => {
+  const { error } = await supabase.from('departments').select('count', { count: 'exact', head: true });
+  const isDbConnected = !error;
   res.json({
-    status: isDbConnected ? 'ok' : 'error',
+    status: isDbConnected ? 'ok' : 'degraded',
     database: isDbConnected ? 'connected' : 'disconnected',
+    provider: 'Supabase PostgreSQL',
     platform: 'MahaSetu Government Citizen & Admin Backend',
     state: 'Maharashtra',
     timestamp: new Date().toISOString(),
@@ -89,13 +89,11 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start server and initialize DB connection
-async function startServer() {
-  await connectDB();
-
+function startServer() {
   app.listen(PORT, () => {
     console.log(`\n================================================================`);
     console.log(`🚀 MahaSetu Express Backend running on port ${PORT}`);
+    console.log(`   Database:    Supabase PostgreSQL`);
     console.log(`   Citizen API: http://localhost:${PORT}/api`);
     console.log(`   Admin API:   http://localhost:${PORT}/api/admin`);
     console.log(`   Health:      http://localhost:${PORT}/api/health`);

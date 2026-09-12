@@ -17,7 +17,7 @@ export default function AdminSettingsPage() {
           Portal Administration & Security Settings
         </h1>
         <p className="text-xs text-slate-600">
-          System operational configurations, cryptographic parameters, MongoDB Atlas status, and statutory DPDP compliance.
+          System operational configurations, cryptographic parameters, Supabase PostgreSQL status, and statutory DPDP compliance.
         </p>
       </div>
 
@@ -29,25 +29,25 @@ export default function AdminSettingsPage() {
               <span className="material-symbols-outlined text-[24px]">database</span>
             </div>
             <div>
-              <h2 className="text-sm font-bold text-slate-900">Database Engine: MongoDB Atlas</h2>
-              <p className="text-xs text-slate-500">Persistent Cloud Database Cluster</p>
+              <h2 className="text-sm font-bold text-slate-900">Database Engine: Supabase PostgreSQL</h2>
+              <p className="text-xs text-slate-500">Persistent Cloud Relational Database & Row Level Security</p>
             </div>
           </div>
           <span className="text-[10px] font-bold px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            Operational (Mongoose ODM)
+            Operational (Supabase Client)
           </span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
           <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
-            <span className="text-slate-500 font-bold block text-[10px] uppercase">Connection URI</span>
-            <span className="font-mono font-bold text-[#002840]">Configured in .env (MONGODB_URI)</span>
+            <span className="text-slate-500 font-bold block text-[10px] uppercase">Connection Endpoint</span>
+            <span className="font-mono font-bold text-[#002840]">Configured in .env (SUPABASE_URL)</span>
           </div>
           <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
-            <span className="text-slate-500 font-bold block text-[10px] uppercase">Collections Maintained</span>
+            <span className="text-slate-500 font-bold block text-[10px] uppercase">Tables Maintained</span>
             <span className="font-bold text-slate-800">
-              Users, Profiles, Schemes, Applications, Documents, Consents, AuditLogs, Notifications, DigiLocker
+              profiles, schemes, services, applications, application_timeline, documents, consents, audit_logs, notifications, admin_users, departments
             </span>
           </div>
         </div>
@@ -114,8 +114,8 @@ export default function AdminSettingsPage() {
           </div>
           <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 space-y-1">
             <span className="text-[10px] text-slate-500 font-bold block uppercase">Database Layer</span>
-            <div className="font-bold text-[#002840]">MongoDB Atlas Cluster</div>
-            <div className="text-[11px] text-slate-500">Mongoose ODM 8.8+</div>
+            <div className="font-bold text-[#002840]">Supabase PostgreSQL</div>
+            <div className="text-[11px] text-slate-500">Supabase JS Client / RLS</div>
           </div>
         </div>
       </div>

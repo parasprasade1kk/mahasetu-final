@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
-import { connectToDatabase } from '@/lib/mongodb';
-import { Consent, AuditLog } from '@/lib/models';
+import { supabase } from '@/lib/supabaseClient';
+import { toggleConsent, createAuditLog } from '@/lib/supabaseService';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,7 +10,7 @@ const JWT_SECRET =
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
     const authHeader = req.headers.get('authorization');
@@ -43,60 +42,83 @@ export async function POST(
       );
     }
 
-    const conn = await connectToDatabase();
-    if (!conn) {
+    const resolvedParams = await Promise.resolve(context.params);
+    const id = resolvedParams?.id;
+
+    if (!id) {
       return NextResponse.json(
-        { success: false, error: 'Database connection unavailable.' },
-        { status: 503 }
+        { success: false, error: 'Consent ID is required.' },
+        { status: 400 }
       );
     }
 
-    const { id } = params;
+    // Try to toggle existing consent
+    const { data: existing } = await supabase
+      .from('consents')
+      .select('*')
+      .eq('consent_id', id)
+      .eq('user_id', userId)
+      .maybeSingle();
 
-    const consentQuery = mongoose.Types.ObjectId.isValid(id)
-      ? { $or: [{ consentId: id }, { _id: id }] }
-      : { consentId: id };
+    let updatedConsent: any = null;
 
-    let consent = await Consent.findOne(consentQuery);
-
-    if (!consent) {
-      // If not found, create an active consent for this user
-      consent = await Consent.create({
-        consentId: id,
-        userId,
-        requestingDept: 'Higher & Technical Education Department',
-        requestingDeptMr: 'उच्च व तंत्रशिक्षण विभाग',
-        sourceDept: 'Revenue Department (e-Mahabhumi / DigiLocker)',
-        sourceDeptMr: 'महसूल विभाग (ई-महाभूमी / डिजिलॉकर)',
+    if (!existing) {
+      // If not existing, insert as Active
+      const newConsent = {
+        consent_id: id,
+        user_id: userId,
+        requesting_dept: 'Higher & Technical Education Department',
+        requesting_dept_mr: 'उच्च व तंत्रशिक्षण विभाग',
+        source_dept: 'Revenue Department (e-Mahabhumi / DigiLocker)',
+        source_dept_mr: 'महसूल विभाग (ई-महाभूमी / डिजिलॉकर)',
         purpose: 'Automatic income tier verification for MahaDBT scholarship disbursal',
-        purposeMr: 'महाडीबीटी शिष्यवृत्ती वितरणासाठी स्वयंचलित उत्पन्न पडताळणी',
+        purpose_mr: 'महाडीबीटी शिष्यवृत्ती वितरणासाठी स्वयंचलित उत्पन्न पडताळणी',
         status: 'Active',
-        validUntil: '31 Mar 2027',
+        granted: true,
+        valid_until: '31 Mar 2027',
+      };
+
+      const { data: created, error: createErr } = await supabase
+        .from('consents')
+        .insert(newConsent)
+        .select()
+        .single();
+
+      if (createErr) throw createErr;
+      updatedConsent = created;
+
+      await createAuditLog({
+        actorId: userId,
+        actorRole: 'citizen',
+        action: 'CONSENT_GRANTED',
+        targetResource: 'Consent',
+        targetId: id,
+        status: 'SUCCESS',
+        metadata: { newStatus: 'Active' },
       });
     } else {
-      const newStatus = consent.status === 'Active' ? 'Revoked' : 'Active';
-      consent.status = newStatus as any;
-      if (newStatus === 'Revoked') {
-        consent.revokedAt = new Date();
-      }
-      await consent.save();
+      updatedConsent = await toggleConsent(id, userId);
     }
 
-    await AuditLog.create({
-      logId: `AUD-${Date.now()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`,
-      actorId: userId,
-      actorRole: 'citizen',
-      action: 'TOGGLE_CONSENT',
-      targetResource: 'Consent',
-      targetId: consent.consentId,
-      status: 'SUCCESS',
-      metadata: { newStatus: consent.status },
-    });
+    const mapped = {
+      ...updatedConsent,
+      id: updatedConsent.consent_id,
+      consentId: updatedConsent.consent_id,
+      requestingDept: updatedConsent.requesting_dept,
+      requestingDeptMr: updatedConsent.requesting_dept_mr,
+      sourceDept: updatedConsent.source_dept,
+      sourceDeptMr: updatedConsent.source_dept_mr,
+      purpose: updatedConsent.purpose,
+      purposeMr: updatedConsent.purpose_mr,
+      dataFields: updatedConsent.data_fields || [],
+      status: updatedConsent.status,
+      validUntil: updatedConsent.valid_until,
+    };
 
     return NextResponse.json({
       success: true,
-      message: `Consent ${consent.consentId} is now ${consent.status}.`,
-      consent,
+      message: `Consent ${mapped.consentId} is now ${mapped.status}.`,
+      consent: mapped,
     });
   } catch (err: any) {
     return NextResponse.json(

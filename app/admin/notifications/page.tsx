@@ -168,7 +168,7 @@ export default function AdminNotificationsPage() {
           <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-900 flex items-start gap-2">
             <span className="material-symbols-outlined text-amber-600 text-[18px]">info</span>
             <span>
-              Broadcasting to all citizens will generate individual verified notification records stored in MongoDB.
+              Broadcasting to all citizens will generate individual verified notification records stored in Supabase.
             </span>
           </div>
 

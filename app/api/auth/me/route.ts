@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
-import { connectToDatabase } from '@/lib/mongodb';
-import { User, Profile } from '@/lib/models';
+import { findCitizenByUserId } from '@/lib/supabaseService';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,28 +29,30 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const conn = await connectToDatabase();
-    if (!conn) {
-      return NextResponse.json(
-        { success: false, error: 'Database unavailable.' },
-        { status: 503 }
-      );
-    }
-
-    const user = await User.findOne({ userId: decoded.userId });
-    if (!user) {
+    const citizen = await findCitizenByUserId(decoded.userId);
+    if (!citizen) {
       return NextResponse.json(
         { success: false, error: 'Citizen account not found.' },
         { status: 404 }
       );
     }
 
-    const profile = await Profile.findOne({ userId: decoded.userId });
+    const userObj = {
+      userId: citizen.user_id,
+      fullName: citizen.full_name,
+      fullNameMr: citizen.full_name_mr || citizen.full_name,
+      mobile: citizen.mobile_number,
+      email: citizen.email,
+      aadhaarMasked: citizen.aadhaar_masked,
+      role: 'citizen',
+      createdAt: citizen.created_at,
+      aadhaarLinked: Boolean(citizen.aadhaar_hash || (citizen.aadhaar_masked && !citizen.aadhaar_masked.endsWith('0000'))),
+    };
 
     return NextResponse.json({
       success: true,
-      user,
-      profile,
+      user: userObj,
+      profile: citizen,
     });
   } catch (err: any) {
     return NextResponse.json(
