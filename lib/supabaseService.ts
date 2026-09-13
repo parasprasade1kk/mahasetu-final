@@ -621,17 +621,40 @@ export async function getLiveAnalytics() {
     supabase
       .from('applications')
       .select('*', { count: 'exact', head: true })
-      .in('status', ['Submitted', 'Under Scrutiny', 'Under Review', 'Field Verification', 'Document Verification']),
+      .in('status', [
+        'Submitted', 'submitted',
+        'Under Scrutiny', 'under_scrutiny',
+        'Under Review', 'under_review',
+        'Field Verification', 'field_verification',
+        'Document Verification', 'document_verification',
+        'Pending', 'pending',
+        'In Progress', 'in_progress',
+        'Pending Verification', 'pending_verification'
+      ]),
     supabase
       .from('applications')
       .select('*', { count: 'exact', head: true })
-      .in('status', ['Approved', 'Approved / Issued', 'Completed']),
-    supabase.from('applications').select('*', { count: 'exact', head: true }).ilike('status', '%reject%'),
+      .in('status', [
+        'Approved', 'approved',
+        'Approved / Issued', 'approved / issued',
+        'Completed', 'completed',
+        'Issued', 'issued'
+      ]),
+    supabase
+      .from('applications')
+      .select('*', { count: 'exact', head: true })
+      .or('status.ilike.%reject%,status.ilike.%decline%,status.ilike.%disapprove%'),
     supabase.from('schemes').select('*', { count: 'exact', head: true }).eq('active', true),
     supabase.from('services').select('*', { count: 'exact', head: true }).eq('active', true),
     supabase.from('documents').select('*', { count: 'exact', head: true }),
-    supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('digilocker_linked', true),
-    supabase.from('consents').select('*', { count: 'exact', head: true }).eq('status', 'Active'),
+    supabase
+      .from('profiles')
+      .select('*', { count: 'exact', head: true })
+      .or('digilocker_linked.eq.true,digilocker_status.eq.Linked,digilocker_status.eq.linked'),
+    supabase
+      .from('consents')
+      .select('*', { count: 'exact', head: true })
+      .in('status', ['Active', 'active', 'ACTIVE', 'Granted', 'granted']),
   ]);
 
   const [

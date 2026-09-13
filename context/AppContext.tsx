@@ -325,6 +325,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setIsLoggedIn(true);
         try {
           localStorage.setItem(STORAGE_KEY_AUTH_USER, JSON.stringify(localAccount));
+          setCitizenToken(`demo_citizen_token_${localAccount.id}_${Date.now()}`);
         } catch {}
         return { success: true, user: localAccount };
       }
@@ -338,6 +339,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (localAccount) {
         setCurrentUser(localAccount);
         setIsLoggedIn(true);
+        try {
+          setCitizenToken(`demo_citizen_token_${localAccount.id}_${Date.now()}`);
+        } catch {}
         return { success: true, user: localAccount };
       }
       return {
@@ -428,6 +432,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setIsLoggedIn(true);
     try {
       localStorage.setItem(STORAGE_KEY_AUTH_USER, JSON.stringify(firstSeed));
+      setCitizenToken(`demo_citizen_token_${firstSeed.id}_${Date.now()}`);
     } catch {
       // Ignore
     }
@@ -476,6 +481,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const addApplication = async (app: Partial<ApplicationRecord> & { serviceName: string; department: string }): Promise<ApplicationRecord> => {
+    const user = currentUser || {
+      id: 'MH-CIT-001',
+      name: 'Paras Prasade',
+      mobile: '9876543210',
+      district: 'Pune',
+      aadhaarMasked: 'XXXX XXXX 1988',
+    };
+
     const fallbackRecord: ApplicationRecord = {
       id: app.id || `MH-GEN-2026-${Math.floor(10000 + Math.random() * 90000)}`,
       serviceName: app.serviceName,
@@ -486,7 +499,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       status: app.status || 'Submitted',
       statusColor: app.statusColor || 'bg-blue-100 text-blue-800 border-blue-300',
       applicantName: app.applicantName || user.name,
-      district: app.district || 'Maharashtra',
+      district: app.district || userProfile?.district || 'Maharashtra',
       serviceId: app.serviceId,
       schemeId: app.schemeId,
       applicationType: app.applicationType || (app.schemeId ? 'scheme' : 'service'),
@@ -495,22 +508,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     try {
       const res = await applicationApi.submit({
-        applicationId: app.id,
+        applicationId: fallbackRecord.id,
         serviceId: app.serviceId || app.schemeId,
         schemeId: app.schemeId,
         serviceName: app.serviceName,
         serviceNameMr: app.serviceNameMr,
         department: app.department,
         departmentMr: app.departmentMr,
-        district: app.district,
-        appliedDate: app.appliedDate,
-        status: app.status || 'Submitted',
-        applicationType: app.applicationType || (app.schemeId ? 'scheme' : 'service'),
+        district: app.district || userProfile?.district || 'Maharashtra',
+        appliedDate: fallbackRecord.appliedDate,
+        status: fallbackRecord.status,
+        applicationType: fallbackRecord.applicationType,
+        userId: user.id,
+        applicantName: app.applicantName || user.name,
+        applicantMobile: user.mobile,
+        applicantAadhaarMasked: user.aadhaarMasked,
       });
 
-      if (res.success && res.application) {
+      if (res && res.success && res.application) {
         const dbApp: ApplicationRecord = {
-          id: res.application.applicationId,
+          id: res.application.applicationId || res.application.id,
           serviceName: res.application.serviceName,
           serviceNameMr: res.application.serviceNameMr || res.application.serviceName,
           department: res.application.department,
@@ -528,7 +545,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setApplications(prev => [dbApp, ...prev.filter(a => a.id !== dbApp.id)]);
         return dbApp;
       }
-    } catch {}
+    } catch (err) {
+      console.warn('Backend application submit error, using fallback:', err);
+    }
 
     setApplications(prev => [fallbackRecord, ...prev.filter(a => a.id !== fallbackRecord.id)]);
     return fallbackRecord;

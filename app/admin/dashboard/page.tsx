@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { adminApi } from '@/lib/api';
+import { supabase } from '@/lib/supabaseClient';
 
 interface AnalyticsData {
   totalCitizens: number;
@@ -27,8 +28,10 @@ export default function AdminDashboardPage() {
   const [error, setError] = useState('');
   const [lastUpdated, setLastUpdated] = useState<string>('');
 
-  const fetchAnalytics = async () => {
-    setLoading(true);
+  const fetchAnalytics = async (isManualRefresh = false) => {
+    if (isManualRefresh || !data) {
+      setLoading(true);
+    }
     setError('');
     try {
       const res = await adminApi.getAnalytics();
@@ -61,17 +64,50 @@ export default function AdminDashboardPage() {
           })
         );
       } else {
-        setError(res.error || 'Unable to load live dashboard data.');
+        if (!data) setError(res.error || 'Unable to load live dashboard data.');
       }
     } catch (err: any) {
-      setError(err.message || 'Unable to load live dashboard data.');
+      if (!data) setError(err.message || 'Unable to load live dashboard data.');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchAnalytics();
+    fetchAnalytics(true);
+
+    // 1. Supabase Realtime channel subscription across all core tables
+    const channel = supabase
+      .channel('admin-dashboard-kpis-live')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'applications' }, () => {
+        fetchAnalytics(false);
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => {
+        fetchAnalytics(false);
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'documents' }, () => {
+        fetchAnalytics(false);
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'consents' }, () => {
+        fetchAnalytics(false);
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'schemes' }, () => {
+        fetchAnalytics(false);
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'services' }, () => {
+        fetchAnalytics(false);
+      })
+      .subscribe();
+
+    // 2. Continuous background sync every 6 seconds to guarantee real-time updates
+    const pollTimer = setInterval(() => {
+      fetchAnalytics(false);
+    }, 6000);
+
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(pollTimer);
+    };
   }, []);
 
   if (loading && !data) {
@@ -99,7 +135,7 @@ export default function AdminDashboardPage() {
             <p className="text-xs text-red-700 mt-1 max-w-md mx-auto">{error}</p>
           </div>
           <button
-            onClick={fetchAnalytics}
+            onClick={() => fetchAnalytics(true)}
             className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#002840] hover:bg-[#001c30] text-white rounded-xl text-xs font-bold transition shadow-sm"
           >
             <span className="material-symbols-outlined text-[16px]">refresh</span>
@@ -222,6 +258,10 @@ export default function AdminDashboardPage() {
             <span className="text-xs text-slate-500 font-mono">
               Live Database: Supabase PostgreSQL
             </span>
+            <span className="flex items-center gap-1.5 text-xs text-emerald-700 font-semibold bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span>Live Real-Time Sync</span>
+            </span>
             {lastUpdated && (
               <span className="text-xs text-slate-500 font-mono">
                 • Last updated: {lastUpdated}
@@ -238,7 +278,7 @@ export default function AdminDashboardPage() {
 
         <div className="flex items-center gap-2">
           <button
-            onClick={fetchAnalytics}
+            onClick={() => fetchAnalytics(true)}
             className="bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm"
           >
             <span className="material-symbols-outlined text-[16px]">refresh</span>
@@ -260,7 +300,7 @@ export default function AdminDashboardPage() {
             <span className="material-symbols-outlined text-amber-600">info</span>
             <span>{error}</span>
           </div>
-          <button onClick={fetchAnalytics} className="font-bold underline text-amber-800">
+          <button onClick={() => fetchAnalytics(true)} className="font-bold underline text-amber-800">
             Retry Connection
           </button>
         </div>
