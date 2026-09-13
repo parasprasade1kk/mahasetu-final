@@ -45,15 +45,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           router.replace('/admin/login');
         }
       })
-      .catch(() => {
-        // Fallback for demo when backend is starting
-        setAdmin({
-          adminId: '1120610',
-          name: 'Shri. S. K. Deshmukh',
-          role: 'admin',
-          department: 'General Administration Department',
-        });
-        setIsLoading(false);
+      .catch((err) => {
+        console.error('Administrator clearance check failed:', err);
+        removeAdminToken();
+        router.replace('/admin/login');
       });
   }, [isLoginPage, router]);
 

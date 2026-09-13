@@ -53,7 +53,7 @@ export async function GET(req: NextRequest) {
       query = query.ilike('district', district);
     }
     if (category && category !== 'All') {
-      query = query.ilike('caste_category', category);
+      query = query.or(`category.ilike.%${category}%,caste_category.ilike.%${category}%`);
     }
 
     const from = (page - 1) * limit;
@@ -80,10 +80,10 @@ export async function GET(req: NextRequest) {
       isVerified: Boolean(p.aadhaar_hash),
       createdAt: p.created_at,
       district: p.district || 'Maharashtra',
-      category: p.caste_category || 'General/Open',
+      category: p.category || p.caste_category || 'General/Open',
       occupation: p.occupation || 'Not Specified',
-      annualIncomeAmount: p.annual_income_amount || 0,
-      educationLevel: p.current_education_level || '',
+      annualIncomeAmount: Number(p.annual_family_income || p.annual_income_amount || 0),
+      educationLevel: p.education_level || p.current_education_level || '',
       isStudent: Boolean(p.student_status),
       hasDisability: Boolean(p.disability_status),
       digiLockerLinked: Boolean(p.digilocker_linked),

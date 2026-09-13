@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
     if (decoded.adminId) {
       const { data } = await supabase
         .from('admin_users')
-        .select('admin_id, name, department, role, is_active, last_login')
+        .select('admin_id, name, role, active, last_login')
         .eq('admin_id', decoded.adminId)
         .maybeSingle();
       adminRecord = data;

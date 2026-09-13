@@ -36,53 +36,53 @@ export async function GET(req: NextRequest) {
     }
 
     const { searchParams } = new URL(req.url);
-    const department = searchParams.get('department');
-    const active = searchParams.get('active');
-    const search = searchParams.get('search');
+    const action = searchParams.get('action');
+    const actorRole = searchParams.get('actorRole');
+    const limit = Number(searchParams.get('limit')) || 100;
 
-    let query = supabase.from('schemes').select('*');
+    let query = supabase.from('audit_logs').select('*');
 
-    if (department && department !== 'All') {
-      query = query.or(`department_name.ilike.%${department}%,department_id.ilike.%${department}%`);
+    if (action && action !== 'All') {
+      query = query.eq('action', action);
     }
-    if (active && active !== 'All') {
-      query = query.eq('active', active === 'true');
-    }
-    if (search) {
-      query = query.or(
-        `name.ilike.%${search}%,name_mr.ilike.%${search}%,department_name.ilike.%${search}%,scheme_id.ilike.%${search}%`
-      );
+    if (actorRole && actorRole !== 'All') {
+      query = query.eq('actor_role', actorRole);
     }
 
-    const { data: schemes, error } = await query.order('created_at', { ascending: false });
+    const { data: logs, error } = await query
+      .order('created_at', { ascending: false })
+      .limit(limit);
 
     if (error) {
-      console.error('Fetch admin schemes error:', error.message);
+      console.error('Fetch audit logs error:', error.message);
       return NextResponse.json(
-        { success: false, error: 'Failed to retrieve schemes: ' + error.message },
+        { success: false, error: 'Failed to retrieve audit trail: ' + error.message },
         { status: 500 }
       );
     }
 
-    const mapped = (schemes || []).map((s: any) => ({
-      ...s,
-      schemeId: s.scheme_id,
-      department: s.department_name,
-      departmentMr: s.department_name_mr,
-      departmentKey: s.department_id,
-      nameMr: s.name_mr,
-      categoryMr: s.category_mr,
-      descriptionMr: s.description_mr,
+    const mapped = (logs || []).map((l: any) => ({
+      _id: l.id,
+      id: l.log_id || l.id,
+      logId: l.log_id || l.id,
+      actorId: l.actor_id,
+      actorRole: l.actor_role,
+      action: l.action,
+      targetResource: l.target_resource,
+      targetId: l.target_id,
+      metadata: l.metadata,
+      status: l.status || 'SUCCESS',
+      timestamp: l.created_at,
     }));
 
     return NextResponse.json({
       success: true,
-      schemes: mapped,
+      logs: mapped,
       total: mapped.length,
     });
   } catch (err: any) {
     return NextResponse.json(
-      { success: false, error: 'Failed to retrieve schemes: ' + (err?.message || 'Server error') },
+      { success: false, error: 'Failed to retrieve audit trail: ' + (err?.message || 'Server error') },
       { status: 500 }
     );
   }
