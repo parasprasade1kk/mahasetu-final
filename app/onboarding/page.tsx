@@ -63,7 +63,16 @@ export default function OnboardingProfilePage() {
   useEffect(() => {
     if (currentUser) {
       if (!fullName) setFullName(currentUser.name);
-      setMobile(currentUser.mobile);
+      if (currentUser.mobile) setMobile(currentUser.mobile.replace(/\D/g, ''));
+    } else {
+      try {
+        const saved = localStorage.getItem('mahasetu_auth_user');
+        if (saved) {
+          const u = JSON.parse(saved);
+          if (u.mobile) setMobile(u.mobile.replace(/\D/g, ''));
+          if (u.name && !fullName) setFullName(u.name);
+        }
+      } catch {}
     }
   }, [currentUser, fullName]);
 
@@ -143,19 +152,19 @@ export default function OnboardingProfilePage() {
 
   // Validation
   const isFormValid = useMemo(() => {
+    const cleanMobile = mobile.replace(/\D/g, '');
+    const cleanPin = pinCode.replace(/\D/g, '');
     return (
       fullName.trim().length > 0 &&
-      mobile.length === 10 &&
+      cleanMobile.length === 10 &&
       dob.length > 0 &&
-      age >= 0 &&
       district.trim().length > 0 &&
       taluka.trim().length > 0 &&
       villageCity.trim().length > 0 &&
-      pinCode.length === 6 &&
-      schemeInterests.length > 0 &&
+      cleanPin.length === 6 &&
       confirmedAccurate === true
     );
-  }, [fullName, mobile, dob, age, district, taluka, villageCity, pinCode, schemeInterests, confirmedAccurate]);
+  }, [fullName, mobile, dob, district, taluka, villageCity, pinCode, confirmedAccurate]);
 
   const handleOpenDigiLockerModal = () => {
     setShowDigiLockerModal(true);
@@ -209,12 +218,27 @@ export default function OnboardingProfilePage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isFormValid) {
+    const cleanMobile = mobile.replace(/\D/g, '');
+    const cleanPin = pinCode.replace(/\D/g, '');
+    const missing: string[] = [];
+
+    if (!fullName.trim()) missing.push(language === 'mr' ? 'पूर्ण नाव' : 'Full Name');
+    if (cleanMobile.length !== 10) missing.push(language === 'mr' ? '१० अंकी मोबाईल क्रमांक' : '10-digit Mobile Number');
+    if (!dob) missing.push(language === 'mr' ? 'जन्मतारीख' : 'Date of Birth');
+    if (!district.trim()) missing.push(language === 'mr' ? 'जिल्हा' : 'District');
+    if (!taluka.trim()) missing.push(language === 'mr' ? 'तालुका' : 'Taluka');
+    if (!villageCity.trim()) missing.push(language === 'mr' ? 'गाव / शहर' : 'Village / City');
+    if (cleanPin.length !== 6) missing.push(language === 'mr' ? '६ अंकी पिन कोड' : '6-digit Pin Code');
+    if (!confirmedAccurate) missing.push(language === 'mr' ? 'माहितीच्या अचूकतेची पुष्टी (चेकबॉक्स)' : 'Confirmation Checkbox');
+
+    if (missing.length > 0) {
       setFormError(
         language === 'mr'
-          ? 'कृपया सर्व आवश्यक रकाने भरा आणि माहितीच्या अचूकतेची पुष्टी करा.'
-          : 'Please complete all required fields and check the confirmation box.'
+          ? `कृपया पुढील आवश्यक रकाने भरा: ${missing.join(', ')}`
+          : `Please complete the following required fields: ${missing.join(', ')}`
       );
+      const errEl = document.getElementById('bottom-error-banner') || document.getElementById('top-error-banner') || document.getElementById('confirmation-section');
+      errEl?.scrollIntoView({ behavior: 'smooth' });
       return;
     }
 
@@ -328,7 +352,7 @@ export default function OnboardingProfilePage() {
               />
             </div>
 
-            {/* Mobile Number (Read-Only) */}
+            {/* Mobile Number */}
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1" htmlFor="mobile">
                 {language === 'mr' ? 'मोबाईल क्रमांक (Mobile Number)' : 'Mobile Number (Verified)'}
@@ -337,15 +361,24 @@ export default function OnboardingProfilePage() {
               <div className="relative">
                 <input
                   id="mobile"
-                  type="text"
+                  type="tel"
+                  maxLength={10}
                   value={mobile}
-                  readOnly
-                  disabled
-                  className="w-full h-11 px-3.5 bg-slate-100 border border-slate-300 rounded-lg text-xs font-mono font-bold text-slate-600 cursor-not-allowed"
+                  onChange={(e) => setMobile(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                  readOnly={Boolean(currentUser?.mobile && currentUser.mobile.replace(/\D/g, '').length === 10)}
+                  placeholder="10-digit Mobile Number"
+                  className={`w-full h-11 px-3.5 border border-slate-300 rounded-lg text-xs font-mono font-bold ${
+                    currentUser?.mobile && currentUser.mobile.replace(/\D/g, '').length === 10
+                      ? 'bg-slate-100 text-slate-600 cursor-not-allowed'
+                      : 'bg-white text-slate-800 focus:outline-none focus:border-[#003b5a]'
+                  }`}
+                  required
                 />
-                <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-emerald-600">
-                  <span className="material-symbols-outlined text-[18px]">verified</span>
-                </span>
+                {currentUser?.mobile && currentUser.mobile.replace(/\D/g, '').length === 10 && (
+                  <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-emerald-600">
+                    <span className="material-symbols-outlined text-[18px]">verified</span>
+                  </span>
+                )}
               </div>
             </div>
 
@@ -1009,6 +1042,14 @@ export default function OnboardingProfilePage() {
           </label>
         </div>
 
+        {/* Error alert at bottom if validation fails */}
+        {formError && (
+          <div id="bottom-error-banner" className="p-4 bg-red-50 border border-red-300 text-red-800 text-xs rounded-xl flex items-center gap-3 animate-in fade-in">
+            <span className="material-symbols-outlined text-red-600 text-[20px]">error</span>
+            <p className="font-semibold">{formError}</p>
+          </div>
+        )}
+
         {/* Submit Action */}
         <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-[11px] text-slate-500">
@@ -1017,11 +1058,11 @@ export default function OnboardingProfilePage() {
 
           <button
             type="submit"
-            disabled={!isFormValid || isSubmitting}
+            disabled={isSubmitting}
             className={`w-full sm:w-auto px-8 h-12 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 shadow-gov ${
-              isFormValid && !isSubmitting
-                ? 'bg-[#003b5a] hover:bg-[#002840] text-white cursor-pointer'
-                : 'bg-slate-300 text-slate-500 cursor-not-allowed'
+              isSubmitting
+                ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                : 'bg-[#003b5a] hover:bg-[#002840] text-white cursor-pointer active:scale-[0.99]'
             }`}
           >
             {isSubmitting ? (

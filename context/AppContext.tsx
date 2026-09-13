@@ -203,7 +203,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         const savedUserStr = localStorage.getItem(STORAGE_KEY_AUTH_USER);
         if (savedUserStr) {
           const savedUser: CitizenAccount = JSON.parse(savedUserStr);
-          const verified = findAccount(savedUser.mobile);
+          const verified = findAccount(savedUser.mobile) || savedUser;
           if (verified) {
             setCurrentUser(verified);
             setIsLoggedIn(true);
