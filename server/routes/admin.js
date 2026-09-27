@@ -24,16 +24,18 @@ router.post('/login', async (req, res) => {
 
     const admin = await authenticateAdmin({ adminId, password });
 
-    const token = jwt.sign(
+    const fallbackToken = jwt.sign(
       { adminId: admin.admin_id, role: admin.role, name: admin.name },
       JWT_SECRET,
       { expiresIn: '24h' }
     );
+    const token = admin.supabaseToken || fallbackToken;
 
     res.json({
       success: true,
       message: 'Government Administrator authenticated successfully.',
       token,
+      refreshToken: admin.refreshToken || null,
       admin: {
         adminId: admin.admin_id,
         name: admin.name,

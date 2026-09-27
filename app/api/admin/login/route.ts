@@ -30,25 +30,31 @@ export async function POST(req: NextRequest) {
 
     const admin = await authenticateAdmin({ adminId, password });
 
-    const token = jwt.sign(
-      {
-        adminId: admin.admin_id,
-        role: admin.role || 'admin',
-        name: admin.name,
-      },
-      JWT_SECRET,
-      { expiresIn: '12h' }
-    );
+    // Use authentic Supabase Auth session access_token as primary token
+    const token =
+      admin.supabaseToken ||
+      jwt.sign(
+        {
+          adminId: admin.admin_id,
+          role: admin.role || 'admin',
+          name: admin.name,
+        },
+        JWT_SECRET,
+        { expiresIn: '12h' }
+      );
 
     return NextResponse.json({
       success: true,
       message: 'Administrator authenticated successfully',
       token,
+      refreshToken: admin.refreshToken || null,
       admin: {
         adminId: admin.admin_id,
         role: admin.role || 'admin',
         name: admin.name,
-        department: admin.department,
+        department:
+          admin.department ||
+          'General Administration Department (GAD), Mantralaya, Mumbai',
       },
     });
   } catch (err: any) {

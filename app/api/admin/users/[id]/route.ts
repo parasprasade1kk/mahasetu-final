@@ -1,40 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import jwt from 'jsonwebtoken';
+import { verifyAdminRequest } from '@/lib/adminAuth';
 import { supabase } from '@/lib/supabaseClient';
 
 export const dynamic = 'force-dynamic';
-
-const JWT_SECRET =
-  process.env.JWT_SECRET || 'mahasetu_secure_jwt_secret_key_2026_gov_maharashtra_dpi';
 
 export async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const authHeader = req.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    const authResult = await verifyAdminRequest(req);
+    if (!authResult.authorized) {
       return NextResponse.json(
-        { success: false, error: 'Administrator authentication required.' },
-        { status: 401 }
-      );
-    }
-
-    const token = authHeader.split(' ')[1];
-    let decoded: any = null;
-    try {
-      decoded = jwt.verify(token, JWT_SECRET);
-    } catch {
-      return NextResponse.json(
-        { success: false, error: 'Invalid or expired session.' },
-        { status: 401 }
-      );
-    }
-
-    if (!decoded || (decoded.role !== 'admin' && decoded.role !== 'superadmin')) {
-      return NextResponse.json(
-        { success: false, error: 'Access denied. Admin role required.' },
-        { status: 403 }
+        { success: false, error: authResult.error || 'Administrator authentication required.' },
+        { status: authResult.status || 401 }
       );
     }
 

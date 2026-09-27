@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { authApi, setAdminToken, getAdminToken } from '@/lib/api';
+import { supabase } from '@/lib/supabaseClient';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -46,6 +47,14 @@ export default function AdminLoginPage() {
 
       if (res.success && res.token) {
         setAdminToken(res.token);
+        if (res.refreshToken) {
+          try {
+            await supabase.auth.setSession({
+              access_token: res.token,
+              refresh_token: res.refreshToken,
+            });
+          } catch {}
+        }
         setIsSuccess(true);
         setTimeout(() => {
           router.push('/admin/dashboard');

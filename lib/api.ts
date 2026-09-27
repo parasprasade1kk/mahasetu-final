@@ -2,7 +2,10 @@
 // Handles communication between Next.js frontend and Express/Supabase backend.
 // Supports both relative /api calls (via Next rewrites) and absolute NEXT_PUBLIC_API_URL.
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
+const BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  process.env.VITE_API_BASE_URL ||
+  '/api';
 
 export const CITIZEN_TOKEN_KEY = 'mahasetu_token';
 export const ADMIN_TOKEN_KEY = 'mahasetu_admin_token';

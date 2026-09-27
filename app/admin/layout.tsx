@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { authApi, getAdminToken, removeAdminToken } from '@/lib/api';
+import { supabase } from '@/lib/supabaseClient';
 
 interface AdminInfo {
   adminId: string;
@@ -52,7 +53,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       });
   }, [isLoginPage, router]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch {}
     removeAdminToken();
     router.replace('/admin/login');
   };

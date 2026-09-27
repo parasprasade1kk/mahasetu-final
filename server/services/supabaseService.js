@@ -205,6 +205,43 @@ async function authenticateCitizen({ mobile, aadhaar }) {
 
 async function authenticateAdmin({ adminId, password }) {
   const trimmedId = String(adminId || '').trim();
+  const safePassword = String(password || '');
+
+  if (!trimmedId) {
+    const err = new Error('Please enter Administrator ID.');
+    err.status = 400;
+    throw err;
+  }
+  if (!safePassword) {
+    const err = new Error('Please enter password.');
+    err.status = 400;
+    throw err;
+  }
+
+  const adminEmail = trimmedId.includes('@')
+    ? trimmedId
+    : `admin.${trimmedId}@admin.mahasetu.gov.in`;
+
+  let supabaseToken = null;
+  let refreshToken = null;
+  let authUser = null;
+
+  // 1. Primary: Sign in to Supabase Auth to obtain an authentic session
+  try {
+    const { data: authSession, error: authErr } = await supabase.auth.signInWithPassword({
+      email: adminEmail,
+      password: safePassword,
+    });
+    if (!authErr && authSession?.session?.access_token) {
+      supabaseToken = authSession.session.access_token;
+      refreshToken = authSession.session.refresh_token;
+      authUser = authSession.user;
+    }
+  } catch (authErr) {
+    console.warn('Supabase Auth signIn note:', authErr?.message);
+  }
+
+  // 2. Fetch admin user record from public.admin_users
   let admin = null;
   try {
     const { data: rpcAdmin, error: rpcErr } = await supabase.rpc('get_admin_for_login', { p_admin_id: trimmedId });
@@ -224,57 +261,63 @@ async function authenticateAdmin({ adminId, password }) {
     }
   }
 
+  // Fallback lookup if adminId was provided as email
+  if (!admin && trimmedId.includes('@') && authUser?.id) {
+    const { data: byAuthId } = await supabase
+      .from('admin_users')
+      .select('*')
+      .eq('auth_user_id', authUser.id)
+      .maybeSingle();
+    if (byAuthId) admin = byAuthId;
+  }
+
+  // 3. If admin record doesn't exist or is deactivated
   if (!admin) {
-    const err = new Error('Invalid Administrator ID or password.');
+    const err = new Error('Admin profile not found.');
     err.status = 401;
     throw err;
   }
 
-  const isValid = bcrypt.compareSync(password, admin.password_hash);
-  if (!isValid) {
-    await createAuditLog({
-      actorId: trimmedId,
-      actorRole: 'admin',
-      action: 'ADMIN_LOGIN_FAILED',
-      targetResource: 'AdminPortal',
-      status: 'FAILURE',
-      metadata: { attemptedId: trimmedId },
-    });
-    const err = new Error('Invalid Administrator ID or password.');
-    err.status = 401;
+  if (admin.active === false) {
+    const err = new Error('Admin account is not authorized.');
+    err.status = 403;
     throw err;
   }
 
-  // Sign in to Supabase Auth to obtain a real authenticated session
-  let supabaseToken = null;
-  try {
-    const adminEmail = `admin.${trimmedId}@admin.mahasetu.gov.in`;
-    const { data: authSession } = await supabase.auth.signInWithPassword({
-      email: adminEmail,
-      password: password || '',
-    });
-    if (authSession?.session?.access_token) {
-      supabaseToken = authSession.session.access_token;
+  // 4. If Supabase Auth didn't succeed, fallback to bcrypt verification
+  if (!supabaseToken) {
+    const isValid = admin.password_hash ? bcrypt.compareSync(safePassword, admin.password_hash) : false;
+    if (!isValid) {
+      await createAuditLog({
+        actorId: trimmedId,
+        actorRole: 'admin',
+        action: 'ADMIN_LOGIN_FAILED',
+        targetResource: 'AdminPortal',
+        status: 'FAILURE',
+        metadata: { attemptedId: trimmedId },
+      });
+      const err = new Error('Invalid Administrator ID or password.');
+      err.status = 401;
+      throw err;
     }
-  } catch (authErr) {
-    console.warn('Supabase Auth admin login non-blocking notice:', authErr);
   }
 
+  // 5. Update last_login timestamp and write audit record
   await supabase
     .from('admin_users')
     .update({ last_login: new Date().toISOString() })
-    .eq('admin_id', trimmedId);
+    .eq('admin_id', admin.admin_id || trimmedId);
 
   await createAuditLog({
-    actorId: trimmedId,
+    actorId: admin.admin_id || trimmedId,
     actorRole: 'admin',
     action: 'ADMIN_LOGIN',
     targetResource: 'AdminPortal',
     status: 'SUCCESS',
-    metadata: { adminId: trimmedId },
+    metadata: { adminId: admin.admin_id || trimmedId, email: adminEmail },
   });
 
-  return { ...admin, supabaseToken };
+  return { ...admin, supabaseToken, refreshToken, authUser };
 }
 
 // ─── Applications ────────────────────────────────────────────────────────────
