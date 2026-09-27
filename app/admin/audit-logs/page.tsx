@@ -7,6 +7,7 @@ interface LogItem {
   _id: string;
   logId: string;
   actorId: string;
+  actorName?: string;
   actorRole: string;
   action: string;
   targetResource: string;
@@ -49,9 +50,11 @@ export default function AdminAuditLogsPage() {
     'All',
     'CITIZEN_REGISTRATION',
     'CITIZEN_LOGIN',
+    'ADMIN_LOGIN',
     'ADMIN_LOGIN_SUCCESS',
     'ADMIN_LOGIN_FAILED',
     'PROFILE_UPDATE',
+    'UPDATE_PROFILE',
     'AI_SCHEME_SEARCH',
     'ELIGIBILITY_EVALUATION',
     'DOCUMENT_UPLOAD',
@@ -131,24 +134,25 @@ export default function AdminAuditLogsPage() {
               <tr>
                 <th className="py-3.5 px-4">Audit ID</th>
                 <th className="py-3.5 px-4">Timestamp</th>
+                <th className="py-3.5 px-4">Citizen / Actor Name</th>
+                <th className="py-3.5 px-4">User ID (Role)</th>
                 <th className="py-3.5 px-4">Action Event</th>
-                <th className="py-3.5 px-4">Actor ID (Role)</th>
-                <th className="py-3.5 px-4">Resource Target</th>
-                <th className="py-3.5 px-4">Audit Metadata</th>
+                <th className="py-3.5 px-4">Module / Resource</th>
+                <th className="py-3.5 px-4">Record / Details</th>
                 <th className="py-3.5 px-4">Result</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-mono text-[11px]">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-slate-400 font-sans">
+                  <td colSpan={8} className="py-8 text-center text-slate-400 font-sans">
                     Loading audit trail from Supabase...
                   </td>
                 </tr>
               ) : logs.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-slate-500 font-sans">
-                    No audit logs found matching criteria.
+                  <td colSpan={8} className="py-8 text-center text-slate-500 font-sans">
+                    No audit records found
                   </td>
                 </tr>
               ) : (
@@ -157,25 +161,47 @@ export default function AdminAuditLogsPage() {
                     <td className="py-3 px-4 font-bold text-[#002840]">
                       {l.logId}
                     </td>
-                    <td className="py-3 px-4 text-slate-500">
-                      {new Date(l.timestamp).toLocaleString()}
+                    <td className="py-3 px-4 text-slate-500 font-sans text-[11px]">
+                      {new Date(l.timestamp).toLocaleString('en-IN', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                      })}
                     </td>
-                    <td className="py-3 px-4 font-sans font-bold text-slate-900">
-                      {l.action}
+                    <td className="py-3 px-4 font-sans">
+                      <div className="font-bold text-slate-900">{l.actorName || l.actorId}</div>
                     </td>
                     <td className="py-3 px-4 text-slate-700">
-                      <span>{l.actorId}</span>
-                      <span className={`ml-1 text-[9px] px-1.5 py-0.2 rounded uppercase ${
-                        l.actorRole === 'admin' ? 'bg-amber-100 text-amber-900 font-bold' : 'bg-slate-100 text-slate-600'
+                      <span className="font-mono text-[#003b5a]">{l.actorId}</span>
+                      <span className={`ml-1 text-[9px] px-1.5 py-0.5 rounded font-sans uppercase font-bold ${
+                        l.actorRole === 'admin' ? 'bg-amber-100 text-amber-900' : 'bg-blue-100 text-blue-900'
                       }`}>
                         {l.actorRole}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-slate-600">
-                      {l.targetResource} {l.targetId ? `(${l.targetId})` : ''}
+                    <td className="py-3 px-4 font-sans font-bold text-slate-900">
+                      {l.action}
                     </td>
-                    <td className="py-3 px-4 text-slate-500 max-w-xs truncate font-sans">
-                      {l.metadata ? JSON.stringify(l.metadata) : '-'}
+                    <td className="py-3 px-4 text-slate-600 font-sans font-medium">
+                      {l.targetResource}
+                    </td>
+                    <td className="py-3 px-4 text-slate-600 font-sans max-w-xs">
+                      {l.targetId && (
+                        <div className="font-mono text-[11px] text-[#002840] font-bold">
+                          ID: {l.targetId}
+                        </div>
+                      )}
+                      {l.metadata && Object.keys(l.metadata).length > 0 && (
+                        <div className="text-[10px] text-slate-500 truncate">
+                          {l.metadata.serviceName || l.metadata.department || l.metadata.newStatus || l.metadata.remarks || JSON.stringify(l.metadata)}
+                        </div>
+                      )}
+                      {!l.targetId && (!l.metadata || Object.keys(l.metadata).length === 0) && (
+                        <span className="text-slate-400">-</span>
+                      )}
                     </td>
                     <td className="py-3 px-4">
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${

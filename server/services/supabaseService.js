@@ -602,6 +602,7 @@ async function getLiveAnalytics() {
   const [
     { count: totalCitizens },
     { count: verifiedCitizens },
+    { count: totalAuditLogs },
     { count: totalApplications },
     { count: pendingApplications },
     { count: approvedApplications },
@@ -612,8 +613,14 @@ async function getLiveAnalytics() {
     { count: digiLockerUsers },
     { count: activeConsents },
   ] = await Promise.all([
-    supabase.from('profiles').select('*', { count: 'exact', head: true }),
-    supabase.from('profiles').select('*', { count: 'exact', head: true }).not('aadhaar_hash', 'is', null),
+    supabase.from('profiles').select('*', { count: 'exact', head: true }).not('user_id', 'is', null),
+    supabase
+      .from('profiles')
+      .select('*', { count: 'exact', head: true })
+      .not('user_id', 'is', null)
+      .not('aadhaar_hash', 'is', null)
+      .neq('aadhaar_hash', ''),
+    supabase.from('audit_logs').select('*', { count: 'exact', head: true }),
     supabase.from('applications').select('*', { count: 'exact', head: true }),
     supabase.from('applications').select('*', { count: 'exact', head: true }).in('status', [
       'Submitted', 'submitted',
@@ -640,7 +647,7 @@ async function getLiveAnalytics() {
   ]);
 
   const [
-    { data: recentActivity },
+    { data: recentActivityRaw },
     { data: appsSummary },
   ] = await Promise.all([
     supabase
@@ -652,6 +659,19 @@ async function getLiveAnalytics() {
       .from('applications')
       .select('department, status, district'),
   ]);
+
+  const recentActivity = (recentActivityRaw || []).map((log) => ({
+    id: log.id,
+    logId: log.log_id || log.id,
+    actorId: log.actor_id,
+    actorRole: log.actor_role,
+    action: log.action,
+    targetResource: log.target_resource,
+    targetId: log.target_id,
+    status: log.status || 'SUCCESS',
+    timestamp: log.created_at,
+    metadata: log.metadata,
+  }));
 
   const deptCounts = {};
   const statusCounts = {};
@@ -675,6 +695,7 @@ async function getLiveAnalytics() {
   return {
     totalCitizens: totalCitizens || 0,
     verifiedCitizens: verifiedCitizens || 0,
+    totalAuditLogs: totalAuditLogs || 0,
     totalApplications: totalApplications || 0,
     pendingApplications: pendingApplications || 0,
     approvedApplications: approvedApplications || 0,

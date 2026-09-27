@@ -50,29 +50,40 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const combined = (profiles || []).map((p: any) => ({
-      userId: p.user_id,
-      fullName: p.full_name,
-      mobile: p.mobile_number,
-      aadhaarMasked: p.aadhaar_masked,
-      email: p.email || '',
-      isVerified: Boolean(p.aadhaar_hash),
-      createdAt: p.created_at,
-      district: p.district || 'Maharashtra',
-      category: p.category || p.caste_category || 'General/Open',
-      occupation: p.occupation || 'Not Specified',
-      annualIncomeAmount: Number(p.annual_family_income || p.annual_income_amount || 0),
-      educationLevel: p.education_level || p.current_education_level || '',
-      isStudent: Boolean(p.student_status),
-      hasDisability: Boolean(p.disability_status),
-      digiLockerLinked: Boolean(p.digilocker_linked),
-      confirmedAccurate: Boolean(p.confirmed_accurate),
-    }));
+    const combined = (profiles || []).map((p: any) => {
+      const isVerified = Boolean(p.aadhaar_hash && p.aadhaar_hash.trim() !== '');
+      const cleanMobile = p.mobile_number ? String(p.mobile_number).replace(/\D/g, '') : '';
+      const mobileMasked = cleanMobile.length >= 4 ? `******${cleanMobile.slice(-4)}` : '******0000';
+
+      return {
+        userId: p.user_id,
+        fullName: p.full_name,
+        mobile: p.mobile_number,
+        mobileMasked,
+        aadhaarMasked: p.aadhaar_masked || (isVerified ? 'XXXX XXXX ****' : 'Not Linked'),
+        email: p.email || '',
+        isVerified,
+        verificationStatus: isVerified ? 'Verified' : 'Unverified',
+        accountStatus: 'Active',
+        createdAt: p.created_at,
+        district: p.district || 'Maharashtra',
+        category: p.category || p.caste_category || 'General/Open',
+        occupation: p.occupation || 'Not Specified',
+        annualIncomeAmount: Number(p.annual_family_income || p.annual_income_amount || 0),
+        educationLevel: p.education_level || p.current_education_level || '',
+        isStudent: Boolean(p.student_status),
+        hasDisability: Boolean(p.disability_status),
+        digiLockerLinked: Boolean(p.digilocker_linked),
+        confirmedAccurate: Boolean(p.confirmed_accurate),
+      };
+    });
 
     return NextResponse.json({
       success: true,
       users: combined,
-      total: count || combined.length,
+      total: count !== null && count !== undefined ? count : combined.length,
+      page,
+      limit,
     });
   } catch (err: any) {
     return NextResponse.json(

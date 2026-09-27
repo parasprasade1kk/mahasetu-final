@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabaseClient';
 interface AnalyticsData {
   totalCitizens: number;
   verifiedCitizens: number;
+  totalAuditLogs: number;
   totalApplications: number;
   pendingApplications: number;
   approvedApplications: number;
@@ -39,6 +40,7 @@ export default function AdminDashboardPage() {
         const payload: AnalyticsData = res.data || {
           totalCitizens: res.kpis?.totalRegisteredCitizens ?? 0,
           verifiedCitizens: res.kpis?.verifiedCitizens ?? 0,
+          totalAuditLogs: res.kpis?.totalAuditLogs ?? 0,
           totalApplications: res.kpis?.totalApplications ?? 0,
           pendingApplications: res.kpis?.pendingApplications ?? 0,
           approvedApplications: res.kpis?.approvedApplications ?? 0,
@@ -83,6 +85,9 @@ export default function AdminDashboardPage() {
         fetchAnalytics(false);
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => {
+        fetchAnalytics(false);
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'audit_logs' }, () => {
         fetchAnalytics(false);
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'documents' }, () => {
@@ -149,6 +154,7 @@ export default function AdminDashboardPage() {
   const d = data || {
     totalCitizens: 0,
     verifiedCitizens: 0,
+    totalAuditLogs: 0,
     totalApplications: 0,
     pendingApplications: 0,
     approvedApplications: 0,
@@ -173,12 +179,20 @@ export default function AdminDashboardPage() {
       link: '/admin/users',
     },
     {
-      title: 'Verified Citizens',
+      title: 'Registered & Verified Citizens',
       value: d.verifiedCitizens,
       icon: 'verified',
       color: 'text-emerald-700',
       bg: 'bg-emerald-50 border-emerald-200',
       link: '/admin/users',
+    },
+    {
+      title: 'Audit Trails',
+      value: d.totalAuditLogs,
+      icon: 'receipt_long',
+      color: 'text-purple-700',
+      bg: 'bg-purple-50 border-purple-200',
+      link: '/admin/audit-logs',
     },
     {
       title: 'Total Applications',
@@ -227,14 +241,6 @@ export default function AdminDashboardPage() {
       color: 'text-cyan-700',
       bg: 'bg-cyan-50 border-cyan-200',
       link: '/admin/documents',
-    },
-    {
-      title: 'DigiLocker Connected',
-      value: d.digiLockerUsers,
-      icon: 'cloud_done',
-      color: 'text-sky-700',
-      bg: 'bg-sky-50 border-sky-200',
-      link: '/admin/users',
     },
     {
       title: 'Active DPDP Consents',
@@ -472,7 +478,7 @@ export default function AdminDashboardPage() {
                   </span>
                   <div>
                     <span className="font-bold text-slate-800">{log.action}</span>
-                    <span className="text-slate-500 ml-2">by {log.actorId} ({log.actorRole})</span>
+                    <span className="text-slate-500 ml-2">by <strong className="text-slate-700">{log.actorName || log.actorId}</strong> ({log.actorRole})</span>
                   </div>
                 </div>
                 <div className="text-[11px] text-slate-400 font-mono">
@@ -482,7 +488,7 @@ export default function AdminDashboardPage() {
             ))}
           </div>
         ) : (
-          <p className="text-xs text-slate-500 py-2">No recent audit logs recorded.</p>
+          <p className="text-xs text-slate-500 py-2">No audit records found.</p>
         )}
       </div>
 

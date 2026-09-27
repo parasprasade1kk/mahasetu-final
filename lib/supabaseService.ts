@@ -23,6 +23,7 @@ export async function createAuditLog({
   targetId,
   status = 'SUCCESS',
   metadata = {},
+  authUserId,
 }: {
   actorId: string;
   actorRole?: string;
@@ -31,10 +32,11 @@ export async function createAuditLog({
   targetId?: string;
   status?: string;
   metadata?: any;
+  authUserId?: string;
 }) {
   try {
     const logId = `AUD-${Date.now()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
-    await supabase.from('audit_logs').insert({
+    const insertObj: any = {
       log_id: logId,
       actor_id: actorId,
       actor_role: actorRole,
@@ -43,7 +45,11 @@ export async function createAuditLog({
       target_id: targetId,
       status,
       metadata,
-    });
+    };
+    if (authUserId) {
+      insertObj.auth_user_id = authUserId;
+    }
+    await supabase.from('audit_logs').insert(insertObj);
   } catch (err: any) {
     console.warn('Audit log write error:', err.message);
   }
@@ -177,8 +183,40 @@ export async function registerCitizen({
       throw new Error('Failed to create citizen profile: ' + directErr.message);
     }
 
+    await createAuditLog({
+      actorId: directProfile.user_id,
+      authUserId: directProfile.auth_user_id || undefined,
+      actorRole: 'citizen',
+      action: 'CITIZEN_REGISTRATION',
+      targetResource: 'Profile',
+      targetId: directProfile.user_id,
+      status: 'SUCCESS',
+      metadata: {
+        fullName: directProfile.full_name,
+        district: directProfile.district || 'Pune',
+        mobileMasked: `******${cleanMobile.slice(-4)}`,
+        verified: Boolean(directProfile.aadhaar_hash),
+      },
+    });
+
     return directProfile;
   }
+
+  await createAuditLog({
+    actorId: newProfile.user_id,
+    authUserId: newProfile.auth_user_id || undefined,
+    actorRole: 'citizen',
+    action: 'CITIZEN_REGISTRATION',
+    targetResource: 'Profile',
+    targetId: newProfile.user_id,
+    status: 'SUCCESS',
+    metadata: {
+      fullName: newProfile.full_name,
+      district: newProfile.district || 'Pune',
+      mobileMasked: `******${cleanMobile.slice(-4)}`,
+      verified: Boolean(newProfile.aadhaar_hash),
+    },
+  });
 
   return newProfile;
 }
@@ -648,6 +686,7 @@ export async function getLiveAnalytics() {
   const [
     { count: totalCitizens },
     { count: verifiedCitizens },
+    { count: totalAuditLogs },
     { count: totalApplications },
     { count: pendingApplications },
     { count: approvedApplications },
@@ -658,8 +697,14 @@ export async function getLiveAnalytics() {
     { count: digiLockerUsers },
     { count: activeConsents },
   ] = await Promise.all([
-    supabase.from('profiles').select('*', { count: 'exact', head: true }),
-    supabase.from('profiles').select('*', { count: 'exact', head: true }).not('aadhaar_hash', 'is', null),
+    supabase.from('profiles').select('*', { count: 'exact', head: true }).not('user_id', 'is', null),
+    supabase
+      .from('profiles')
+      .select('*', { count: 'exact', head: true })
+      .not('user_id', 'is', null)
+      .not('aadhaar_hash', 'is', null)
+      .neq('aadhaar_hash', ''),
+    supabase.from('audit_logs').select('*', { count: 'exact', head: true }),
     supabase.from('applications').select('*', { count: 'exact', head: true }),
     supabase
       .from('applications')
@@ -701,7 +746,7 @@ export async function getLiveAnalytics() {
   ]);
 
   const [
-    { data: recentActivity },
+    { data: recentActivityRaw },
     { data: appsSummary },
   ] = await Promise.all([
     supabase
@@ -713,6 +758,40 @@ export async function getLiveAnalytics() {
       .from('applications')
       .select('department, status, district'),
   ]);
+
+  // Resolve actor names for recent activity
+  const actorIds = Array.from(new Set((recentActivityRaw || []).map((l: any) => l.actor_id).filter(Boolean)));
+  const profilesMap = new Map<string, any>();
+  const adminsMap = new Map<string, any>();
+
+  if (actorIds.length > 0) {
+    const [{ data: matchedProfiles }, { data: matchedAdmins }] = await Promise.all([
+      supabase.from('profiles').select('user_id, full_name').in('user_id', actorIds),
+      supabase.from('admin_users').select('admin_id, name').in('admin_id', actorIds),
+    ]);
+    (matchedProfiles || []).forEach((p: any) => profilesMap.set(p.user_id, p));
+    (matchedAdmins || []).forEach((a: any) => adminsMap.set(a.admin_id, a));
+  }
+
+  const recentActivity = (recentActivityRaw || []).map((log: any) => {
+    const prof = profilesMap.get(log.actor_id);
+    const adm = adminsMap.get(log.actor_id);
+    const actorName = log.metadata?.applicantName || log.metadata?.fullName || prof?.full_name || adm?.name || (log.actor_role === 'admin' ? `Admin (${log.actor_id})` : log.actor_id);
+
+    return {
+      id: log.id,
+      logId: log.log_id || log.id,
+      actorId: log.actor_id,
+      actorName,
+      actorRole: log.actor_role,
+      action: log.action,
+      targetResource: log.target_resource,
+      targetId: log.target_id,
+      status: log.status || 'SUCCESS',
+      timestamp: log.created_at,
+      metadata: log.metadata,
+    };
+  });
 
   const deptCounts: Record<string, number> = {};
   const statusCounts: Record<string, number> = {};
@@ -736,6 +815,7 @@ export async function getLiveAnalytics() {
   return {
     totalCitizens: totalCitizens || 0,
     verifiedCitizens: verifiedCitizens || 0,
+    totalAuditLogs: totalAuditLogs || 0,
     totalApplications: totalApplications || 0,
     pendingApplications: pendingApplications || 0,
     approvedApplications: approvedApplications || 0,

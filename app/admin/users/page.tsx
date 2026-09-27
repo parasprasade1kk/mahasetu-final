@@ -20,6 +20,9 @@ interface CitizenUser {
   hasDisability: boolean;
   digiLockerLinked: boolean;
   confirmedAccurate: boolean;
+  mobileMasked?: string;
+  verificationStatus?: string;
+  accountStatus?: string;
 }
 
 export default function AdminUsersPage() {
@@ -28,22 +31,31 @@ export default function AdminUsersPage() {
   const [search, setSearch] = useState('');
   const [districtFilter, setDistrictFilter] = useState('All');
   const [categoryFilter, setCategoryFilter] = useState('All');
+  const [page, setPage] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const limit = 20;
 
   // Modal State
   const [selectedUser, setSelectedUser] = useState<any | null>(null);
   const [modalTab, setModalTab] = useState<'profile' | 'documents' | 'applications' | 'consents' | 'activity'>('profile');
   const [modalLoading, setModalLoading] = useState(false);
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (newPage = page) => {
     setLoading(true);
     try {
       const res = await adminApi.getUsers({
         search: search || undefined,
         district: districtFilter !== 'All' ? districtFilter : undefined,
         category: categoryFilter !== 'All' ? categoryFilter : undefined,
+        page: newPage,
       });
       if (res.success && Array.isArray(res.users)) {
         setUsers(res.users);
+        if (typeof res.total === 'number') {
+          setTotalRecords(res.total);
+        } else {
+          setTotalRecords(res.users.length);
+        }
       }
     } catch (err) {
       console.error('Failed to load users:', err);
@@ -53,12 +65,14 @@ export default function AdminUsersPage() {
   };
 
   useEffect(() => {
-    fetchUsers();
+    setPage(1);
+    fetchUsers(1);
   }, [districtFilter, categoryFilter]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    fetchUsers();
+    setPage(1);
+    fetchUsers(1);
   };
 
   const handleOpenUserDetail = async (userId: string, tab: 'profile' | 'documents' | 'applications' | 'consents' | 'activity') => {
@@ -166,26 +180,25 @@ export default function AdminUsersPage() {
             <thead className="bg-[#f0f4f9] text-[#002840] border-b border-slate-200 uppercase font-bold text-[10px] tracking-wider">
               <tr>
                 <th className="py-3.5 px-4">Citizen ID</th>
-                <th className="py-3.5 px-4">Name & Masked Aadhaar</th>
-                <th className="py-3.5 px-4">Mobile</th>
+                <th className="py-3.5 px-4">Full Name</th>
+                <th className="py-3.5 px-4">Mobile Number</th>
                 <th className="py-3.5 px-4">District</th>
-                <th className="py-3.5 px-4">Category</th>
-                <th className="py-3.5 px-4">Occupation</th>
-                <th className="py-3.5 px-4">Annual Income</th>
-                <th className="py-3.5 px-4">Status</th>
+                <th className="py-3.5 px-4">Verification</th>
+                <th className="py-3.5 px-4">Account Status</th>
+                <th className="py-3.5 px-4">Registered Date</th>
                 <th className="py-3.5 px-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {loading ? (
                 <tr>
-                  <td colSpan={9} className="py-8 text-center text-slate-400">
+                  <td colSpan={8} className="py-8 text-center text-slate-400">
                     Loading citizens from Supabase...
                   </td>
                 </tr>
               ) : users.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="py-8 text-center text-slate-500">
+                  <td colSpan={8} className="py-8 text-center text-slate-500">
                     No registered citizens found matching filter criteria.
                   </td>
                 </tr>
@@ -198,26 +211,17 @@ export default function AdminUsersPage() {
                     <td className="py-3 px-4">
                       <div className="font-bold text-slate-900">{u.fullName}</div>
                       <div className="text-[10px] text-slate-500 font-mono flex items-center gap-1">
-                        <span className="material-symbols-outlined text-[12px] text-emerald-600">verified</span>
-                        {u.aadhaarMasked}
+                        <span className={`material-symbols-outlined text-[12px] ${u.isVerified ? 'text-emerald-600' : 'text-slate-400'}`}>
+                          {u.isVerified ? 'verified' : 'pending'}
+                        </span>
+                        <span>{u.aadhaarMasked}</span>
                       </div>
                     </td>
                     <td className="py-3 px-4 font-mono font-semibold text-slate-700">
-                      +91 {u.mobile}
+                      +91 {u.mobileMasked || (u.mobile ? `******${u.mobile.slice(-4)}` : '******0000')}
                     </td>
                     <td className="py-3 px-4 font-medium text-slate-700">
                       {u.district}
-                    </td>
-                    <td className="py-3 px-4">
-                      <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-800 border border-blue-200 text-[10px] font-bold">
-                        {u.category}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-slate-600">
-                      {u.occupation}
-                    </td>
-                    <td className="py-3 px-4 font-semibold text-slate-800">
-                      ₹{u.annualIncomeAmount.toLocaleString()}
                     </td>
                     <td className="py-3 px-4">
                       <span
@@ -227,9 +231,18 @@ export default function AdminUsersPage() {
                             : 'bg-amber-50 text-amber-800 border-amber-300'
                         }`}
                       >
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                        Verified
+                        <span className={`w-1.5 h-1.5 rounded-full ${u.isVerified ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                        {u.isVerified ? 'Verified' : 'Unverified'}
                       </span>
+                    </td>
+                    <td className="py-3 px-4">
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-800 border border-blue-200">
+                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                        {u.accountStatus || 'Active'}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 font-mono text-slate-600 text-[11px]">
+                      {u.createdAt ? new Date(u.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}
                     </td>
                     <td className="py-3 px-4 text-right">
                       <div className="inline-flex items-center gap-1">
@@ -262,6 +275,40 @@ export default function AdminUsersPage() {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination Bar */}
+        {totalRecords > limit && (
+          <div className="flex items-center justify-between px-4 py-3 border-t border-slate-200 bg-slate-50 text-xs">
+            <span className="text-slate-600">
+              Showing {(page - 1) * limit + 1} to {Math.min(page * limit, totalRecords)} of {totalRecords} citizens
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                disabled={page <= 1}
+                onClick={() => {
+                  const newPage = page - 1;
+                  setPage(newPage);
+                  fetchUsers(newPage);
+                }}
+                className="px-3 py-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold disabled:opacity-50 hover:bg-slate-100"
+              >
+                Previous
+              </button>
+              <span className="font-mono text-slate-700">Page {page} of {Math.ceil(totalRecords / limit)}</span>
+              <button
+                disabled={page * limit >= totalRecords}
+                onClick={() => {
+                  const newPage = page + 1;
+                  setPage(newPage);
+                  fetchUsers(newPage);
+                }}
+                className="px-3 py-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold disabled:opacity-50 hover:bg-slate-100"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Citizen Detail Modal / Drawer */}

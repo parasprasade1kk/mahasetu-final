@@ -22,6 +22,7 @@ export async function GET(req: NextRequest) {
       kpis: {
         totalRegisteredCitizens: analyticsData.totalCitizens,
         verifiedCitizens: analyticsData.verifiedCitizens,
+        totalAuditLogs: analyticsData.totalAuditLogs,
         totalApplications: analyticsData.totalApplications,
         pendingApplications: analyticsData.pendingApplications,
         approvedApplications: analyticsData.approvedApplications,
